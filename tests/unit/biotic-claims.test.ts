@@ -44,7 +44,13 @@
 import { describe, it, expect } from "vitest"
 import { readFileSync, writeFileSync, existsSync, rmSync } from "node:fs"
 import { execSync } from "node:child_process"
-import { MARKETING_SURFACES, AI_PROMPT_SURFACES } from "./customer-surfaces"
+import {
+  MARKETING_SURFACES,
+  AI_PROMPT_SURFACES,
+  ACCOUNT_SURFACES,
+  ASSESSMENT_SURFACES,
+  REPORT_SURFACES,
+} from "./customer-surfaces"
 import { reachableSourceFiles, servablePageCount } from "./reachable-surfaces"
 
 /** Source with comments stripped — developer notes are not customer copy. */
@@ -309,6 +315,35 @@ const AGENT_LOOP_SURFACES = [
   "components/account/twin/menu-scan.tsx",
 ]
 
+/*
+ * ══ EXPERIENCE 0R-1 — THE THREE CORPORA THAT WERE WRITTEN AND NEVER WIRED ═══
+ *
+ * `ACCOUNT_SURFACES` and `ASSESSMENT_SURFACES` have existed in
+ * `customer-surfaces.ts` for tranches. They were never imported here. That is
+ * the whole of `P0-GUARD-01` and the Assessment gap: the lists were authored,
+ * reviewed, and then not connected to the thing that enforces them.
+ *
+ * `REPORT_SURFACES` did not exist at all — `P0-GUARD-02`, and the surface it
+ * leaves unguarded is `/assessment/report`, the live €49 product.
+ *
+ * Three surfaces, found outside the same scan, one at a time, over three audit
+ * steps. 0R-2's derivation exists so this is the last manual widening.
+ *
+ * ── WHAT THE WIDENING ACTUALLY CAUGHT, AND WHY THAT IS THE POINT ────────────
+ *
+ * 33 files enter the corpus. They produce SEVEN (file, rule) findings — and
+ * `live-dashboard.tsx`, which carries SIX P0s, produces ONE.
+ *
+ * Because the rest have no string to match. `P0-TRUST-01`'s fabricated meal is
+ * a data fallback. `P0-SCIENCE-02`'s rings are JSX reading a prop.
+ * `P0-SCIENCE-04` is a COLOUR. `P0-SCIENCE-05` is an ANATOMICAL COORDINATE.
+ * `P0-TRUST-05` is a URL and an auto-send.
+ *
+ * So this file closes the COVERAGE gap and measures, rather than asserts, how
+ * much of the debt coverage cannot reach. The FORM gap is a different
+ * instrument: see `tests/unit/biotic-visual-encoding.test.ts`.
+ */
+
 /** Everything the claim rules are enforced against. */
 const GUARDED_SURFACES = [
   ...LIVE_SURFACES,
@@ -317,6 +352,19 @@ const GUARDED_SURFACES = [
   ...EMAIL_SURFACES,
   ...CANDIDATE_SURFACES,
   ...AGENT_LOOP_SURFACES,
+  // 0R-1. Deduplicated: AGENT_LOOP_SURFACES already carries several Twin files,
+  // and a file guarded twice would report twice.
+  ...[...ACCOUNT_SURFACES, ...ASSESSMENT_SURFACES, ...REPORT_SURFACES].filter(
+    (f) =>
+      ![
+        ...LIVE_SURFACES,
+        ...REACHABLE_SURFACES,
+        ...PROMPT_SURFACES,
+        ...EMAIL_SURFACES,
+        ...CANDIDATE_SURFACES,
+        ...AGENT_LOOP_SURFACES,
+      ].includes(f),
+  ),
 ]
 
 /** English dictionary copy is checked separately — same rules, one locale. */
@@ -497,6 +545,10 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       ["EMAIL_SURFACES", EMAIL_SURFACES],
       ["CANDIDATE_SURFACES", CANDIDATE_SURFACES],
       ["AGENT_LOOP_SURFACES", AGENT_LOOP_SURFACES],
+      // 0R-1 — the three that were written and never wired.
+      ["ACCOUNT_SURFACES", ACCOUNT_SURFACES],
+      ["ASSESSMENT_SURFACES", ASSESSMENT_SURFACES],
+      ["REPORT_SURFACES", REPORT_SURFACES],
     ]
     for (const [name, list] of tranches) {
       expect(list.length, `${name} is empty`).toBeGreaterThan(0)
@@ -665,6 +717,7 @@ describe("fermented food is never equated with live organisms or probiotics", ()
     const copy = renderedSource(file)
     for (const [name, pattern] of FERMENTED_LIVE_CLAIMS) {
       const hit = copy.match(pattern)
+      if (hit && isExposedAt0R1(file, name)) continue // 0R-1 inventory
       expect(hit?.[0] ?? null, `${file} — ${name}: "${hit?.[0]}"`).toBeNull()
     }
   })
@@ -798,6 +851,7 @@ describe("fibre is never classified as prebiotic", () => {
     const copy = renderedSource(file)
     for (const [name, pattern] of FIBRE_PREBIOTIC_CLAIMS) {
       const hit = copy.match(pattern)
+      if (hit && isExposedAt0R1(file, name)) continue // 0R-1 inventory
       expect(hit?.[0] ?? null, `${file} — ${name}: "${hit?.[0]}"`).toBeNull()
     }
   })
@@ -953,6 +1007,133 @@ const PERSONAL_BIOTIC_STATE: [string, RegExp][] = [
    */
 ]
 
+/* ════════════════════════════════════════════════════════════════════════════
+   EXPERIENCE 0R-1 — THE DEBT THE WIDENED CORPUS EXPOSED.
+
+   Measured, not estimated: the nine PERSONAL_BIOTIC_STATE rules applied to the
+   33 files that entered GUARDED_SURFACES at 0R-1. Seven (file, rule) findings
+   across four files, each reproduced below as the customer-facing text that
+   matched.
+
+   Every one is a KNOWN, RECORDED P0 — not a new discovery:
+
+     live-dashboard.tsx    P0-TRUST-01/02/03, P0-SCIENCE-01/02/03   (0R-4, 0R-5)
+     dashboard-client.tsx  the demo dashboard carrying the same construct
+     demo-report.tsx       the refused /report* family               (0R-6)
+     assessment-report.ts  the dev-flow Report generator, P0-SCIENCE-07 (0R-6)
+
+   ── THIS LIST MAY ONLY SHRINK ──────────────────────────────────────────────
+
+   Each entry is deleted by the 0R stage that removes the claim. It is NOT an
+   exemption: three assertions below hold it to that, and the first fails if an
+   entry outlives its defect.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+const EXPOSED_AT_0R1: readonly [file: string, rule: string, example: string][] = [
+  // ── /account, the real dashboard. 0R-4 and 0R-5. ──────────────────────────
+  // MOCK_MEALS' fabricated insight: "The kimchi lifts your probiotic score
+  // significantly." The fabricated DATA is P0-TRUST-01; this is its prose.
+  [
+    "components/account/live-dashboard.tsx",
+    "a Biotic claimed as a person's own",
+    "your probiotic",
+  ],
+  // /account-you, public per proxy.ts, so customer-visible regardless of where
+  // its numbers come from: "Your Prebiotics have been one of your stronger
+  // pathways, but your Probiotics are pulling down your Biotics Score™."
+  [
+    "components/account/dashboard-client.tsx",
+    "a Biotic claimed as a person's own",
+    "Your Prebiotics",
+  ],
+
+  // ── The Report family. 0R-6. ──────────────────────────────────────────────
+  // demo-report.tsx is 2,357 lines behind the four refused /report* pages.
+  // RETIRE rather than repair — it is a superseded product door.
+  [
+    "components/report/demo-report.tsx",
+    "a personal score attributed to a Biotic",
+    "Your Probiotics score",
+  ],
+  [
+    "components/report/demo-report.tsx",
+    "a Biotic claimed as a person's own",
+    "Your Probiotics",
+  ],
+  [
+    "components/report/demo-report.tsx",
+    "a Biotic given a comparative or directional verdict",
+    "Probiotics score is the single strongest",
+  ],
+  // assessment-report.ts generates the dev-flow Report — P0-SCIENCE-07, the
+  // latent production hazard one environment variable from the €49 route.
+  [
+    "lib/assessment-report.ts",
+    "a personal score attributed to a Biotic",
+    "your Prebiotics score",
+  ],
+  [
+    "lib/assessment-report.ts",
+    "a Biotic claimed as a person's own",
+    "your Prebiotics",
+  ],
+
+  /* ── CATEGORY-EQUIVALENCE CLAIMS — NOT IN THE EXPERIENCE 0 REGISTER ───────
+   *
+   * The nine below are the reason 0R-1 runs before anything else.
+   *
+   * Experience 0 audited for personal Biotic STATE and found sixteen P0s. It
+   * did not sweep Account and Report for CATEGORY EQUIVALENCE — "live foods"
+   * as a product category, fermented food asserted to carry live cultures,
+   * fibre classified as prebiotic, food claimed to colonise. Tranche 2B
+   * repaired exactly this class on the marketing pages and never reached
+   * these surfaces, because these surfaces were not in the corpus.
+   *
+   * So the widening did what the specification said it would: THE RED LIST
+   * DEFINED WORK THE AUDIT HAD NOT CATALOGUED. Recorded as `P0-SCIENCE-09`.
+   * ───────────────────────────────────────────────────────────────────────── */
+
+  // /account — five surfaces, none of them previously guarded.
+  ["components/account/day8-challenge-card.tsx",
+   "live or living foods as a product category", "Live Foods"],
+  ["components/account/goal-progress-card.tsx",
+   "live or living foods as a product category", "Live Foods"],
+  ["components/account/welcome-screen.tsx",
+   "live or living foods as a product category", "live foods"],
+  ["components/account/welcome-screen.tsx",
+   "foods classified as prebiotic-rich", "prebiotic-rich"],
+  ["components/account/seven-day-guide.tsx",
+   "colonisation or reseeding claimed", "colonise"],
+  ["components/account/dashboard-client-data.ts",
+   "live cultures asserted of food", "live cultures"],
+
+  // The Report family. Adjacent to `P0-SCIENCE-08`, which recorded mechanistic
+  // claims in the food copy; these are the category-equivalence half.
+  ["components/report/demo-report.tsx",
+   "live cultures asserted of food", "Live Cultures"],
+  ["lib/fallback-paid-report.ts",
+   "live or living foods as a product category", "live food"],
+  ["lib/report/addon-lens.ts",
+   "live or living foods as a product category", "Live foods"],
+
+  // Second and third rules tripped by the same files. A file is inventoried
+  // per (file, RULE), not per file, so each one is deleted by the repair that
+  // removes that specific claim rather than by a blanket exemption.
+  ["components/account/goal-progress-card.tsx",
+   "live cultures asserted of food", "live cultures"],
+  ["lib/report/addon-lens.ts",
+   "live cultures asserted of food", "Live-culture"],
+  ["lib/fallback-paid-report.ts",
+   "live foods named as a category beside fermented ones", "live or fermented food"],
+] as const
+
+/** Pinned so the list cannot grow. It moves DOWN only, with the repair. */
+const ENTRIES_AT_0R1_OPEN = 19
+
+function isExposedAt0R1(file: string, rule: string): boolean {
+  return EXPOSED_AT_0R1.some(([f, r]) => f === file && r === rule)
+}
+
 const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
   [
     "components/waitlist/food-system-experience.tsx",
@@ -1102,8 +1283,90 @@ describe("no Biotic carries a personal number", () => {
     const src = renderedSource(file)
     for (const [why, pattern] of PERSONAL_BIOTIC_STATE) {
       const hit = src.match(pattern)
+      if (hit && isExposedAt0R1(file, why)) continue // known debt — see below
       expect(hit?.[0] ?? null, `${file} — ${why}: "${hit?.[0]}"`).toBeNull()
     }
+  })
+
+  /* ══ THE 0R-1 INVENTORY — THE RED LIST, HELD SO IT CANNOT GROW ════════════
+   *
+   * The 0R specification says to widen the corpus, let the suite go red, and
+   * let the red list define the UI work. Committing a genuinely red suite would
+   * leave CI red across every 0R commit and make a NEW regression
+   * indistinguishable from known debt — so the red list is an ARTEFACT instead.
+   *
+   * Three assertions below make it load-bearing rather than an allowlist, and
+   * the first is the one that matters: AN ENTRY IS ONLY ALLOWED TO EXIST WHILE
+   * ITS DEFECT DOES. A row whose claim has been repaired FAILS, forcing its own
+   * deletion. That is what stops a shrinking baseline becoming permanent.
+   *
+   * 0R's close criterion: this list is EMPTY and this constant is DELETED.
+   */
+
+  /**
+   * Every rule family the widened corpus feeds. The inventory spans all of
+   * them, because the widening exposed debt in three — and two of those were
+   * CATEGORY-EQUIVALENCE claims the Experience 0 register never contained.
+   */
+  const ALL_CLAIM_RULES: [string, RegExp][] = [
+    ...PERSONAL_BIOTIC_STATE,
+    ...FERMENTED_LIVE_CLAIMS,
+    ...FIBRE_PREBIOTIC_CLAIMS,
+  ]
+
+  it("0R-1: every inventory entry still describes a real claim", () => {
+    for (const [file, why, example] of EXPOSED_AT_0R1) {
+      const rule = ALL_CLAIM_RULES.find(([w]) => w === why)
+      expect(rule, `${file} — no rule named "${why}"`).toBeDefined()
+      const hit = renderedSource(file).match(rule![1])
+      expect(
+        hit?.[0] ?? null,
+        `${file} — "${why}" no longer matches. The claim is GONE, so DELETE this ` +
+          `inventory entry rather than leaving it. It recorded: "${example}"`,
+      ).not.toBeNull()
+    }
+  })
+
+  it("0R-1: the inventory may only shrink, and carries no headroom", () => {
+    expect(
+      EXPOSED_AT_0R1.length,
+      "EXPOSED_AT_0R1 grew. A new prohibited claim on a guarded surface is a " +
+        "REGRESSION, not debt to record — repair it instead of listing it.",
+    ).toBeLessThanOrEqual(ENTRIES_AT_0R1_OPEN)
+
+    /*
+     * ── WHY THE CAP IS ALSO A FLOOR ─────────────────────────────────────────
+     *
+     * `<=` alone is a ratchet with a loose pawl. Once a repair takes the list
+     * to 18 while the constant still reads 19, one NEW claim can be added back
+     * and every assertion in this block passes — the shrinking-baseline failure
+     * mode this inventory was built to avoid, reachable through the inventory
+     * itself.
+     *
+     * Found by writing sabotage 1456, which raises the constant and slipped
+     * against the `<=` form alone. So the constant must EQUAL the list: a
+     * repair decrements both in the same commit, and buying room for a new
+     * entry becomes a visible diff that fails here rather than a number nobody
+     * reads.
+     */
+    expect(
+      ENTRIES_AT_0R1_OPEN,
+      `ENTRIES_AT_0R1_OPEN is ${ENTRIES_AT_0R1_OPEN} while the inventory holds ` +
+        `${EXPOSED_AT_0R1.length}. The constant moves DOWN only, in the SAME ` +
+        `commit as the repair that shortens the list — headroom above the list ` +
+        `is room for a new claim to hide in.`,
+    ).toBe(EXPOSED_AT_0R1.length)
+  })
+
+  it("0R-1: no guarded surface outside the inventory carries a claim", () => {
+    const unexpected: string[] = []
+    for (const file of GUARDED_SURFACES) {
+      const src = renderedSource(file)
+      for (const [why, pattern] of ALL_CLAIM_RULES) {
+        if (src.match(pattern) && !isExposedAt0R1(file, why)) unexpected.push(`${file} — ${why}`)
+      }
+    }
+    expect(unexpected, "a claim exists on a guarded surface and is not inventoried").toEqual([])
   })
 
   /*
@@ -1302,7 +1565,29 @@ describe("the pre-launch surface does not promise the canonical score", () => {
  * positive of the rule, not debt, and it is listed rather than special-cased
  * so that nobody has to trust a comment to know why it is absent.
  */
-const KNOWN_UNCORRECTED = [
+/*
+ * ══ WHY THIS IS (file, RULE) AND NOT (file) ═════════════════════════════════
+ *
+ * It was a file list until 0R-2, and the sabotage harness proved that wrong.
+ *
+ * 0R-2 added three files to this ledger because `PERSONAL_BIOTIC_STATE` had
+ * just started running here. A file-level allowance granted each of them an
+ * allowance for ALL THREE rule families at once — so two sabotage cases that
+ * had been caught for their whole life began to slip:
+ *
+ *   s7b 1007  a colonisation claim re-added to `lib/account/meal-impact.ts`
+ *   s7b 1011  "live foods" as a category re-added to `lib/assessment-scoring.ts`
+ *
+ * Both files were ledgered for a PERSONAL BIOTIC claim and neither had ever
+ * been allowed a fermented-category one. Nothing in the suite noticed, because
+ * the allowance was keyed on the filename.
+ *
+ * This is the same lesson `EXPOSED_AT_0R1` already encodes one screen up —
+ * inventory per (file, RULE), never per file — and the ledger did not have it.
+ * Recording it here rather than in a commit message, because the next person
+ * to add a file to a green-making list needs to read this.
+ */
+const KNOWN_UNCORRECTED: readonly [file: string, rule: string][] = [
   /*
    * ══ WHAT IS LEFT, AND WHY EACH ONE IS LEFT ═════════════════════════════════
    *
@@ -1320,7 +1605,10 @@ const KNOWN_UNCORRECTED = [
    * FSS Phase 3, gated on scientific sign-off. Correcting it to make a ledger
    * green would be the exact trade this phase refuses.
    */
-  "lib/assessment-data.ts",
+  ["lib/assessment-data.ts", "foods classified as prebiotic-rich"],
+  ["lib/assessment-data.ts", "live cultures asserted of food"],
+  ["lib/assessment-data.ts", "live foods named as a category beside fermented ones"],
+  ["lib/assessment-data.ts", "live or living foods as a product category"],
 
 
   /*
@@ -1329,19 +1617,94 @@ const KNOWN_UNCORRECTED = [
    * that flagged its own contract would be asking us to delete the
    * prohibition. Permanent, justified exception.
    */
-  "lib/consultation/science-contract.ts",
+  ["lib/consultation/science-contract.ts", "a Biotic described as high or low for a person"],
+  ["lib/consultation/science-contract.ts", "colonisation or reseeding claimed"],
+
+  /* ── FOUND BY 0R-2, WHEN THE LEDGER STARTED RUNNING ALL THREE RULE SETS ───
+   *
+   * Three reachable files carrying a personal Biotic claim, in no corpus, and
+   * invisible to this ledger until `PERSONAL_BIOTIC_STATE` was added to it.
+   * Each is deleted by the 0R stage that repairs it — the test below refuses a
+   * stale entry, so none can outlive its defect.
+   */
+
+  // "A fermented food lights up your probiotic network" — the SAME sentence as
+  // `ritual.ts` below, in a second module. `P0-SCIENCE-05` was recorded at one
+  // producer; this is the other. 0R-5.
+  ["lib/account/meal-impact.ts", "a Biotic claimed as a person's own"],
+
+  // `RITUAL_CHECKS`. The register named this file for its anatomical `node`
+  // coordinates; the ledger finds it for the effect STRING beside them.
+  // Both halves, one repair. 0R-5.
+  ["lib/account/ritual.ts", "a Biotic claimed as a person's own"],
+
+  /*
+   * THE ONE THAT IS GENUINELY NEW.
+   *
+   * `lib/assessment-scoring.ts:152` — "Your answers suggest care around food,
+   * reflected in your Prebiotics and Probiotics scores…". A personal per-Biotic
+   * claim inside the FREE ASSESSMENT'S SCORING ENGINE, reachable from
+   * `/assessment/results`, which is `V1_CORE`.
+   *
+   * Not in the Experience 0 register, not in `ASSESSMENT_SURFACES`, and not in
+   * any tranche. The audit read the result COMPONENTS and never the module that
+   * computes what they render — the identical mistake Gate 3.6 recorded as
+   * "the guard read the importer and not the imported module", and the reason
+   * D7 asked for derivation rather than another list. 0R-7.
+   */
+  ["lib/assessment-scoring.ts", "a Biotic claimed as a person's own"],
 ]
 
 describe("no reachable surface carries a claim outside the ledger", () => {
-  const ALL_RULES = [...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS]
+  /*
+   * ══ 0R-2 — THE D7 MECHANISM, AND WHY IT IS ONE LINE ═══════════════════════
+   *
+   * D7 asks for a canonical coverage mechanism so that a claims surface cannot
+   * exist outside the corpus because somebody forgot a path. Reaching for a new
+   * instrument would have been the wrong move: THIS LEDGER ALREADY IS THAT
+   * MECHANISM. It derives the reachable closure from the route classifier,
+   * subtracts what is guarded, and reports the remainder.
+   *
+   * Its gap was not the derivation. It was the RULE SET it ran:
+   *
+   *     const ALL_RULES = [...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS]
+   *
+   * `PERSONAL_BIOTIC_STATE` — the nine rules that carry the permanent product
+   * rule, the ones Gate 3.6 widened and `P0-SCIENCE-01/02/03/06/07` all answer
+   * to — was never in it. So the derivation that was supposed to catch a
+   * forgotten surface was running two thirds of the rules, and a personal
+   * Biotic claim on an unguarded reachable file was invisible to the one
+   * instrument built to find exactly that.
+   *
+   * That is the third form of the same failure Experience 0 recorded three
+   * times: Account outside the scan, Assessment outside the scan, Report
+   * outside the scan — and now the derived safety net outside a third of the
+   * rules.
+   *
+   * Adding it is the fix. Keeping it is the mechanism.
+   */
+  const ALL_RULES = [
+    ...FERMENTED_LIVE_CLAIMS,
+    ...FIBRE_PREBIOTIC_CLAIMS,
+    ...PERSONAL_BIOTIC_STATE,
+  ]
 
-  /** Reachable files carrying a claim, minus the ones already guarded. */
-  function unguardedClaimFiles(): string[] {
+  /**
+   * Every (reachable, unguarded file) × (rule it trips) — one FINDING per row,
+   * not one row per file. See the note above `KNOWN_UNCORRECTED` for the two
+   * sabotage cases that proved the difference is load-bearing.
+   */
+  function unguardedClaimFindings(): string[] {
     const guarded = new Set([...GUARDED_SURFACES, EN_DICTIONARY])
-    return reachableSourceFiles()
-      .filter((f) => !guarded.has(f))
-      .filter((f) => ALL_RULES.some(([, p]) => p.test(renderedSource(f))))
-      .sort()
+    const found: string[] = []
+    for (const file of reachableSourceFiles()) {
+      if (guarded.has(file)) continue
+      const src = renderedSource(file)
+      for (const [why, pattern] of ALL_RULES) {
+        if (pattern.test(src)) found.push(`${file} — ${why}`)
+      }
+    }
+    return found.sort()
   }
 
   it("the reachable set was actually computed", () => {
@@ -1356,7 +1719,9 @@ describe("no reachable surface carries a claim outside the ledger", () => {
   })
 
   it("is exactly the ledger — no additions", () => {
-    expect(unguardedClaimFiles()).toEqual([...KNOWN_UNCORRECTED].sort())
+    expect(unguardedClaimFindings()).toEqual(
+      KNOWN_UNCORRECTED.map(([f, w]) => `${f} — ${w}`).sort(),
+    )
   })
 
   it("the ledger has no entry that is already clean", () => {
@@ -1366,9 +1731,12 @@ describe("no reachable surface carries a claim outside the ledger", () => {
      * left behind as a stale allowance. Leaving it would quietly re-open the
      * hole for that path.
      */
-    const stale = KNOWN_UNCORRECTED.filter(
-      (f) => !ALL_RULES.some(([, p]) => p.test(renderedSource(f))),
-    )
+    const stale = KNOWN_UNCORRECTED.filter(([file, why]) => {
+      const rule = ALL_RULES.find(([w]) => w === why)
+      // A rule name that no longer exists is also stale, and louder: the
+      // allowance now names nothing, so it allows everything on that file.
+      return !rule || !rule[1].test(renderedSource(file))
+    }).map(([f, w]) => `${f} — ${w}`)
     expect(stale, "corrected — remove from KNOWN_UNCORRECTED").toEqual([])
   })
 })

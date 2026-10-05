@@ -352,9 +352,202 @@ satisfy, with the explicit note that derivation closes coverage and **not** form
 4. the `?q=` path cannot carry an unreviewed product-authored assertion;
 5. no refused destination is presented as available on any crawled surface,
    including `/account` in a Twin-present state;
-6. the full gate is green, including all thirteen sabotage suites, with
-   `run_s3a`'s 33 documented PR #274 anchors the only exception;
+6. the full gate is green, including all **fourteen** sabotage suites —
+   `run_0r` was added by tranche 1 — with `run_s3a`'s 33 documented PR #274
+   anchors the only exception;
 7. new sabotage cases exist for each repaired class, and **a slipped case
    strengthens the test, never the case.**
 
 **Only then does visual redesign begin.**
+
+---
+
+## 7 · DELIVERY RECORD — tranche 1 (0R-1 + 0R-2)
+
+Appended as the stages complete. Tranche 1 repaired **no product surface**: it
+closed the enforcement boundary and recorded what that exposed. Stated plainly
+because an enforcement-only tranche is the easiest kind of work to overstate.
+
+### 0R-1 · the corpora joined the scan
+
+| | |
+|---|---|
+| newly guarded files | **33** — `ACCOUNT_SURFACES` (18) + `ASSESSMENT_SURFACES` (15) + the new `REPORT_SURFACES` (9), deduplicated against the six corpora already in `GUARDED_SURFACES` |
+| `REPORT_SURFACES` | **new** — `P0-GUARD-02` was the absence of any report corpus at all |
+| the red state, measured | **19 (file, rule) findings across 3 rule families** |
+
+**The red state was measured three times before it was claimed, and the first
+two measurements were wrong.**
+
+1. A `re.search` simulation reported **10** hits. `re.search` returns the first
+   match per rule; `finditer` returned **16**.
+2. Two of those were docblock comments, and `renderedSource()` already strips
+   comments — so under the test's own semantics it was **7**.
+3. All three numbers measured `PERSONAL_BIOTIC_STATE` **only**.
+   `GUARDED_SURFACES` feeds **three** rule families, and the real figure
+   converged at **19** once `FERMENTED_LIVE_CLAIMS` and
+   `FIBRE_PREBIOTIC_CLAIMS` were included.
+
+The third correction is the substantive one, and it produced
+**`P0-SCIENCE-09`** — nine category-equivalence claims on Account and Report
+that the Experience 0 audit never catalogued, because the audit swept for
+personal Biotic *state* and these are claims about food *categories*.
+
+### The red list is an artefact, not a red suite
+
+The specification says to let the suite go red and let the red list define the
+work. A **committed** red suite would leave CI red across every 0R commit and
+make a new regression indistinguishable from known debt, so the red list is held
+as `EXPOSED_AT_0R1` — a shrinking inventory with four assertions:
+
+| | |
+|---|---|
+| every entry still describes a real claim | a repaired row **fails**, forcing its own deletion, so the list cannot outlive its debt |
+| no guarded surface outside the inventory carries a claim | a *new* claim fails immediately — the protection the widening is for |
+| the inventory may only shrink | `length <= ENTRIES_AT_0R1_OPEN` |
+| the cap carries no headroom | `ENTRIES_AT_0R1_OPEN === length` — see below |
+
+**Close criterion for 0R: `EXPOSED_AT_0R1` is empty and the constant is
+deleted.**
+
+### 0R-2 · the D7 mechanism was one line, and the line was missing
+
+D7 asked for a canonical coverage mechanism. Building a new instrument would
+have been wrong: the derived reachability ledger in `biotic-claims.test.ts`
+**already is** that mechanism — it takes the import closure of the non-refused
+page routes, subtracts what is guarded, and asserts the remainder equals
+`KNOWN_UNCORRECTED`.
+
+Its gap was not the derivation. It was the rule set it ran:
+
+```ts
+const ALL_RULES = [...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS]
+```
+
+`PERSONAL_BIOTIC_STATE` — the nine rules carrying the permanent product rule —
+was never in it. So the derivation built to catch a forgotten surface was
+running two thirds of the rules, and a personal Biotic claim on an unguarded
+reachable file was invisible to the one instrument built to find exactly that.
+
+**That is the same failure Experience 0 recorded three times** — Account outside
+the scan, Assessment outside the scan, Report outside the scan — occurring in
+the safety net itself. Adding the line exposed three more unguarded reachable
+files (`lib/account/meal-impact.ts`, `lib/account/ritual.ts`,
+`lib/assessment-scoring.ts`), and the third is **`P0-SCIENCE-10`**: a personal
+per-Biotic sentence inside the **free assessment's scoring engine**, reachable
+from `/assessment/results`, which is `V1_CORE`. The audit read the result
+*components* and never the module that computes what they render.
+
+### The form track — `tests/unit/biotic-visual-encoding.test.ts`
+
+Coverage and form are separate problems, and `P0-SCIENCE-04` proves it: a
+prohibited verdict encoded as a **colour**, with no prohibited string anywhere.
+
+The new guard asserts over **data flow**, not language — a Biotic-derived value
+(`biotics.weakest`, `biotics.strongest`, a `BioticKey` parameter) reaching a
+visual sink (colour, gradient, tint, aura), and an anatomical coordinate
+(`node: { x: … }`) reaching self-reported behaviour. Four inventoried encodings,
+same shrink-only contract, and non-vacuity proved against a known-dirty module
+(`twin-visual.ts`) and a known-clean one (`lib/pillars.ts`).
+
+**The guard rejected its author's own inventory entry, correctly.** `ritual.ts`
+was listed under "a Biotic chooses a colour"; its `RITUAL_CHECKS` keys are
+`fermented · plants · moved · slept · feeling` — self-reported behaviour, not
+Biotics. So `P0-SCIENCE-05` is a **different form** from `P0-SCIENCE-04`:
+
+| | |
+|---|---|
+| `P0-SCIENCE-04` | a Biotic verdict → a colour |
+| `P0-SCIENCE-05` | a self-reported tap → a point on the body |
+
+Collapsing them into one rule would have hidden the second. Split into two, the
+guard then found a **fourth** site its author had missed —
+`twin-stage.tsx:243`'s `signals?: Array<{ key; node: { x; y }; color }>`, the
+prop contract that carries a body coordinate between producer and renderer.
+
+### Two weak tests the sabotage harness found before it ran
+
+Recorded because a guard author finding their own guard decorative is the only
+evidence the harness is doing more than restating what was already known.
+
+1. **Both inventories were ratchets with a loose pawl.** `length <= CAP` means
+   that once a repair takes the list below the cap, the gap is room for one new
+   claim and every assertion still passes. Cases **1456** and **1462** raise the
+   constant and slipped against that form. Both constants must now **equal**
+   their list, so buying room is a visible diff that fails.
+2. **`it.each(VISUAL_MODULES)` only looks at what the list names.** Dropping
+   `twin-stage.tsx` from `VISUAL_MODULES` while leaving it inventoried removed
+   the product's worst visual encoding from the instrument and broke nothing —
+   case **1461**. Membership is now asserted both ways round: every inventoried
+   file must still be a module under test.
+
+### The regression this tranche caused, and how it was found
+
+**The most important thing 0R-2 produced is a defect it introduced itself.**
+
+Running `run_s7b` after the tranche returned **168/171**, against **171/171** at
+the Experience 0 close. Three cases:
+
+| case | verdict | cause |
+|---|---|---|
+| **1007** | **SLIPPED** | a colonisation claim re-added to `lib/account/meal-impact.ts` stopped being caught |
+| **1011** | **SLIPPED** | "live foods" as a category re-added to `lib/assessment-scoring.ts` stopped being caught |
+| 1090 | ANCHOR MISSING | 0R-1's dedup block moved the line the case anchors on |
+
+1007 and 1011 are a **real coverage loss, caused by 0R-2.**
+`KNOWN_UNCORRECTED` was a list of **files**. 0R-2 added three files to it
+because `PERSONAL_BIOTIC_STATE` had just started running against the ledger —
+and a file-level allowance granted each of them an allowance for **all three
+rule families at once.** Both files were ledgered for a personal-Biotic claim;
+neither had ever been allowed a fermented-category one. Two cases that had been
+caught for their whole life went quiet, and nothing else in the suite noticed,
+because the allowance was keyed on the filename.
+
+**It is the same lesson `EXPOSED_AT_0R1` already encodes one screen above it** —
+inventory per (file, **rule**), never per file — and the ledger did not have it.
+Writing one mechanism with the lesson and one without, in the same file, in the
+same tranche.
+
+| | |
+|---|---|
+| repair | `KNOWN_UNCORRECTED` is now `readonly [file, rule][]` — **5 files became 9 findings** |
+| the comparison | `unguardedClaimFindings()` emits one row per (file × rule it trips), compared by exact equality |
+| the staleness test | a pair whose rule no longer matches **fails**; a pair naming a rule that does not exist fails louder, because it constrains nothing while reading as covered |
+| 1007 · 1011 · 1090 | **all three caught** after the repair |
+| new cases | **1465** a ledger entry names a rule its file does not trip · **1466** a ledger entry names a rule that does not exist |
+
+1090 is a different thing and is not dressed up as the same: the case is aimed
+correctly and its **anchor** no longer exists, so the anchor was repointed to
+the dedup block with the reason recorded inline. That is the Gate 4 precedent
+(two repointed anchors), not a weakened case.
+
+> **A slipped case strengthens the test, never the case** — and here the test
+> that needed strengthening was one this tranche had just written.
+
+### `tools/sabotage/cases_0r.py` + `run_0r.py` — the fourteenth suite
+
+**17 cases, 1450–1466.** Fourteen mutate test source, because tranche 1's
+deliverable *is* the instrument; the precedent is case 1310, which mutates
+`agent-loop-claims.test.ts` for the same reason. Three mutate production files,
+because "the widening sees a **new** claim" can only be proved by introducing
+one.
+
+| | |
+|---|---|
+| 1450–1451 | a corpus leaves `GUARDED_SURFACES` — `P0-GUARD-01` / `-02` reopen |
+| 1452 | one **file** quietly leaves the Report corpus, and the D7 ledger catches it — 0R-2 protecting 0R-1 |
+| 1453–1455 | a rule family leaves the inventory's rule set, and the D7 gap itself restored |
+| 1456–1457 | the inventory grows, or an entry outlives its debt |
+| 1458 | a personal Biotic claim introduced on a newly guarded Report module |
+| 1459–1462 | the form instrument narrowed, or a module dropped from it |
+| 1463–1464 | a new encoding appears — one per form |
+| 1465–1466 | the ledger's (file, rule) granularity, added after 1007/1011 slipped |
+
+### What tranche 1 did not do
+
+**No production file was modified.** No FSS methodology, candidate domain,
+weight, band decision, comparison rule, My Food System composition authority,
+Gate 6 context ceiling or Gate 6.1 model authority was touched. No refusal was
+removed, no route reclassified, no copy rewritten, and no finding repaired.
+
+The debt is now **visible and un-growable**. Repair begins at 0R-3.

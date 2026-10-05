@@ -1171,8 +1171,12 @@ CASES = [
     # ── the guards themselves ───────────────────────────────
 
     (1090, "the agent loop leaves the claims corpus again", BCLAIMSFILE,
-     "  ...AGENT_LOOP_SURFACES,\n]",
-     "]",
+     # Anchor repointed at 0R-1: the dedup block for the Account/Assessment/
+     # Report corpora now sits between this line and the closing bracket, so
+     # the old "...AGENT_LOOP_SURFACES,\n]" anchor no longer exists. The case is
+     # unchanged in what it attacks — the agent-loop corpus leaving the scan.
+     "  ...AGENT_LOOP_SURFACES,\n  // 0R-1. Deduplicated:",
+     "  // 0R-1. Deduplicated:",
      BCLAIMS),
 
     (1091, "the possessive rule is dropped from PERSONAL_BIOTIC_STATE", BCLAIMSFILE,

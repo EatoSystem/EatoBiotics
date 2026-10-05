@@ -182,6 +182,44 @@ export const SAMPLE_REPORT_SURFACES = [
 ]
 
 /** Public marketing and commercial pages. */
+/**
+ * The Report family — Experience 0R-1.
+ *
+ * ══ WHY THIS LIST DID NOT EXIST ═════════════════════════════════════════════
+ *
+ * `P0-GUARD-02`. Not one report generator or component had ever been in any
+ * claims corpus, and `/assessment/report` is `V1_CORE_ROUTES:94` — the live €49
+ * product. So the one Report EatoBiotics actually sells was the least guarded
+ * surface in the repository.
+ *
+ * This is the THIRD instance of the same enforcement failure: Account was
+ * outside the scan (`P0-GUARD-01`), Assessment was outside the scan, Report was
+ * outside the scan. 0R-2's derivation exists so this is the last list anyone
+ * has to remember to write.
+ *
+ * ══ GENERATORS AND COMPONENTS, DELIBERATELY ═════════════════════════════════
+ *
+ * `build-food-system-report.ts` composes the sentence; `food-system-section.tsx`
+ * renders it. Gate 3.6 learned this the hard way — the guard read the importer
+ * and not the module that gave it its words. A COPY SOURCE COUNTS AS A SURFACE.
+ */
+export const REPORT_SURFACES = [
+  // The generators. `build-food-system-report.ts:457-469` composes
+  // `dominantPattern`, which is `P0-SCIENCE-06` — a personal Biotic ranking on
+  // the money path.
+  "lib/report/build-food-system-report.ts",
+  "lib/report/subscores.ts",
+  "lib/report/framing.ts",
+  "lib/report/addon-lens.ts",
+  // "what a paying customer actually receives" when generation fails.
+  "lib/fallback-paid-report.ts",
+  "lib/assessment-report.ts",
+  // The renderers.
+  "components/report/food-system-section.tsx",
+  "components/report/demo-report.tsx",
+  "components/assessment/full-report-client.tsx",
+] as const
+
 export const MARKETING_SURFACES = [
   "app/page.tsx",
   // The holding page — the ONLY page a visitor sees while the password gate is

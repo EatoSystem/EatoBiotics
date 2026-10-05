@@ -1227,11 +1227,82 @@ register records them together rather than in separate entries.
 | Kind | **readiness**, not claims and not live |
 | Disposition | **RECORD.** It belongs beside the `constraints-known` pre-activation blocker in CLAUDE.md, which this audit neither discharges nor weakens |
 
+## `P0-SCIENCE-09` · Category-equivalence claims on Account and Report
+
+**Surfaces** `/account`, `/account-you`, the Report family · **Verified** by the
+widened claims corpus, 2026-10-05 · **Reachability: LIVE**
+
+**Found by Experience 0R-1, not by Experience 0.** The audit swept for personal
+Biotic *state* and found sixteen P0s. It did not sweep Account and Report for
+**category equivalence** — the class Tranche 2B repaired on the marketing pages
+and never reached these surfaces, because these surfaces were not in the corpus.
+
+Nine findings across eight files:
+
+| file | claim |
+|---|---|
+| `components/account/day8-challenge-card.tsx` | *"Live Foods"* as a product category |
+| `components/account/goal-progress-card.tsx` | *"Live Foods"*, and *"live cultures"* asserted of food |
+| `components/account/welcome-screen.tsx` | *"live foods"*, and *"prebiotic-rich"* as a food classification |
+| `components/account/seven-day-guide.tsx` | *"colonise"* — colonisation claimed |
+| `components/account/dashboard-client-data.ts` | *"live cultures"* asserted of food |
+| `components/report/demo-report.tsx` | *"Live Cultures"* |
+| `lib/fallback-paid-report.ts` | *"live food"*, and *"live or fermented food"* as a category |
+| `lib/report/addon-lens.ts` | *"Live foods"*, and *"Live-culture"* |
+
+Against *do not treat fermented foods as automatically probiotic* and *do not
+treat all fibre as prebiotic* — two of the standing prohibitions, on live
+surfaces, for the whole of Experience 0 without anyone seeing them.
+
+### Why this is the strongest evidence for D7
+
+The claims existed. The rules existed. The rules had been written specifically
+for this class and proven against it on other pages. **Only the corpus
+membership was missing**, and nothing in the repository could say so.
+
+| | |
+|---|---|
+| Disposition | **REMEDIATE** with the surfaces they sit on — 0R-5 for Account, 0R-6 for Report |
+| Held as | `EXPOSED_AT_0R1` in `tests/unit/biotic-claims.test.ts`, shrink-only |
+
+---
+
+## `P0-SCIENCE-10` · A personal Biotic claim inside the scoring engine
+
+**Surface** `lib/assessment-scoring.ts:152`, reachable from
+`/assessment/results` (`V1_CORE`) · **Verified** by the derived ledger, 2026-10-05
+· **Reachability: LIVE**
+
+**Found by Experience 0R-2**, when the derived reachability ledger began running
+`PERSONAL_BIOTIC_STATE` as well as the two category rule sets.
+
+> *"Your answers suggest care around food, **reflected in your Prebiotics and
+> Probiotics scores**, with rhythm and recovery thinner…"*
+
+A personal per-Biotic claim in the module that **computes the free assessment's
+score** — not in a component, in the engine.
+
+### The mistake it exposes, which has a name in this repository
+
+The audit read the result **components** and never the module that computes what
+they render. That is verbatim the failure Gate 3.6 recorded as *"the guard read
+the importer and not the imported module"*, and the reason `AGENT_LOOP_SURFACES`
+exists at all.
+
+It is also why D7 asked for **derivation** rather than another list: no amount of
+care in writing `ASSESSMENT_SURFACES` would have included a scoring module,
+because nobody thinks of a scoring module as a copy surface. **It is one.**
+
+| | |
+|---|---|
+| Disposition | **REMEDIATE** at 0R-7, with the Assessment ruling |
+| Held as | `KNOWN_UNCORRECTED` in the derived ledger, shrink-only |
+
 ---
 
 ## Register status
 
-**24 entries — 16 P0 · 3 P1 · 2 P2 · 3 notes.** Plus `RESP-ACCOUNT-01`, named
+**26 entries — 18 P0 · 3 P1 · 2 P2 · 3 notes.** Two P0s were added by Experience 0R-1 and 0R-2 — `P0-SCIENCE-09` and `P0-SCIENCE-10`, both found by the widened and derived guards rather than by the audit, which is what those stages exist to do. Plus `RESP-ACCOUNT-01`, named
 inside `NOTE-CAPTURE-01` and deliberately not entered separately.
 
 | id | severity | surface | verified | disposition |
@@ -1255,6 +1326,8 @@ inside `NOTE-CAPTURE-01` and deliberately not entered separately.
 | `P1-VOCAB-01` | P1 | report food tags | render | REMEDIATE — "Heal" is not customer-facing |
 | `P0-GUARD-02` | P0 | test corpus | source | **WIDEN WITH D1** — or `P0-SCIENCE-06` survives the repair |
 | `P2-REPORT-01` | P2 | `/demo/food-system-report` | render | RECORD — readiness, preview only |
+| `P0-SCIENCE-09` | **P0 live** | `/account` · Report | widened corpus | REMEDIATE — **found by 0R-1**, nine category-equivalence claims |
+| `P0-SCIENCE-10` | **P0 live** | `lib/assessment-scoring.ts` | derived ledger | REMEDIATE — **found by 0R-2**, a claim inside the scoring engine |
 | `P0-GUARD-01` | P0 | test corpus | source | REPAIR FIRST, in remediation |
 | `P2-FSS-ARCH-01` | P2 | My Food System → Biotics | source closure | RECORD + PROVE, no refactor |
 | `DEBT-CODE-01` | DEBT-CODE | `/account` | render (disproved as P0) | RETIRE with generation |

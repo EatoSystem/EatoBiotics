@@ -14,6 +14,7 @@ remediation sequence and one roadmap.
 | **tested audit head** | **`5274e03`** — the full gate is recorded in [`AUDIT_BASELINE.md` §10](./AUDIT_BASELINE.md) |
 | evidence | 234 manifest rows · 101 committed citations · 133 archive-only |
 | findings | **16 P0 · 3 P1 · 2 P2 · 3 notes = 24**, plus `RESP-ACCOUNT-01` (named inside `NOTE-CAPTURE-01`, deliberately not entered separately) |
+| the register has since grown | **24 at this freeze, 26 today.** Experience 0R-1 and 0R-2 added `P0-SCIENCE-09` and `P0-SCIENCE-10`, both found by the widened and derived guards rather than by this audit. The 24 above is the Experience 0 count and does **not** move; `EATOBIOTICS_SCIENTIFIC_UI_DEBT.md` is the live total |
 
 The audit's own standard, which decided several conclusions against my first
 reading of them:
