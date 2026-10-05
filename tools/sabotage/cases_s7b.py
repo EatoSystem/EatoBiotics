@@ -712,8 +712,16 @@ CASES = [
 
     (1012, "a corrected file is left behind in the ledger as a stale allowance",
      CORPUSTEST,
-     '  "lib/assessment-data.ts",\n',
-     '  "lib/assessment-data.ts",\n  "lib/account/meal-impact.ts",\n',
+     # Anchor repointed at 0R tranche 1: KNOWN_UNCORRECTED became
+     # (file, RULE) pairs after s7b 1007/1011 proved a file-level allowance
+     # covers rule families it was never granted. The case is unchanged in what
+     # it attacks — a ledger entry for a file that carries no claim at all.
+     # `lib/pillars.ts` is the canonical education module and is genuinely
+     # clean, which is why biotic-visual-encoding.test.ts uses it as its
+     # known-clean control too.
+     '  ["lib/assessment-data.ts", "foods classified as prebiotic-rich"],\n',
+     '  ["lib/assessment-data.ts", "foods classified as prebiotic-rich"],\n'
+     '  ["lib/pillars.ts", "a Biotic claimed as a person\'s own"],\n',
      BIOTIC),
 
     # ── Work Package B — the constitution and the FSS-v1 documents ──────────
