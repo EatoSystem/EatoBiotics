@@ -400,25 +400,132 @@ test.describe("the fixture's network footprint", () => {
 /* ── The findings, kept continuously proved ───────────────────────────────── */
 
 test.describe("the recorded findings still reproduce", () => {
-  test("P0-TRUST-01 · a fabricated meal sits beside 'No meals logged today'", async ({ page }) => {
+  /*
+   * ── 0R-4 · P0-TRUST-01 and P0-TRUST-02, ASSERTED AS REPAIRED ─────────────
+   *
+   * This test previously asserted the DEFECT reproduced — that
+   * "Mackerel, kimchi & asparagus", a fabricated meal, rendered under
+   * "Today's Meals" directly above "No meals logged today". 0R-4 removed it,
+   * so the assertion is inverted: the fabrication must be gone and the
+   * truthful empty state must remain.
+   *
+   * COVERED PER MANIFESTATION, deliberately. The audit caught one of four
+   * MOCK_MEALS sites; a single assertion on the meal name would let somebody
+   * remove one manifestation, leave another, and close the finding falsely.
+   */
+  test("P0-TRUST-01 · no fabricated meal, average or history renders", async ({ page }) => {
+    // ── manifestation 1 · Today's Meals, Overview ──────────────────────────
     await openFixture(page, "returning-no-meals-today")
+    let body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase().toLowerCase()
 
-    const body = (await page.locator("body").innerText()).replace(/\s+/g, " ")
-
-    // The fabricated meal is MOCK_MEALS[0].meals[0] from the production file.
-    expect(body, "the fabricated meal no longer renders — has the defect been repaired?").toContain(
-      "Mackerel, kimchi & asparagus",
+    // Non-vacuity: this state must reach the block at all.
+    expect(body, "Today's Meals did not render — the assertion would be vacuous").toContain(
+      "today's meals",
     )
-    expect(body).toContain("No meals logged today")
+    expect(
+      body,
+      "the fabricated meal is back under Today's Meals — P0-TRUST-01 has regressed",
+    ).not.toContain("mackerel, kimchi & asparagus")
 
-    // The contradiction is the finding: both on one screen, mock above empty.
-    const mockAt = body.indexOf("Mackerel, kimchi & asparagus")
-    const emptyAt = body.indexOf("No meals logged today")
-    expect(mockAt).toBeGreaterThan(-1)
-    expect(emptyAt).toBeGreaterThan(mockAt)
+    // The truthful empty state is still there. This is a removal, not a deletion
+    // of the surface.
+    expect(body).toContain("no meals logged today")
 
-    // And no fixture meal is dated today, which is what makes it fire.
-    expect(body).not.toContain(AUDIT_DATE)
+    // ── manifestation 2 · the tautological "today's average" ───────────────
+    expect(
+      body,
+      "Today's average rendered with no meals logged. Its gate was " +
+        "`(todayMeals.length > 0 || true)` and its value came from MOCK_MEALS.",
+    ).not.toContain("today's average")
+
+    // ── manifestations 3 and 4 · My Meals history, count and average ───────
+    for (const state of ["first-use-member", "sparse"] as const) {
+      await openFixture(page, state)
+      await page.getByRole("button", { name: /My Meals/i }).click()
+      body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase()
+
+      expect(body, `My Meals did not render for ${state}`).toContain("my meals")
+      for (const fabricated of [
+        "mackerel, kimchi & asparagus",
+        "eggs, sourdough & avocado",
+        "salmon salad with kimchi",
+      ]) {
+        expect(
+          body,
+          `${state} · My Meals shows the fabricated seven-day history: ${fabricated}`,
+        ).not.toContain(fabricated)
+      }
+      expect(body, `${state} · the fabricated meal count is back`).not.toMatch(/7 meals logged/)
+      expect(body, `${state} · the fabricated average is back`).not.toMatch(/average score:\s*73/)
+      expect(body, `${state} · no truthful empty state`).toContain("no meals logged yet")
+    }
+  })
+
+  /*
+   * ── 0R-4 · P0-TRUST-02, site 3 — the Consultations tab ───────────────────
+   *
+   * A member with zero weekly reports was shown three fabricated consultations
+   * with quotations attributed to their own reports. Not in the Experience 0
+   * register; found by tracing every mock constant to every consumer.
+   */
+  test("P0-TRUST-02 · no fabricated consultation, quote or per-Biotic bar renders", async ({ page }) => {
+    await openFixture(page, "first-use-member")
+    await page.getByRole("button", { name: /Consultations/i }).click()
+    const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase().toLowerCase()
+
+    expect(body, "the Consultations tab did not render").toMatch(/consultation/)
+
+    for (const [why, fabricated] of [
+      ["a fabricated week label", "week 8 of 30"],
+      ["a fabricated attributed quotation", "plant diversity was your strongest area"],
+      ["a second fabricated quotation", "your prebiotic score held steady"],
+      ["a fabricated week summary", "your best week for plant diversity"],
+      ["the fused per-Biotic bars", "biotics this week"],
+    ] as const) {
+      expect(body, `${why} is back on the Consultations tab`).not.toContain(fabricated)
+    }
+
+    expect(body, "no truthful empty state for zero reports").toContain("no consultations yet")
+  })
+
+  /*
+   * ── 0R-4 · P0-TRUST-02, site 2 — the attributed quotation on Overview ────
+   */
+  test("P0-TRUST-02 · the attributed frame needs a real report", async ({ page }) => {
+    await openFixture(page, "returning-no-meals-today")
+    const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase().toLowerCase()
+
+    expect(
+      body,
+      "the fabricated pull quote is back under 'From your latest report' — a " +
+        "quantified predicted outcome attributed to a report that does not exist",
+    ).not.toMatch(/8[–-]12 points within three weeks|biggest lever right now/)
+    expect(body, "the attributed frame renders with no real report").not.toMatch(
+      /from your latest report/,
+    )
+  })
+
+  /*
+   * ── 0R-4 · P0-TRUST-03 and the absorbed P0-SCIENCE-03 at :1757 ───────────
+   */
+  test("P0-TRUST-03 · no false personal conclusion renders", async ({ page }) => {
+    for (const state of ["returning-no-meals-today", "member-with-biotics"] as const) {
+      await openFixture(page, state)
+      const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase().toLowerCase()
+      expect(
+        body,
+        `${state} · the 'lowest pillar' sentence is back. It was FALSE for any ` +
+          `member whose lowest value is not Probiotic, under a heading claiming ` +
+          `it came from their own data.`,
+      ).not.toMatch(/lowest pillar/)
+      expect(body, `${state} · the Your Focus Today block is back`).not.toContain(
+        "your focus today",
+      )
+      // And the absorbed P0-SCIENCE-02: no personal per-Biotic profile.
+      expect(body, `${state} · Your Biotics Profile is back`).not.toContain(
+        "your biotics profile",
+      )
+    }
   })
 
   /*

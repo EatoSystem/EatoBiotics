@@ -55,7 +55,18 @@ required and they are different pieces of work.**
 | Guard turns red | a render assertion that no `MOCK_MEALS` value reaches the member tree in any state; `audit-capture.spec.ts`'s existing `P0-TRUST-01` reproduction **inverts** — it currently asserts the defect is present |
 | Close | zero mock values in any `/account` render path, and the inverted test green |
 
-### `P0-TRUST-02` · Fabricated quotation attributed to the member's own report
+### `P0-TRUST-02` · Fabricated member-attributed content presented as the member's own
+
+> **CANONICALISED at 0R-4, and this heading changed.** This document defined
+> `P0-TRUST-02` as the fabricated quotation; the register defined it as the
+> per-Biotic hardcoded fallback. **One id, two findings.** Both were real. It is
+> now **one** finding with **three sites** — the per-Biotic profile fallback,
+> the attributed pull-quote, and the Consultations tab's fabricated reports — so
+> that the controlling specification has one definition only. No second trust id
+> was created merely because the number was used twice. Site-level evidence is
+> preserved in the register.
+>
+> The entry below is **site 2**.
 
 | | |
 |---|---|

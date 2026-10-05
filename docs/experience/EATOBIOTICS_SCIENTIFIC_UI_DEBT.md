@@ -34,6 +34,31 @@ disproved is filed as `DEBT-CODE-01`, not as a customer-facing problem.
 
 ## `P0-TRUST-01` · Fabricated member data presented as the member's own
 
+> **CLOSED at 0R-4.** All four live manifestations removed; proved by render,
+> per manifestation. One unreachable reference survives as `DEBT-CODE-01`.
+>
+> **THE AUDIT CAUGHT ONE OF FOUR.** The entry below describes the Overview
+> tab's "Today's Meals". Tracing `MOCK_MEALS` to every consumer in 0R-4 found
+> three more live sites, on two tabs, reaching a different population — not "a
+> member with no meal today" but **a member with no analyses at all**.
+>
+> | site | what rendered | population |
+> |---|---|---|
+> | `:1653` Today's Meals | a fabricated meal — name, time, type, Biotics score — above *"No meals logged today"* | any returning member before their first meal today |
+> | `:1699` "Today's average" | **71**, from `MOCK_MEALS`, behind a gate written `(todayMeals.length > 0 \|\| true)` — **a tautology**, so it always rendered | same |
+> | `:1931` My Meals history | a fabricated **seven-day history** with invented insights, per-Biotic numbers and nutrition figures, incl. *"The kimchi lifts your probiotic score significantly"* and *"would push your diversity score from 55 to ~72"* | **any member with zero analyses** |
+> | `:1936` / `:1938` | *"7 meals logged this week · Average score: 73"* | same |
+>
+> Site-level evidence is preserved above so provenance is not lost: the audit
+> found the first by render; the other three were found by tracing the constant.
+>
+> **Remediation.** Real data only, on every site. Zero meals render as zero
+> meals; missing history renders as missing history; counts and averages derive
+> from `recentAnalyses` and nothing else. **No sample data, no more-realistic
+> fixture and no inferred history replaced any of it.** The `|| true` gate was
+> deleted rather than honoured, because the block it guarded has nothing to show
+> without real meals.
+
 **Surface** `/account` (`V1_CORE`, served) · **Component**
 `components/account/live-dashboard.tsx:1653` · **Generation** 1 (legacy
 dashboard) · **Verified** by render, 2026-10-03
@@ -205,7 +230,31 @@ untouched, and fixing the data source is not a fix.
 
 ---
 
-## `P0-TRUST-02` · The per-Biotic numbers are a hardcoded fallback, and it is reachable
+## `P0-TRUST-02` · Fabricated member-attributed content presented as the member's own
+
+> **CLOSED at 0R-4**, across all three sites. Proved by render.
+>
+> **THE ID WAS USED FOR TWO DIFFERENT FINDINGS.** `EXPERIENCE_0R_REMEDIATION_SPEC.md`
+> defined `P0-TRUST-02` as *"Fabricated quotation attributed to the member's own
+> report"*; this register defined it as the per-Biotic hardcoded fallback. Both
+> were real. Canonicalised at 0R-4 as **one** trust finding — *fabricated
+> member-attributed report or profile content presented as though it belongs to
+> the member* — with **three sites**, rather than renumbering a finding
+> mid-programme:
+>
+> | site | what rendered | reachability |
+> |---|---|---|
+> | **1** · `:817` | `propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }` — invented numbers as the member's own profile, with band words | **live**, and reachable in production: `app/account/page.tsx` filters out null per-Biotic columns for `bioticsProfile` while `recentAnalyses` does not |
+> | **2** · `:1885` | under **"From your latest report"**, *"…shift your overall Biotics number by **8–12 points within three weeks**"* — a quantified predicted outcome attributed to a report that does not exist | **live** for any member with no weekly report |
+> | **3** · the Consultations tab | **three fabricated weekly consultations** — invented dates, "Week 8 of 30", average scores, deltas, meal counts, a score-progression strip, a fabricated report **count**, quotations attributed to the member (*"Your prebiotic score held steady…"*), and `pillars` rendered as **per-Biotic `ScoreBar`s** | **live** for any member with zero reports. **In no register entry** — found by tracing every mock constant to every consumer |
+>
+> **Remediation.** Site 1: the fallback removed with the construct it fed. Site
+> 2: the attributed frame renders **only** when a real `pullQuote` exists. Site
+> 3: `MOCK_CONSULTATIONS` **deleted entirely** — it had zero readers once the
+> fabricated count and card list were removed — with a truthful empty state for
+> zero reports. No demo, sample or placeholder report content replaced any of it.
+
+### The original entry, preserved as site 1's evidence
 
 **Surface** `/account` · **Component** `live-dashboard.tsx:817` ·
 **Verified** by render, 2026-10-03
@@ -1492,12 +1541,12 @@ inside `NOTE-CAPTURE-01` and deliberately not entered separately.
 
 | id | severity | surface | verified | disposition |
 |---|---|---|---|---|
-| `P0-TRUST-01` | P0 | `/account` | render | RETIRE the fallback |
-| `P0-TRUST-02` | P0 | `/account` | render | RETIRE with `P0-SCIENCE-02` |
+| `P0-TRUST-01` | P0 | `/account` Overview + Meals | render ×4 | **CLOSED at 0R-4** — all four live MOCK_MEALS sites |
+| `P0-TRUST-02` | P0 | `/account` Overview + Consultations | render ×3 | **CLOSED at 0R-4** — one finding, three sites; absorbed `P0-SCIENCE-02` |
 | `P0-SCIENCE-01` | P0 | `/account` | render | RETIRE / REMEDIATE |
 | `P0-SCIENCE-02` | P0 | `/account` | render | RETIRE |
 | `P0-SCIENCE-03` | P0 | `/account` | render | RETIRE / REMEDIATE — **two repairs**; `:1757` extracted |
-| `P0-TRUST-03` | **P0-TRUST / P0-SCIENCE** | `/account` | render + source | RETIRE — **its own remediation proof** |
+| `P0-TRUST-03` | **P0-TRUST / P0-SCIENCE** | `/account` | render + source | **CLOSED at 0R-4** — block retired; absorbed `P0-SCIENCE-03` at `:1757` only |
 | `P0-TRUST-04` | P0 | `/assessment/you` → Results | render + source | REMEDIATE — mirror the existing guard |
 | `P1-FUNNEL-01` | P1 | `/assessment/you` → Results | live HTTP | REMEDIATE — four dead CTAs |
 | `P0-SCIENCE-04` | P0 | `/account` Twin | render | RETIRE — **a Biotic verdict rendered as colour**; no string guard can see it |
@@ -1714,3 +1763,62 @@ Principles accepted as durable are carried into
 [`EXPERIENCE_CONSTITUTION.md`](./EXPERIENCE_CONSTITUTION.md); the evidence stays
 here.
 
+---
+
+## 0R-4 · SITE-LEVEL CLOSE RECORD
+
+Reported at site level rather than finding-id level, so that no manifestation of
+a multi-site finding is falsely marked closed.
+
+### Entire findings closed
+
+| | |
+|---|---|
+| `P0-TRUST-01` | all **four** live `MOCK_MEALS` manifestations |
+| `P0-TRUST-02` | all **three** sites, canonicalised as one finding |
+| `P0-TRUST-03` | the block retired whole |
+
+### Individual manifestations of multi-site findings closed
+
+| finding | manifestation | why it closed here |
+|---|---|---|
+| `P0-SCIENCE-02` | the three `displayBiotics` cards — numbers, rings, band words | its **only** consumers were the fabricated numbers; removing the source alone would have left them rendering real per-Biotic values |
+| `P0-SCIENCE-03` | **`:1757` only** — the "lowest pillar" sentence | literally the same rendered sentence as `P0-TRUST-03` |
+| `P0-SCIENCE-03` | **`:1885`** — the pull-quote | literally the same rendered sentence as `P0-TRUST-02` site 2 |
+| *(the fused report-card construct)* | "Biotics this week" per-Biotic `ScoreBar`s | embedded in the fabricated cards; leaving them would make the card structurally capable of rendering a real personal per-Biotic state |
+
+### Manifestations that remain for 0R-5 — explicitly NOT closed
+
+| finding | what remains |
+|---|---|
+| `P0-SCIENCE-03` | **`:1896`** — *"Your Prebiotics have been strong but your Probiotics are pulling down your Biotics Score™"*, including its causal mechanism. Not shared with a trust finding |
+| `P0-SCIENCE-01` | the first-use per-Biotic copy, and `MealCard`'s per-Biotic `ScoreBar`s |
+| `P0-SCIENCE-02` | nothing — fully closed above |
+| `P0-SCIENCE-04` · `-05` | the Twin's colour verdict and anatomical claims |
+
+**Three per-Biotic `ScoreBar` triples survive in `live-dashboard.tsx`** — at
+`MealCard`, the analysis result and the recent-analyses list. All three render
+**real** meal data, none renders fabrication now that `MOCK_MEALS` reaches no
+live path, and none is fused to a trust finding. They are `P0-SCIENCE-01`'s
+class and remain 0R-5's. A guard written here that demanded them would have been
+0R-4 quietly annexing 0R-5.
+
+### The close condition, satisfied
+
+0R-4 claims *"no fabricated member data remains on live `/account`"* only
+because every materially distinct live tab was checked, with the tab set read
+from source rather than assumed:
+
+| tab | mock constants consumed |
+|---|---|
+| `overview` | none — `MOCK_MEALS` reaches only the unreachable `DEBT-CODE-01` branch |
+| `meals` | none |
+| `reports` | none |
+| `consultations` | none — `MOCK_CONSULTATIONS` deleted |
+| `account` | none |
+
+A **new** tab fails `tests/unit/live-dashboard-fabrication.test.ts` until
+somebody audits it, because the tab set is pinned: the close claim does not
+silently extend to a surface nobody checked.
+
+---

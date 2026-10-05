@@ -48,6 +48,7 @@ SUBSCORES = "lib/report/subscores.ts"
 ASK_TWIN = "components/account/twin/ask-twin.tsx"
 CONSULT = "app/account/consult/consult-client.tsx"
 TEXTCHAT = "components/eatobiotic/text-chat.tsx"
+DASH = "components/account/live-dashboard.tsx"
 SYSTEM_MAP = "lib/account/system-map.ts"
 STAGE_MOOD = "lib/account/stage-mood.ts"
 
@@ -57,6 +58,7 @@ V = [VISUAL]
 # customer-facing prose belongs; the authorship boundary has its own file.
 LOOP = ["tests/unit/agent-loop-claims.test.ts"]
 AUTH = ["tests/unit/ai-authorship.test.ts"]
+FAB = ["tests/unit/live-dashboard-fabrication.test.ts"]
 
 CASES = [
     # ── 1 · A CORPUS LEAVES THE SCAN AGAIN ──────────────────────────────────
@@ -285,4 +287,76 @@ CASES = [
      "  async function sendMessage(text: string) {",
      "  async function dispatchToModel(text: string) {",
      AUTH),
+
+    # ── 9 · 0R-4 · FABRICATED MEMBER DATA ───────────────────────────────────
+    #
+    # The audit caught ONE of four live MOCK_MEALS manifestations, and knew
+    # nothing of MOCK_CONSULTATIONS at all. So these cases attack the ROOT
+    # property — a live member surface consuming a mock member-history constant
+    # — rather than the four sentences that happened to be found.
+
+    (1474, "Today's Meals falls back to fabricated meals again", DASH,
+     "                {todayMeals.map((meal, i) => {",
+     "                {(todayMeals.length > 0 ? todayMeals : MOCK_MEALS[0].meals).map((meal, i) => {",
+     FAB),
+
+    # The gate somebody already disabled once. `|| true` reads as a condition
+    # and is not one.
+    (1475, "the average gate is disabled with a tautology again", DASH,
+     "                {todayMeals.length > 0 && todayAvg !== null && (",
+     "                {(todayMeals.length > 0 || true) && (",
+     FAB),
+
+    (1476, "a meal count falls back to a literal again", DASH,
+     "            const totalMeals = recentAnalyses.length",
+     "            const totalMeals = analysesByDate.length > 0 ? recentAnalyses.length : 7",
+     FAB),
+
+    # The whole point of the root-level rule: a NEW mock constant, under a name
+    # no existing rule knows, consumed on a live surface.
+    # NOTE: first written so that it DECLARED `MOCK_HISTORY` without ever
+    # reading it, and slipped — correctly, because the rule is about
+    # CONSUMPTION and nothing consumed it. The case was aimed at the right
+    # property and performed the wrong mutation. It now completes the ternary,
+    # so the constant is genuinely read on a live surface.
+    (1477, "a new mock constant is consumed on a live surface", DASH,
+     "            const groups = analysesByDate.map(({ date, meals }) => ({\n"
+     "              date,\n"
+     "              cards: meals.map(a => realToMealEntry(a)),\n"
+     "            }))",
+     "            const MOCK_HISTORY = [{ date: \"Today\", cards: [] }]\n"
+     "            const groups = analysesByDate.length > 0 ? analysesByDate.map(({ date, meals }) => ({\n"
+     "              date,\n"
+     "              cards: meals.map(a => realToMealEntry(a)),\n"
+     "            })) : MOCK_HISTORY",
+     FAB),
+
+    (1478, "the attributed quotation gets a content fallback again", DASH,
+     "                  {weeklyReport?.report_json?.pullQuote && (",
+     "                  {(weeklyReport?.report_json?.pullQuote ?? \"Your probiotic score is your biggest lever right now.\") && (",
+     FAB),
+
+    (1479, "the report count falls back to a demo array's length again", DASH,
+     "        const count     = reports.length",
+     "        const count     = reports.length ?? MOCK_CONSULTATIONS.length",
+     FAB),
+
+    # The fused science construct. Restoring it makes the report card
+    # structurally capable of rendering a personal per-Biotic state again.
+    (1480, "the report card renders per-Biotic bars again", DASH,
+     "      {/* Pull quote */}",
+     "      {card.pillars && (\n"
+     "        <div><p>Biotics this week</p>\n"
+     "          <ScoreBar label=\"Prebiotic\" score={card.pillars.prebiotic} />\n"
+     "        </div>\n"
+     "      )}\n"
+     "      {/* Pull quote */}",
+     FAB),
+
+    # The close condition: a new tab has not been audited for fabrication, so
+    # 0R-4's claim does not extend to it.
+    (1481, "a new live tab appears without a fabrication audit", DASH,
+     '      {tab === "account" && (',
+     '      {tab === "insights" && <div />}\n      {tab === "account" && (',
+     FAB),
 ]

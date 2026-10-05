@@ -11,7 +11,7 @@ import {
   Calendar, Target, Activity, User, Trash2, AlertTriangle, Plus,
 } from "lucide-react"
 import {
-  AssessmentJourneyCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
+  AssessmentJourneyCard, ReferralCard, ScoreRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
@@ -241,32 +241,20 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
   },
 ]
 
-const MOCK_CONSULTATIONS = [
-  {
-    id: 1, date: "Sunday, 11 May 2025", week: "Week 8 of 30", avgScore: 73, delta: 5,
-    weekSummaryTitle: "Your Best Week for Plant Diversity",
-    pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 },
-    pullQuote: "Your food system showed real momentum this week. Plant diversity was your strongest area — 9 different plants, your best showing in a month.",
-    focusAction: "Add a fermented food to 4 out of 7 dinners this week — kefir, kimchi, or live yoghurt all count.",
-    mealCount: 9,
-  },
-  {
-    id: 2, date: "Sunday, 4 May 2025", week: "Week 7 of 30", avgScore: 68, delta: 4,
-    weekSummaryTitle: "Consistency Building — Momentum Is Growing",
-    pillars: { prebiotic: 65, probiotic: 28, postbiotic: 42 },
-    pullQuote: "Your prebiotic score held steady and your fermented food frequency improved to 4 out of 7 days. The habit is forming — keep the weekend routine tighter.",
-    focusAction: "Tighten your weekend routine — aim for the same meal quality Saturday and Sunday as you do during the week.",
-    mealCount: 11,
-  },
-  {
-    id: 3, date: "Sunday, 27 Apr 2025", week: "Week 6 of 30", avgScore: 64, delta: 2,
-    weekSummaryTitle: "Mid-Week Strong — Weekends Need Attention",
-    pillars: { prebiotic: 60, probiotic: 19, postbiotic: 38 },
-    pullQuote: "Monday–Friday averaged 71 but Saturday dropped to 48. You have the pattern — now extend it to the full week.",
-    focusAction: "Plan two gut-friendly meals for the weekend before Saturday arrives — preparation is the key lever here.",
-    mealCount: 8,
-  },
-]
+/*
+ * 0R-4 · `MOCK_CONSULTATIONS` DELETED.
+ *
+ * Three fabricated weekly consultations — dates, week labels, average scores,
+ * deltas, meal counts, invented `pillars` and quotations attributed to the
+ * member's own reports. Its last two consumers were the fabricated report
+ * count and the fabricated card list, both removed above, so the constant had
+ * zero readers. A superseded construct is removed, not left in place for
+ * somebody to re-wire.
+ *
+ * `MOCK_MEALS` still has ONE reader — the unreachable `DEBT-CODE-01` branch —
+ * so it survives until 0R-9, inventoried in
+ * `tests/unit/live-dashboard-fabrication.test.ts`.
+ */
 
 /* ─────────────────────────────────────────────────────────────────────────
    Real-data types
@@ -527,19 +515,24 @@ function ReportCard({ card }: { card: ReportCardData }) {
         </div>
       </div>
 
-      {/* Biotics pillars */}
-      {card.pillars && (
-        <div className="border-b px-5 py-4" style={{ borderColor: "var(--border)" }}>
-          <p className="mb-2.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-            Biotics this week
-          </p>
-          <div className="space-y-2">
-            <ScoreBar label="Prebiotic"  score={card.pillars.prebiotic} />
-            <ScoreBar label="Probiotic"  score={card.pillars.probiotic} />
-            <ScoreBar label="Postbiotic" score={card.pillars.postbiotic} />
-          </div>
-        </div>
-      )}
+      {/*
+        * 0R-4 · the science construct FUSED to `P0-TRUST-02` site 3 — removed
+        * here rather than in 0R-5, and only this one.
+        *
+        * "Biotics this week" rendered `card.pillars` as three per-Biotic
+        * `ScoreBar`s. Gate 5's own exclusion list says meal-level per-Biotic
+        * bars are "still off every surface"; they were on this one, and in the
+        * fabricated cards they carried invented numbers.
+        *
+        * Removing the fabrication alone would have left these bars rendering a
+        * member's REAL per-Biotic values — still prohibited, and the knowingly
+        * invalid intermediate state the tranche-boundary rule forbids. So the
+        * card is no longer structurally capable of rendering a personal
+        * per-Biotic state at all.
+        *
+        * This is the ONLY Biotics construct 0R-4 touches beyond the retired
+        * profile block. Every other one remains 0R-5's.
+        */}
 
       {/* Pull quote */}
       {card.pullQuote && (
@@ -677,7 +670,6 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     score:             propScore  = null,
     previousScore:     propPrev   = null,
     profileType        = null,
-    biotics:           propBiotics = null,
     recentAnalyses     = [],
     scoreHistory       = [],
     paidReports        = [],
@@ -814,7 +806,25 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const displayStreak  = propStreak  || 0
   const displayProfile = profileType ?? "Emerging Balance"
 
-  const displayBiotics = propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }
+  /*
+   * 0R-4 · P0-TRUST-02 — REMOVED, with the construct it fed.
+   *
+   * This read `propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }`.
+   * Those three numbers are invented, and they were REACHABLE IN PRODUCTION,
+   * not only in the audit fixture: `app/account/page.tsx` returns undefined for
+   * `bioticsProfile` when the member's last five analyses have null per-Biotic
+   * columns, while `recentAnalyses` applies no such filter. So a member who had
+   * logged meals, but whose sub-scores were null, satisfied the
+   * `recentAnalyses.length > 0` gate AND got the fallback — and was shown
+   * 71/23/48, with band words, as their own profile.
+   *
+   * Its only consumers were the three per-Biotic cards below, so the data
+   * source and the construct were ONE remediation unit: removing this line
+   * alone would have left those cards rendering a member's REAL per-Biotic
+   * numbers with band words, which the permanent product rule forbids outright.
+   * That is why the absorbed `P0-SCIENCE-02` closes here rather than in 0R-5 —
+   * a tranche boundary must not require a knowingly invalid intermediate state.
+   */
 
   /* Milestone celebrations — fire once per milestone (localStorage seen-set):
      burst over the stage orb + a celebration card at the top of the feed. */
@@ -1649,16 +1659,26 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
                 <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
-                {/* Real today's meals — or mock fallback */}
-                {(todayMeals.length > 0 ? todayMeals : MOCK_MEALS[0].meals).map((meal, i) => {
-                  const isMock = todayMeals.length === 0
-                  const name   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).name : ((meal as RealAnalysis).meal_name ?? "Meal")
-                  const time   = isMock
-                    ? (meal as typeof MOCK_MEALS[0]["meals"][0]).time
-                    : new Date((meal as RealAnalysis).created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
-                  const type   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).type : ((meal as RealAnalysis).meal_type ?? "Meal")
-                  const score  = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).score : ((meal as RealAnalysis).biotics_score ?? 0)
-                  const img    = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).image : ((meal as RealAnalysis).image_url ?? "/food-1.webp")
+                {/*
+                  * 0R-4 · P0-TRUST-01. This read
+                  *   (todayMeals.length > 0 ? todayMeals : MOCK_MEALS[0].meals)
+                  * with `const isMock = todayMeals.length === 0` beside the
+                  * comment "Real today's meals — or mock fallback". A returning
+                  * member with no meals logged TODAY — the most common way a
+                  * daily product is opened — was shown a fabricated meal, with
+                  * a name, a time, a type and a Biotics score, under a
+                  * possessive heading, directly above "No meals logged today".
+                  *
+                  * Real meals only. When there are none, the "No meals logged
+                  * today" row below is the truthful empty state, and it already
+                  * existed.
+                  */}
+                {todayMeals.map((meal, i) => {
+                  const name   = meal.meal_name ?? "Meal"
+                  const time   = new Date(meal.created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
+                  const type   = meal.meal_type ?? "Meal"
+                  const score  = meal.biotics_score ?? 0
+                  const img    = meal.image_url ?? "/food-1.webp"
                   return (
                     <div key={i} className="flex items-center gap-3 px-4 py-3.5"
                       style={{ borderTop: i > 0 ? "1px solid var(--border)" : undefined }}>
@@ -1690,14 +1710,24 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   </div>
                 )}
 
-                {/* Daily average */}
-                {(todayMeals.length > 0 || true) && (
+                {/*
+                  * 0R-4 · P0-TRUST-01, second manifestation — NOT in the
+                  * Experience 0 register, found by tracing MOCK_MEALS to every
+                  * consumer.
+                  *
+                  * The gate read `(todayMeals.length > 0 || true)`: somebody
+                  * wrote the honest condition and then neutered it, so the
+                  * average always rendered — and `todayAvg ?? MOCK_MEALS[0]
+                  * .meals[0].score` answered "what did this member average
+                  * today?" with 71, a number nobody logged.
+                  *
+                  * An average of no meals is not a number. It is absence.
+                  */}
+                {todayMeals.length > 0 && todayAvg !== null && (
                   <div className="border-t px-4 py-2.5" style={{ borderColor: "var(--border)" }}>
                     <p className="text-right text-[11px]" style={{ color: "var(--muted-foreground)" }}>
                       Today&apos;s average:{" "}
-                      <strong style={{ color: "var(--icon-green)" }}>
-                        {todayAvg ?? MOCK_MEALS[0].meals[0].score}
-                      </strong>
+                      <strong style={{ color: "var(--icon-green)" }}>{todayAvg}</strong>
                     </p>
                   </div>
                 )}
@@ -1712,56 +1742,61 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             {/* 30 plants a week — detected from this week's logged meals */}
             <PlantsThisWeek mealNames={recentAnalyses.map((a) => a.meal_name)} />
 
-            {/* Biotics Profile */}
+            {/*
+              * 0R-4 · the absorbed `P0-SCIENCE-02` — RETIRED, not restyled.
+              *
+              * "Your Biotics Profile": three cards, each a per-Biotic number in
+              * a ring with a band word — "On track" / "Building" / "Needs
+              * work" / "Strong" / "Stable". A personal numerical Three-Biotic
+              * state in every form the permanent product rule names: a number,
+              * a ring, a band word, and a possessive heading.
+              *
+              * A questionnaire and a meal photo reach none of the three. The
+              * construct has no honest replacement, so nothing replaces it; the
+              * membership progress line below is kept because it claims nothing
+              * about the member's biology.
+              *
+              * Educational Biotics content is unaffected and stays where it
+              * belongs — a correction is never a deletion of the science.
+              */}
             <div>
-              <SectionLabel>Your Biotics Profile</SectionLabel>
-              <div className="grid grid-cols-3 gap-3">
-                {([
-                  { label: "Prebiotic",  score: displayBiotics.prebiotic,  delta: displayBiotics.prebiotic  >= 60 ? "On track"    : displayBiotics.prebiotic  >= 30 ? "Building"    : "Needs work", c0: "#A8E063", c1: "#4CB648", textColor: "#2d7a24", borderColor: "var(--icon-lime)" },
-                  { label: "Probiotic",  score: displayBiotics.probiotic,  delta: displayBiotics.probiotic  >= 60 ? "On track"    : displayBiotics.probiotic  >= 30 ? "Building"    : "Needs work", c0: "#F5C518", c1: "#F5A623", textColor: "#a05a0a", borderColor: "var(--icon-orange)" },
-                  { label: "Postbiotic", score: displayBiotics.postbiotic, delta: displayBiotics.postbiotic >= 60 ? "Strong"      : displayBiotics.postbiotic >= 30 ? "Stable"      : "Needs work", c0: "#4CB648", c1: "#2DAA6E", textColor: "#0a6644", borderColor: "var(--icon-teal)" },
-                ] as { label: string; score: number; delta: string; c0: string; c1: string; textColor: string; borderColor: string }[]).map(({ label, score, delta, c0, c1, textColor, borderColor }) => (
-                  <div key={label} className="flex flex-col items-center overflow-hidden rounded-2xl"
-                    style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 10px rgba(26,46,18,0.05)" }}>
-                    {/* Coloured top border */}
-                    <div className="h-[3.5px] w-full" style={{ background: `linear-gradient(90deg, ${c0}, ${c1})` }} />
-                    <div className="flex flex-col items-center p-3.5">
-                      <p className="mb-2 text-[11px] font-semibold" style={{ color: "var(--muted-foreground)" }}>{label}</p>
-                      <MiniRing score={score} gradId={`ring-${label}`} c0={c0} c1={c1} textColor={textColor} />
-                      <p className="mt-2 text-center text-[10px] font-semibold leading-tight" style={{ color: borderColor }}>{delta}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
               {/* Subtle membership progress line */}
               <p className="mt-2.5 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
                 Week {weekNumber} of 30 · Building your food system
               </p>
             </div>
 
-            {/* Your Focus Today — lowest pillar driven */}
-            <div className="overflow-hidden rounded-2xl" style={{
-              background: "white",
-              border: "1px solid var(--border)",
-              borderLeft: "4px solid var(--icon-orange)",
-              boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
-            }}>
-              <div className="p-4">
-                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
-                  Your Focus Today
-                </p>
-                <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>
-                  Add one fermented food today
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                  Your probiotic score is your lowest pillar. One serving of kimchi, kefir, yoghurt,
-                  or kombucha today would make a measurable difference.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {["Probiotics", "Quick win"].map(t => <Tag key={t}>{t}</Tag>)}
-                </div>
-              </div>
-            </div>
+            {/*
+              * 0R-4 · `P0-TRUST-03`, and the absorbed `P0-SCIENCE-03`
+              * manifestation at the SAME rendered sentence — RETIRED.
+              *
+              * The block was headed "Your Focus Today", commented
+              * "lowest pillar driven", and read:
+              *
+              *   "Your probiotic score is your lowest pillar. One serving of
+              *    kimchi, kefir, yoghurt, or kombucha today would make a
+              *    measurable difference."
+              *
+              * The comment asserted a derivation that did not exist:
+              * `displayBiotics` was referenced ZERO times in the block, and the
+              * sentence was a literal naming Probiotic unconditionally. So it
+              * was not merely unsupported — it was FALSE for any member whose
+              * lowest value was not Probiotic, under a heading claiming it came
+              * from their own data.
+              *
+              * It read true in both captured fixtures by coincidence:
+              * Probiotic was lowest in the fabricated 71/23/48 AND in the
+              * genuine 58/44/63.
+              *
+              * Retired rather than reworded, because nothing in it was derived:
+              * the heading, the action and the tags were all hardcoded. The
+              * member's genuine next action is derived elsewhere on this page
+              * and is unaffected.
+              *
+              * `P0-SCIENCE-03`'s other two sites — the pull-quote and
+              * "This month's focus" — are NOT shared with a trust finding and
+              * remain 0R-5's.
+              */}
 
             {/* Consultation — premium editorial card */}
             <div>
@@ -1829,20 +1864,38 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   {/* Divider */}
                   <div className="my-4 h-px" style={{ background: "rgba(255,255,255,0.15)" }} />
 
-                  {/* Pull quote — real or fallback */}
-                  <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.10)" }}>
-                    <div className="mb-2 flex items-center gap-2">
-                      <MessageSquare size={11} color="rgba(255,255,255,0.50)" />
-                      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.50)" }}>
-                        {weeklyReport?.report_json?.weekNumber
-                          ? `From your Week ${weeklyReport.report_json.weekNumber} report`
-                          : "From your latest report"}
+                  {/*
+                    * 0R-4 · `P0-TRUST-02`, site 2 — and the absorbed
+                    * `P0-SCIENCE-03` manifestation at the same sentence.
+                    *
+                    * The quotation was `pullQuote ?? "Your probiotic score is
+                    * your biggest lever right now. One daily fermented food
+                    * would shift your overall Biotics number by 8–12 points
+                    * within three weeks."` — presented under **"From your
+                    * latest report"**, so a member with no report at all was
+                    * shown an invented sentence attributed to a report of
+                    * theirs that does not exist, carrying a quantified
+                    * predicted outcome with a magnitude and a deadline.
+                    *
+                    * With no report there is no quotation. The attributed frame
+                    * now renders ONLY when a real `pullQuote` exists — absence
+                    * is rendered as absence, and nothing is substituted.
+                    */}
+                  {weeklyReport?.report_json?.pullQuote && (
+                    <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                      <div className="mb-2 flex items-center gap-2">
+                        <MessageSquare size={11} color="rgba(255,255,255,0.50)" />
+                        <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.50)" }}>
+                          {weeklyReport.report_json.weekNumber
+                            ? `From your Week ${weeklyReport.report_json.weekNumber} report`
+                            : "From your latest report"}
+                        </p>
+                      </div>
+                      <p className="text-sm italic leading-relaxed text-white">
+                        &ldquo;{weeklyReport.report_json.pullQuote}&rdquo;
                       </p>
                     </div>
-                    <p className="text-sm italic leading-relaxed text-white">
-                      &ldquo;{weeklyReport?.report_json?.pullQuote ?? "Your probiotic score is your biggest lever right now. One daily fermented food would shift your overall Biotics number by 8–12 points within three weeks."}&rdquo;
-                    </p>
-                  </div>
+                  )}
 
                   {/* Next session box — white card */}
                   <div className="mt-4 overflow-hidden rounded-xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
@@ -1922,18 +1975,34 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {tab === "meals" && (
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           {(() => {
-            /* Use real data if available, else fall back to mock */
-            const groups = analysesByDate.length > 0
-              ? analysesByDate.map(({ date, meals }) => ({
-                  date,
-                  cards: meals.map(a => realToMealEntry(a)),
-                }))
-              : MOCK_MEALS.map(({ date, meals }) => ({ date, cards: meals }))
+            /*
+             * 0R-4 · P0-TRUST-01, third and fourth manifestations — NEITHER in
+             * the Experience 0 register. The audit read the Overview tab; these
+             * are on My Meals, and they reach a different population: not "a
+             * member with no meal TODAY" but a member with NO ANALYSES AT ALL.
+             *
+             * `groups` fell back to `MOCK_MEALS.map(…)`, which is a fabricated
+             * SEVEN-DAY history — invented meal names, times, scores,
+             * per-Biotic numbers, nutrition figures and insight prose, including
+             * "The kimchi lifts your probiotic score significantly" and "would
+             * push your diversity score from 55 to ~72". A member who had
+             * logged nothing was shown a week of someone else's eating as their
+             * own, and told they had logged "7 meals this week · Average score:
+             * 73".
+             *
+             * Real data only, and an honest empty state below. The counts now
+             * derive from `recentAnalyses` and nothing else; when there is
+             * nothing to average there is no average, not 73.
+             */
+            const groups = analysesByDate.map(({ date, meals }) => ({
+              date,
+              cards: meals.map(a => realToMealEntry(a)),
+            }))
 
-            const totalMeals = analysesByDate.length > 0 ? recentAnalyses.length : 7
-            const avgScore   = analysesByDate.length > 0 && recentAnalyses.length > 0
+            const totalMeals = recentAnalyses.length
+            const avgScore   = recentAnalyses.length > 0
               ? Math.round(recentAnalyses.reduce((s, a) => s + (a.biotics_score ?? 0), 0) / recentAnalyses.length)
-              : 73
+              : null
 
             return (
               <>
@@ -1941,14 +2010,27 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <div>
                     <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Meals</h2>
                     <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                      {totalMeals} meal{totalMeals !== 1 ? "s" : ""} logged this week · Average score:{" "}
-                      <strong style={{ color: "var(--icon-green)" }}>{avgScore}</strong>
+                      {totalMeals} meal{totalMeals !== 1 ? "s" : ""} logged this week
+                      {avgScore !== null && (
+                        <>
+                          {" · Average score: "}
+                          <strong style={{ color: "var(--icon-green)" }}>{avgScore}</strong>
+                        </>
+                      )}
                     </p>
                   </div>
                   <GradientButton small onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTab("overview"); setLoggerState("empty") }}>
                     <Camera size={13} /> Log meal
                   </GradientButton>
                 </div>
+
+                {groups.length === 0 && (
+                  <div className="rounded-2xl border px-5 py-8 text-center" style={{ borderColor: "var(--border)", background: "white" }}>
+                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                      No meals logged yet. Log your first meal and it will appear here.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-8">
                   {groups.map(({ date, cards }) => (
@@ -2072,8 +2154,17 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           CONSULTATIONS TAB
       ══════════════════════════════════════════════════════════════════ */}
       {tab === "consultations" && (() => {
-        const reports   = weeklyReports.length > 0 ? weeklyReports : null
-        const count     = reports?.length ?? MOCK_CONSULTATIONS.length
+        /*
+         * 0R-4 · `P0-TRUST-02`, site 3 — NOT in the Experience 0 register,
+         * found by tracing every mock constant to every consumer.
+         *
+         * `count` was `reports?.length ?? MOCK_CONSULTATIONS.length`, so a
+         * member with no weekly reports was told how many consultations they
+         * had by counting a demo array. Zero reports must render as zero
+         * reports.
+         */
+        const reports   = weeklyReports
+        const count     = reports.length
 
         /* Normalise real reports → ReportCardData */
         const realCards: ReportCardData[] = (reports ?? []).map((r) => {
@@ -2099,23 +2190,24 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           }
         })
 
-        /* Normalise mock → ReportCardData */
-        const mockCards: ReportCardData[] = MOCK_CONSULTATIONS.map((c) => ({
-          id:               c.id,
-          dateStr:          c.date,
-          weekLabel:        c.week,
-          avgScore:         c.avgScore,
-          delta:            c.delta,
-          weekSummaryTitle: c.weekSummaryTitle,
-          pillars:          c.pillars,
-          pullQuote:        c.pullQuote,
-          focusAction:      c.focusAction,
-          mealCount:        c.mealCount,
-          reportHref:       null,
-          chatHref:         null,
-        }))
-
-        const cards = reports ? realCards : mockCards
+        /*
+         * 0R-4 · `P0-TRUST-02`, site 3 continued — the fabricated cards.
+         *
+         * `const cards = reports ? realCards : mockCards` showed a member with
+         * zero real reports THREE invented weekly consultations: fabricated
+         * dates, "Week 8 of 30" labels, average scores, week-on-week deltas,
+         * meal counts, a score-progression strip derived from them, and
+         * quotations attributed to the member's own reports —
+         * "Your prebiotic score held steady…", "Monday–Friday averaged 71 but
+         * Saturday dropped to 48." Each card also carried
+         * `pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 }`, the same
+         * invented numbers as the retired profile fallback, rendered as
+         * per-Biotic bars.
+         *
+         * `MOCK_CONSULTATIONS` is no longer read. Real reports only, with a
+         * truthful empty state below.
+         */
+        const cards = realCards
 
         /* Score progression strip — scores oldest→newest */
         const scoreSequence = cards.map(c => c.avgScore).filter((s): s is number => s != null).reverse()
@@ -2216,9 +2308,23 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
 
             {/* ── Report cards ── */}
-            <div className="space-y-5">
-              {cards.map(card => <ReportCard key={card.id} card={card} />)}
-            </div>
+            {cards.length === 0 ? (
+              /*
+               * 0R-4 · zero reports render as zero reports. This branch did not
+               * exist: the tab fell back to three fabricated consultations
+               * instead, so a member who had never received one was shown a
+               * history of reports attributed to them.
+               */
+              <div className="rounded-2xl border px-5 py-8 text-center" style={{ borderColor: "var(--border)", background: "white" }}>
+                <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                  No consultations yet. Your weekly check-in will appear here once it has been generated.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {cards.map(card => <ReportCard key={card.id} card={card} />)}
+              </div>
+            )}
 
           </div>
         )
