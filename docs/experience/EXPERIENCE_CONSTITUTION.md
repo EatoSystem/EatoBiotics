@@ -44,6 +44,38 @@ Two corollaries the programme has paid for:
   obligation, not a concession; what is removed is the claim that the biology
   was personally measured, never the education itself.
 
+### Absence of member data must remain absence.
+
+Adopted at the 0R-4 close.
+
+**The product may explain an empty state. It may never populate one with
+synthetic personal history.**
+
+An empty state is a true statement about a person: nothing has been logged, no
+report exists yet, this is the first day. Filling it with plausible content
+replaces a true statement with a false one, in the one place the person has no
+way to check — their own record.
+
+The corollary is what makes it operational, and it closes the obvious wrong fix:
+
+> Do not substitute demo data, sample data, more realistic fixtures, placeholder
+> history or inferred values. Zero meals render as zero meals, missing history as
+> missing history, zero reports as zero reports. **Counts and averages derive
+> only from real member data, and read as absent when there is none.**
+
+It earned constitutional status across **six** surfaces rather than one card —
+meals, averages, weekly history, report counts, attributed quotations and
+consultations — every one of them a fallback that looked like care and behaved
+like fabrication. The code knew: `const isMock = todayMeals.length === 0`, under
+a comment reading *"Real today's meals — or mock fallback"*.
+
+> **A fallback is a design decision about what to say when you know nothing.**
+> The honest answer is usually to say that.
+
+*Evidence: `P0-TRUST-01` and `P0-TRUST-02` in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md);
+enforced by `tests/unit/live-dashboard-fabrication.test.ts`.*
+
 ## 2 · Personalisation boundaries
 
 **A claim is still a claim when it is encoded through colour, motion, anatomy,
