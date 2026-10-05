@@ -6,6 +6,80 @@ git history. This file starts it. Entries are newest first.
 
 ---
 
+## 2026-10-05 — TypeSafe evaluated and not adopted
+
+A third-party agent skill, `typesafe-ai/skills`, was proposed for installation
+and use on this project. **Evaluated and not adopted. Nothing was installed.**
+
+No plugin at user level, no marketplace added, no change to
+`.claude/settings.local.json`, no dependency, no tooling commit and no tooling
+branch. Verified absent: `~/.claude/plugins`, any mention in
+`.claude/settings.local.json` or `package.json`, any installed binary.
+
+### Why — the name does not describe the product
+
+"TypeSafe" reads as a TypeScript static-typing tool. It is not one. Its own
+description is *"small units of AI intelligence you can use like programming
+primitives"*, built on *"System One models, including Jev,"* which *"turn
+natural language and application state into typed judgments and probabilities
+that code can combine."* Its three primitives are each a model call:
+
+| | |
+|---|---|
+| `Choice` | *"Picks one option; its distribution compares competing options"* |
+| `Noul` | *"Probability of yes"* |
+| `Score` | *"Probability-weighted position on ordered levels"* |
+
+It self-describes as supplying *"programmable common sense where ordinary code
+needs semantic understanding"*, producing judgments, classifications and
+scores, with application state sent as JSON to a hosted HTTP API under
+server-side credentials.
+
+### The collision
+
+Adopting it would put a second decision engine inside the product whose entire
+Intelligence boundary exists to prevent exactly that — the permanent rule
+recorded in the Gate 6.0 close above and in
+`docs/fss/FSS_V1_CLAIMS_BOUNDARY.md` §8:
+
+> **Structured truth is authoritative. AI is a consumer of it.**
+>
+> **AI may explain and operationalise EatoBiotics decisions. It may not
+> silently become a second decision engine.**
+
+A primitive set of *pick an option* · *probability of yes* · *score on ordered
+levels* is a second decision engine by construction. `Score` in particular
+lands on the most governed concept in the product: a candidate methodology
+pending independent scientific review, where `interpretation-v1.0` is
+deliberately unregistered and `getScoreBand` throws by design.
+
+Three further collisions, each factual rather than cautionary:
+
+1. **A third AI provider.** `CLAUDE.md` records a deliberate two-provider split
+   — Claude for coaching, reports and chat; OpenAI only for plate-builder
+   recipes and images. A third provider is an architectural decision.
+2. **The AI cost guard would not see it.** `scripts/check-ai-guard.mjs` requires
+   every user-triggered inference path to be capped via `guardAiUsage`; a new
+   provider's calls are invisible to it.
+3. **Member state would leave the product.** The application state here is
+   members' food and health self-reports. Sending it to a third party is a
+   data-protection decision, not a tooling one, and sits beside the retention,
+   RLS and portability commitments already recorded.
+
+### Standing position
+
+Not a permanent prohibition, and not a judgement on the product's quality. If
+adoption is ever wanted it needs its own review gate, in the shape Gates 6.0
+and 6.1 took — the second-decision-engine question, the provider split, AI cost
+capping, the data-protection decision, and where such primitives could live
+without touching FSS methodology or the Biotics Score™. It is **not** a
+mid-remediation tooling choice.
+
+**Experience 0R continues on the existing toolchain and specification,
+unchanged.** No 0R stage, guard, corpus or sabotage suite is affected.
+
+---
+
 ## 2026-10-02 — Gate 6.0 close · EatoBiotics Intelligence boundary
 
 Branch `claude/eatobiotics-intelligence`, head **`331fc80`**, tree clean.
