@@ -98,6 +98,45 @@ guard belongs at that parameter.
 *Evidence: `P0-SCIENCE-04` and `P0-SCIENCE-05` in
 [`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
 
+### Real data does not legitimise an invalid construct.
+
+Adopted at the 0R-5 close.
+
+**Truthful inputs can still produce an untruthful product claim.**
+
+> The validity of a personal conclusion depends on the inference and claim being
+> justified — not merely on the underlying data being real.
+
+This is the half of the boundary that the trust work cannot reach. 0R-4
+established that synthetic data must never masquerade as member data, and every
+construct 0R-5 removed was built from genuine numbers — which is precisely why
+0R-4's guards passed all of it. Provenance is not permission:
+
+- real meal data did not make personal Prebiotic / Probiotic / Postbiotic bars
+  valid, at any of the **seven** live sites that rendered them;
+- a genuine `probiotic_score` did not legitimise a *"Probiotic network"* row, or
+  a biological band word derived from that score;
+- a real self-report did not establish a measured anatomical response.
+
+#### The consequence for how a repair is scoped
+
+**Repair the construct, not the sentence.** An unsupported inference does not
+live in its wording; the wording is one of its outputs.
+
+`lib/account/meal-impact.ts` expressed a single inference through a chain —
+score → Biotic label → band word → mechanism → fermented-implies-probiotic →
+asserted body effect. Removing only the `effect` string would have left the
+model that produced it intact, and the next renderer would have found it again.
+`P0-SCIENCE-04` is the same point structurally rather than textually: the stage
+aura now accepts a static palette tone, so the **capability** to encode a
+personal Biotic verdict as colour is gone, not merely the mapping that did.
+
+A repair is complete when the product can no longer form the claim — not when it
+has stopped saying it.
+
+*Evidence: the 0R-5 site-level close record in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
+
 ## 3 · Voice and authorship
 
 **The product must never place a product-authored personal conclusion into the

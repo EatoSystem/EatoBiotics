@@ -713,3 +713,93 @@ granularity, and the harness's inability to sabotage a file-absence assertion.
 Playwright regenerates part of `docs/experience/audit/`. That is the measured
 `NOTE-CAPTURE-01` residual: the frozen corpus is the *before* evidence, so it is
 **restored, not committed**.
+
+### The unit-suite count, reconciled at the formal close
+
+The suite went `230 files · 6577 passed · 2 skipped` at the 0R-4 accepted head
+to `229 files · 6607 passed · 2 skipped` here. The file count **fell** while the
+test count **rose**, which the 0R-5 report did not explain. Derived from the two
+accepted heads rather than inferred from the totals.
+
+#### Which file disappeared
+
+```
+git ls-tree -r --name-only ef17b98 | grep -E '^tests/.*\.test\.(ts|tsx)$' | sort   → 230
+git ls-tree -r --name-only 5e6bb90 | grep -E '^tests/.*\.test\.(ts|tsx)$' | sort   → 229
+
+REMOVED : tests/unit/habit.test.ts
+ADDED   : (none)
+```
+
+**One file, and nothing added. An intentional deletion**, in the same commit as
+`lib/habit.ts` — not a discovery or configuration issue.
+
+#### Why none of its tests could be kept
+
+`lib/habit.ts`'s entire exported surface was `focusPillar` — *"the weakest
+pillar, the one with the most room to improve"* — and `dailyNudge`, which
+returned that pillar with the member's score for it. `PillarKey` is
+`"prebiotics" | "probiotics" | "postbiotics"`, so the module computed a
+comparative personal Biotic verdict, and its only two callers rendered it on
+`DailyLoopCard`.
+
+Its three tests each **required** the construct 0R-5 removed:
+
+| test | what it demanded |
+|---|---|
+| *picks the lowest-scoring pillar* | a weakest-Biotic verdict, asserted three ways |
+| *breaks ties in canonical order (prebiotics first)* | the same verdict, deterministically |
+| *returns the weakest pillar's nudge from the Food System Core* | `nudge.pillar.key` **and** `nudge.score` — a per-Biotic score for the member |
+
+There is no form of those assertions that survives the repair, because what they
+assert *is* the prohibited construct. The property that replaced them is the
+file-existence check in `tests/unit/agent-loop-claims.test.ts`
+(*"lib/habit.ts does not exist"*), which is the only shape that can state it.
+
+#### The second instance of a suite requiring a defect
+
+`tests/unit/meal-impact.test.ts`'s first case was named *"lights the probiotic
+network for fermented meals"* and demanded a Biotic-named row, a band word of
+`"strong"` **because** the meal was fermented, and the sentence *"lights up your
+probiotic network"*. Both suites were green for the whole programme while
+holding a prohibited construct in place.
+
+> **A test suite can require a defect**, and no guard that reads product source
+> can see it, because the requirement is not on a customer surface.
+
+That is the standing argument for `agent-loop-claims.test.ts` calling the
+generators rather than scanning them.
+
+#### Discovery was complete at both heads
+
+The worry behind the question is a test file silently dropping out of the run.
+It did not:
+
+| head | test files in tree | files vitest collected |
+|---|---|---|
+| `ef17b98` | **230** | **230** |
+| `5e6bb90` | **229** | **229** |
+
+#### The arithmetic, measured per file
+
+`vitest run --reporter=json` at both heads, diffed by file. Both totals match
+their recorded ledgers exactly (`6579` = 6577 + 2 skipped; `6609` = 6607 + 2).
+
+| file | 0R-4 → 0R-5 | Δ |
+|---|---|---|
+| `tests/unit/biotic-visual-encoding.test.ts` | 16 → 28 | **+12** |
+| `tests/unit/agent-loop-claims.test.ts` | 57 → 64 | **+7** |
+| `tests/unit/biotic-claims.test.ts` | 502 → 509 | **+7** |
+| `tests/unit/live-dashboard-fabrication.test.ts` | 23 → 28 | **+5** |
+| `tests/unit/account-twin.test.ts` | 8 → 10 | **+2** |
+| | subtotal | **+33** |
+| `tests/unit/habit.test.ts` | 3 → removed | **−3** |
+| | **net** | **+30** |
+
+A static tally of the diff could not have established this, because the largest
+contributors are `it.each` tables whose length sets the count — `it.each(VISUAL_MODULES)`
+runs twice over a list that went 6 → 9, `NO_PERSONAL_BIOTIC_NUMBER` gained 7
+entries, and `it.each(PRE_REPAIR)` is new with 5 subjects. Hence the measurement.
+
+**No product code changed for this reconciliation, and the gate was not re-run:
+`5e6bb90` remains the tested product state.**

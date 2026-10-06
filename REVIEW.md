@@ -6,12 +6,13 @@ git history. This file starts it. Entries are newest first.
 
 ---
 
-## 2026-10-06 — Two engineering rules adopted at the Experience 0R-5 close
+## 2026-10-06 — Three engineering rules adopted at the Experience 0R-5 close
 
-Both are **review discipline** rather than product design, so they sit here
-beside the warning-counts rule below rather than in
-`EXPERIENCE_CONSTITUTION.md`. Both were paid for: each one names a construct
-that survived a tranche aimed directly at it.
+All three are **review discipline** rather than product design, so they sit
+here beside the warning-counts rule below rather than in
+`EXPERIENCE_CONSTITUTION.md`. Each was paid for: the first two name a construct
+that survived a tranche aimed directly at it, and the third names a sabotage
+case that stopped testing its own property.
 
 ### 1 · An inventory keyed on a naming convention cannot see a construct written inline
 
@@ -47,6 +48,26 @@ was already rebuilt in another.
 > routes also mount it. Before calling a construct retired, grep for every
 > mount point — the fourth rebuild of one construct in this programme was found
 > that way, and the first three were found the same way.
+
+### 3 · When a guard is lexical, its sabotage anchors must follow the semantic target, not merely the old file
+
+Added at the formal close, from the one case that had to be repointed twice.
+
+Case 1007's rule is *"fermented food asserted to deliver or contain live
+organisms"*, and it keys on the word **fermented**. Its anchor was the `why`
+string of `meal-impact.ts`'s probiotic row, which 0R-5 deleted — so the anchor
+vanished for the right reason.
+
+Re-aiming it at the **fibre** row in the same file looked like the conservative
+move and was wrong: with the fermented-language construct gone from that module,
+the mutation no longer expressed the property the rule exists to catch, and it
+slipped. It was re-aimed at `lib/account/ritual.ts`, which still names a
+fermented food on a live surface.
+
+> A lexically-keyed rule follows the WORD. When a repair removes that word from
+> a module, repointing a case to the same module **changes the property rather
+> than the anchor**. Follow the semantic target to a file that still contains
+> it; a dead anchor preserved in the original file proves nothing.
 
 ### And a note on where the find came from
 
