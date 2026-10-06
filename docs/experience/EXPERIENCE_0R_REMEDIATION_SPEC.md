@@ -665,3 +665,71 @@ any crawler.
 > 0R-3 asks *"if this capability exists, is authorship and premise handling
 > safe?"* · 0R-8 asks *"should this destination be presented as available at
 > all?"*
+
+---
+
+## 9 · DELIVERY RECORD — 0R-5 (`P0-SCIENCE-01` · `-03:1896` · `-04` · `-05`)
+
+**The rule this stage establishes:**
+
+> Real data does not legitimise an invalid construct. A personal Biotic score,
+> ranking, biological-state visual, anatomical response or causal statement
+> remains prohibited even when every underlying number is genuine.
+>
+> **Truthful inputs can still produce an untruthful product claim.**
+
+0R-4 proved *synthetic data must never masquerade as member data*. Not one
+construct 0R-5 removed was fabricated, which is exactly why 0R-4's guards passed
+all of them.
+
+### What was repaired, by item
+
+| item | finding | sites |
+|---|---|---|
+| **A** | `P0-SCIENCE-01` | **7 live** — the register named 3. Three `ScoreBar` triples in `live-dashboard.tsx`, the first-use promise at both its sites, `DailyLoopCard`'s weakest-Biotic nudge, `twin-stage.tsx`'s `BioticBar` triple, `quick-log.tsx`'s `BIOTIC_META` triple |
+| **B** | `P0-SCIENCE-03:1896` | the Monthly Focus card, **retired whole** — nothing in it was derived |
+| **C** | `P0-SCIENCE-04` | `twin-stage.tsx:284` (live) and `TwinVisualState.auraGradient` (zero consumers). The aura is re-keyed on a static `AuraTone`, so a `BioticKey` cannot reach a colour function from any call site |
+| **D** | `P0-SCIENCE-05` | `ritual.ts`'s coordinates and effect strings, `twin-stage.tsx`'s `signals` prop contract, `daily-ritual.tsx`'s asserted bodily response, and `meal-impact.ts`'s whole per-Biotic pipeline |
+
+Full site-level evidence, including the four sites no register entry named and
+why each escaped two audits, is in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md)'s
+0R-5 close record. It is not duplicated here.
+
+### Guards, in existing instruments
+
+No new guard family. The brief's instruction was to reuse the mechanism that
+already owns each invariant, and to **report** rather than build if an existing
+instrument could not express a property. Two such reports were filed — the
+`EXPOSED_AT_0R1` file-level granularity limitation, and the harness's inability
+to sabotage a file-absence assertion.
+
+| instrument | what 0R-5 added |
+|---|---|
+| `biotic-claims.test.ts` · `NO_PERSONAL_BIOTIC_NUMBER` | four per-file wiring pins (`live-dashboard`, `meal-impact`, `ritual`, `daily-ritual`) plus three for the fifth site's card and both producers |
+| `biotic-claims.test.ts` · `KNOWN_UNCORRECTED` | **9 pairs → 7**; the two 0R-2 findings this stage owned are closed |
+| `biotic-visual-encoding.test.ts` | `EXPOSED_VISUAL_ENCODINGS` **4 → deleted**, assertions now unconditional; the rule families widened to the **per-Biotic score** and to **extent**, the sink its own 0R-2 header promised and did not implement |
+| `agent-loop-claims.test.ts` | behavioural assertions that **call** `mealImpact()` across the full `probiotic_score` range and `ritualCount()`; `BIOTICS_ANY` widened to the capitalised singular |
+| `live-dashboard-fabrication.test.ts` | the naming-convention blind spot closed — an **inline-literal** fabrication rule that reads the literal's *values*, so absence stays absence |
+| `account-twin.test.ts` | aura invariance across **three varied weakest Biotics** |
+| Playwright `audit-capture.spec.ts` | six rendered proofs, including the aura's computed `backgroundImage` |
+
+### Close criterion, satisfied
+
+A member may still see their observable meal and food-system facts, general
+Three-Biotics education, their actions and their truthful history — enumerated
+in the register's close record, because a repair can also fail by over-reaching.
+
+They cannot see a personally measured Prebiotic, Probiotic or Postbiotic state;
+a weakest or strongest Biotic; a Biotic score, band or rank; a Biotic-driven
+body colour or state; a specific anatomical response; or an unsupported causal
+Biotic mechanism.
+
+### What 0R-5 deliberately did not do
+
+Account was not redesigned, the Digital Twin was not migrated, My Food System
+was untouched, FSS methodology and domain weights were not altered, Gate 6/6.1
+authority was not changed, general Biotics education was not rewritten, the
+Postbiotics evidence-review wording was not touched, and no unrelated eslint
+warning was cleaned — the count returned to its **96** baseline with nothing
+appeared and nothing disappeared.

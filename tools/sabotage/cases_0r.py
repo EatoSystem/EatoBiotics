@@ -51,6 +51,15 @@ TEXTCHAT = "components/eatobiotic/text-chat.tsx"
 DASH = "components/account/live-dashboard.tsx"
 SYSTEM_MAP = "lib/account/system-map.ts"
 STAGE_MOOD = "lib/account/stage-mood.ts"
+# 0R-5.
+TWIN_VISUAL = "lib/account/twin-visual.ts"
+TWIN_STAGE = "components/account/twin/twin-stage.tsx"
+RITUAL = "lib/account/ritual.ts"
+DAILY_RITUAL = "components/account/twin/daily-ritual.tsx"
+MEAL_IMPACT = "lib/account/meal-impact.ts"
+LOOP_CARD = "components/account/daily-loop-card.tsx"
+ACCOUNT_PAGE = "app/account/page.tsx"
+QUICK_LOG = "components/account/twin/quick-log.tsx"
 
 C = [CLAIMS]
 V = [VISUAL]
@@ -173,8 +182,20 @@ CASES = [
      V),
 
     (1462, "the visual cap is raised to buy room for a new encoding", VISUAL,
-     "const VISUAL_ENTRIES_AT_OPEN = 4",
-     "const VISUAL_ENTRIES_AT_OPEN = 8",
+     # REPOINTED AT 0R-5, not retired. This read
+     #   find "const VISUAL_ENTRIES_AT_OPEN = 4" → "= 8"
+     # and its property was "the inventory cap can be raised to buy room for a
+     # new encoding". 0R-5 repaired all four inventoried encodings, so the
+     # inventory AND its cap are deleted — the anchor vanished because the
+     # defect did, which is the outcome the case wanted.
+     #
+     # The residual risk moved with it. With no inventory left to cross-check
+     # against, `MODULES_AT_0R5_CLOSE` is the only thing stopping a module
+     # leaving the instrument, so that is what this case now attacks: empty the
+     # pin and it stops pinning. Case 1508 attacks the other half, by shortening
+     # `VISUAL_MODULES` itself.
+     '  "lib/account/twin-visual.ts",\n  "components/account/twin/quick-log.tsx",\n] as const',
+     "] as const",
      V),
 
     # ── 6 · A NEW ENCODING APPEARS ──────────────────────────────────────────
@@ -188,9 +209,15 @@ CASES = [
     # visual sink; `stage-mood.ts` produces an aura and reads no Biotic.
 
     (1463, "a Biotic-keyed module gains a colour, completing the flow", SYSTEM_MAP,
-     "  /** The biotic this system leans on most. */\n  biotic: BioticKey",
-     "  /** The biotic this system leans on most. */\n  biotic: BioticKey\n"
-     "  /** Aura colour drawn from that biotic. */\n  auraColour: string",
+     # REPOINTED AT 0R-5. The anchor was `biotic: BioticKey` on
+     # `SystemHotspot`, which 0R-5 removed — its last reader was `twin-stage`
+     # passing it into a colour function, and it now passes a static `tone`.
+     #
+     # The PROPERTY is unchanged and still worth attacking: a module that holds
+     # a Biotic key and also produces a colour completes the prohibited flow.
+     # So the mutation puts the key BACK, beside the `tone` already there.
+     "  tone: AuraTone",
+     "  tone: AuraTone\n  /** The biotic this system leans on most. */\n  biotic: BioticKey",
      V),
 
     # ── 7 · THE LEDGER'S GRANULARITY ────────────────────────────────────────
@@ -204,9 +231,14 @@ CASES = [
     # that makes a pair's RULE half mean anything.
 
     (1465, "a ledger entry names a rule its file does not trip", CLAIMS,
-     '  ["lib/account/ritual.ts", "a Biotic claimed as a person\'s own"],',
-     '  ["lib/account/ritual.ts", "a Biotic claimed as a person\'s own"],\n'
-     '  ["lib/account/ritual.ts", "colonisation or reseeding claimed"],',
+     # REPOINTED AT 0R-5. It keyed on the `ritual.ts` ledger entry, which 0R-5
+     # removed because the defect is repaired — so the anchor vanished for the
+     # right reason. Re-aimed at `lib/assessment-scoring.ts`, the one 0R-2
+     # finding still open (0R-7's), so the property — "an entry may not name a
+     # rule its file does not trip" — keeps a live subject.
+     '  ["lib/assessment-scoring.ts", "a Biotic claimed as a person\'s own"],',
+     '  ["lib/assessment-scoring.ts", "a Biotic claimed as a person\'s own"],\n'
+     '  ["lib/assessment-scoring.ts", "colonisation or reseeding claimed"],',
      C),
 
     # The louder half. An entry whose rule name matches nothing in ALL_RULES
@@ -358,5 +390,223 @@ CASES = [
     (1481, "a new live tab appears without a fabrication audit", DASH,
      '      {tab === "account" && (',
      '      {tab === "insights" && <div />}\n      {tab === "account" && (',
+     FAB),
+
+    # ══ 0R-5 · THE LIVE SCIENCE CONSTRUCTS. Cases 1482+. ═════════════════════
+    #
+    # Every one of these mutations restores a construct that rendered REAL
+    # member data, which is the whole distinction the tranche exists to prove:
+    # a guard that only refuses FABRICATION would pass all of them.
+    #
+    # ── WRITING THEM FOUND TWO DEFECTS IN MY OWN INSTRUMENTS ────────────────
+    #
+    # The widened per-Biotic-score rule in `biotic-visual-encoding.test.ts` was
+    # written as `biotics\s*\.\s*(?:pre|pro|post)biotic\b`, which does NOT
+    # match `twin.biotics.prebiotics.score` — the plural defeats the word
+    # boundary — and that is the exact path the worst live site used. And the
+    # non-vacuity case for the bar was a single `style` line, which carries no
+    # Biotic read at all: the signature and the call site were the other two
+    # thirds of the flow. The rule was widened and the case corrected.
+
+    # ── A · the three ScoreBar triples, one case each ───────────────────────
+    (1482, "the MealCard per-Biotic bars come back", DASH,
+     "      {/* Meal Quality */}\n"
+     "      <div className=\"px-4 pb-3 pt-3\">",
+     "      <div className=\"px-4 pb-3 pt-3\">\n"
+     "        <ScoreBar label=\"Prebiotic\"  score={0} />\n"
+     "      </div>\n"
+     "      {/* Meal Quality */}\n"
+     "      <div className=\"px-4 pb-3 pt-3\">",
+     C),
+
+    (1483, "the first-meal celebration's per-Biotic bars come back", DASH,
+     "        {result.insight && (",
+     "        <ScoreBar label=\"Probiotic\"  score={result.probiotic_score} />\n"
+     "        {result.insight && (",
+     C),
+
+    (1484, "the logger result's per-Biotic bars come back", DASH,
+     "                  {/* ── MEAL QUALITY ── */}",
+     "                  <ScoreBar label=\"Postbiotic\" score={0} />\n"
+     "                  {/* ── MEAL QUALITY ── */}",
+     C),
+
+    # The card must not be STRUCTURALLY capable of carrying them — the prop
+    # type, not only the render.
+    (1485, "MealCard accepts a per-Biotic triple again", DASH,
+     "function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; quality:",
+     "function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number }; quality:",
+     C),
+
+    # The promise, at both of its sites. The register named only the paragraph.
+    (1486, "the first-use copy promises a per-Biotic breakdown again", DASH,
+     "                Log your first meal and we&apos;ll give it a Meal Biotics Score out of 100",
+     "                Your Biotics score is built one meal at a time — an instant breakdown of its Prebiotic, Probiotic, and Postbiotic value",
+     C),
+
+    (1487, "step 2 promises a per-Biotic breakdown again", DASH,
+     '{ n: "2", text: "Get its Meal Biotics Score straight away" }',
+     '{ n: "2", text: "Get your instant Biotics score breakdown" }',
+     C),
+
+    # ── B · the Monthly Focus mechanism ─────────────────────────────────────
+    (1488, "the Monthly Focus causal mechanism comes back", DASH,
+     "            {/* Assessment journey + combined report (renders only when a foundation exists) */}",
+     "            <p>Your Prebiotics have been strong but your Probiotics are pulling down your Biotics Score.</p>\n"
+     "            {/* Assessment journey + combined report (renders only when a foundation exists) */}",
+     C),
+
+    # ── the fifth site, in no register entry ────────────────────────────────
+    (1489, "the daily loop card names and scores a Biotic again", LOOP_CARD,
+     "export interface DailyLoopData {\n"
+     "  streak: { current: number; longest: number; loggedToday: boolean; daysSinceLast: number | null }\n"
+     "}",
+     "export interface DailyLoopData {\n"
+     "  streak: { current: number; longest: number; loggedToday: boolean; daysSinceLast: number | null }\n"
+     "  focus: { key: PillarKey; color: string; score: number } | null\n"
+     "}",
+     C),
+
+    (1490, "the account page computes a weakest-Biotic nudge again", ACCOUNT_PAGE,
+     "  const dailyLoop: DailyLoopData = { streak: streakInfo }",
+     "  const dailyLoop: DailyLoopData = { streak: streakInfo, focus: dailyNudge({ prebiotics: 1, probiotics: 2, postbiotics: 3 }) }",
+     C),
+
+    (1491, "the account page is handed a per-Biotic profile again", ACCOUNT_PAGE,
+     "        recentAnalyses={recentAnalyses}",
+     "        biotics={bioticsProfile}\n        recentAnalyses={recentAnalyses}",
+     C),
+
+    # ── the sixth site: the worst of them, and ungated ──────────────────────
+    (1492, "the Twin stage renders named per-Biotic bars again", TWIN_STAGE,
+     "            <div className=\"mt-5\">\n"
+     "              {checklist ?? <Sparkline twin={twin} />}\n"
+     "            </div>",
+     "            <div className=\"mt-5\">\n"
+     "              {checklist ?? <Sparkline twin={twin} />}\n"
+     "              <div style={{ width: `${twin.biotics.prebiotics.score}%`, color: \"#A8E063\" }} />\n"
+     "            </div>",
+     V),
+
+    # ── the seventh site: the QuickLog result contract ──────────────────────
+    (1493, "QuickLogResult carries the three per-Biotic fields again", QUICK_LOG,
+     "export interface QuickLogResult {\n"
+     "  meal_name: string\n"
+     "  biotics_score: number\n"
+     "  insight: string",
+     "export interface QuickLogResult {\n"
+     "  meal_name: string\n"
+     "  biotics_score: number\n"
+     "  prebiotic_score: number\n"
+     "  insight: string",
+     V),
+
+    # ── C · the Biotic → colour flow ────────────────────────────────────────
+    (1494, "the aura takes a BioticKey again", TWIN_VISUAL,
+     "export function auraGradientForTone(tone: AuraTone, intensity = 0.6): string {",
+     "export function auraGradientForTone(biotic: BioticKey, intensity = 0.6): string {",
+     V),
+
+    (1495, "the stage aura is chosen by the weakest Biotic again", TWIN_STAGE,
+     "      : restingAuraGradient(visual.confidence)",
+     "      : auraGradientForTone(twin.biotics.weakest, visual.confidence)",
+     V),
+
+    (1496, "TwinVisualState computes a Biotic-derived gradient again", TWIN_VISUAL,
+     "    momentumLabel: MOMENTUM_LABEL[momentum],",
+     "    auraGradient: auraGradientForTone(twin.biotics.strongest, confidence),\n"
+     "    momentumLabel: MOMENTUM_LABEL[momentum],",
+     V),
+
+    # ── D · the self-report → anatomy chain ─────────────────────────────────
+    (1497, "a ritual check gets a body coordinate again", RITUAL,
+     '  { key: "fermented", label: "Fermented food", ack: "Noted — that\'s today\'s fermented food logged.", color: "#2DAA6E" },',
+     '  { key: "fermented", label: "Fermented food", ack: "Noted.", color: "#2DAA6E", node: { x: 54, y: 56 } },',
+     V),
+
+    (1498, "a ritual check asserts a Biotic effect again", RITUAL,
+     "export interface RitualCheck {\n"
+     "  key: keyof RitualDay\n"
+     "  label: string",
+     "export interface RitualCheck {\n"
+     "  key: keyof RitualDay\n"
+     "  effect: string\n"
+     "  label: string",
+     C),
+
+    (1499, "the ritual asserts a bodily response again", DAILY_RITUAL,
+     "        <p className=\"text-[10px] font-bold uppercase tracking-widest\" style={{ color: \"var(--icon-green)\" }}>Logged for today</p>",
+     "        <p className=\"text-[10px] font-bold uppercase tracking-widest\" style={{ color: \"var(--icon-green)\" }}>Your body just felt that</p>",
+     C),
+
+    (1500, "the ritual heading claims the body reacts again", DAILY_RITUAL,
+     '{ritualComplete(ritual) ? "A full day logged — all five." : "Tap what\'s true today. It all goes into the picture."}',
+     '{ritualComplete(ritual) ? "A full day — your Food System felt all of it." : "Tap what\'s true today. Your body reacts to each one."}',
+     C),
+
+    # ── D · the meal-impact per-Biotic pipeline ─────────────────────────────
+    # The behavioural case the brief asked for by name: a per-Biotic score must
+    # not be able to alter any customer-facing label, band or mechanism.
+    (1501, "meal-impact accepts a per-Biotic score again", MEAL_IMPACT,
+     "export interface MealImpactInput {\n"
+     "  meal_name: string\n"
+     "  tags?: string[]\n"
+     "}",
+     "export interface MealImpactInput {\n"
+     "  meal_name: string\n"
+     "  probiotic_score: number\n"
+     "  tags?: string[]\n"
+     "}",
+     C),
+
+    (1502, "a Biotic-named row comes back on the meal card", MEAL_IMPACT,
+     '    key: "fibre",\n    label: "Fibre",',
+     '    key: "fibre",\n    label: "Probiotic network",',
+     C),
+
+    (1503, "a fermented food is classified as a personal probiotic effect again", MEAL_IMPACT,
+     '  const fibreBoost = hasTag(tags, "High Fibre")',
+     '  const probioticBoost = hasTag(tags, "Fermented Foods")\n  const fibreBoost = probioticBoost || hasTag(tags, "High Fibre")',
+     C),
+
+    (1504, "the fibre row's possessive Biotic mechanism comes back", MEAL_IMPACT,
+     '    effect: fibreBoost ? "Beans, grains or vegetables brought fibre to this plate" : "Not much fibre in this one",',
+     '    effect: fibreBoost ? "Prebiotic fibre flows down to feed your microbes" : "Not much fibre in this one",',
+     LOOP),
+
+    # ── A LIMITATION OF THIS HARNESS, REPORTED RATHER THAN FAKED ────────────
+    #
+    # `agent-loop-claims.test.ts` asserts that `lib/habit.ts` DOES NOT EXIST —
+    # its whole exported surface was `focusPillar` ("the weakest pillar") and
+    # `dailyNudge`, so there is no version of it a customer surface may use.
+    #
+    # That property cannot be sabotaged here. `run.py` mutates a find/replace
+    # inside an existing file; it cannot CREATE one, and `collectable()`
+    # deliberately refuses targets outside `tests/**`. A case that pretended to
+    # restore the module would be testing the harness's own plumbing.
+    #
+    # Recorded instead of engineered around, and the assertion is still
+    # non-vacuous: it fails the moment the file reappears, which is the only
+    # way the construct can return as a module.
+
+    # ── the instruments themselves: can 0R-5's own proofs be switched off? ──
+    (1506, "the extent sink leaves the form track", VISUAL,
+     '  ["an extent — a bar length, a ring arc or a scale", /\\bwidth\\s*:|\\bstrokeDasharray\\b|\\bscale\\s*\\(/],',
+     "",
+     V),
+
+    (1507, "the per-Biotic score rule leaves the form track", VISUAL,
+     "    /\\b(?:pre|pro|post)biotic_score\\b|\\bbiotics\\s*\\.\\s*(?:pre|pro|post)biotics?\\b/,",
+     "    /\\bnever_matches_anything\\b/,",
+     V),
+
+    (1508, "a module leaves the form instrument", VISUAL,
+     '  "lib/account/meal-impact.ts",\n  "components/account/twin/meal-impact.tsx",',
+     "",
+     V),
+
+    (1509, "the inline-fabrication rule stops reading values", FAB[0],
+     '    return /:\\s*-?[1-9]\\d*(?:\\.\\d+)?\\b/.test(literal) || /:\\s*"[^"]+"/.test(literal)',
+     "    return false",
      FAB),
 ]

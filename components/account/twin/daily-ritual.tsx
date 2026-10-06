@@ -11,7 +11,6 @@
  */
 
 import { useEffect, useMemo, useState } from "react"
-import Image from "next/image"
 import { Check, Flame } from "lucide-react"
 import {
   RITUAL_CHECKS,
@@ -29,34 +28,52 @@ import {
 import { hydrateTwinState, pushTwinState } from "@/lib/account/twin-state-sync"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
-/** The body reacting to a habit: a mini figure with the pathway pinging at the
-    signal's node, plus the one-line biology lesson. Amber signals buffer. */
-function RitualBodyReaction({ check, figureSrc }: { check: RitualCheck; figureSrc: string }) {
+/*
+ * ══ 0R-5 · `P0-SCIENCE-05` — WHAT THIS COMPONENT USED TO BE ═════════════════
+ *
+ * `RitualBodyReaction`. Ticking a checkbox rendered a small figure of the
+ * member's body with an aura and a pinging dot positioned at
+ * `check.node.x/y` — the gut for "Fermented food", the head for "Slept
+ * well" — under the heading:
+ *
+ *     YOUR BODY JUST FELT THAT
+ *     A fermented food lights up your probiotic network
+ *
+ * Three claims from one tick: that something happened in the member's body,
+ * WHERE it happened, and that it was a Biotic. The product has none of those.
+ * It has a checkbox the member ticked.
+ *
+ * ── WHAT IT IS NOW, AND WHAT IT DELIBERATELY IS NOT ───────────────────────
+ *
+ * An acknowledgement of the RECORD. The tick, the colour, the pop-in and the
+ * Twin's first-person voice all stay — that interaction was never the problem,
+ * and the brief is explicit that it may remain if it can stand without
+ * unsupported anatomy. What is gone is the figure, the coordinate, the aura
+ * positioned on it and both asserted-effect lines.
+ *
+ * It is NOT re-pointed at a different body part, and it does not predict an
+ * effect elsewhere. "Do not turn it into a different anatomical prediction."
+ */
+function RitualLogged({ check }: { check: RitualCheck }) {
   return (
-    <div className="eb-pop-in mt-3 flex items-center gap-4 rounded-xl px-4 py-3" style={{ background: `color-mix(in srgb, ${check.color} 8%, white)`, border: `1px solid color-mix(in srgb, ${check.color} 30%, white)` }}>
-      {/* the mini body, reacting */}
-      <div className="relative h-20 w-20 shrink-0">
-        <div className="absolute left-1/2 top-1/2 h-[94%] w-[94%] rounded-full" style={{ transform: "translate(-50%,-50%)", background: "radial-gradient(circle, #FDFBF7 0%, #FDFBF7 55%, rgba(253,251,247,0) 76%)" }} />
-        <div className="eb-aura absolute left-1/2 top-1/2 h-full w-full rounded-full" style={{ transform: "translate(-50%,-50%)", background: `radial-gradient(circle at ${check.node.x}% ${check.node.y}%, ${check.color}${check.strain ? "40" : "66"} 0%, transparent 55%)`, animationDuration: check.strain ? "5s" : "3.4s" }} />
-        <Image src={figureSrc} alt="" width={80} height={80} sizes="80px" className="absolute left-1/2 top-1/2 h-[74%] w-[74%] object-contain" style={{ transform: "translate(-50%,-50%)", mixBlendMode: "multiply" }} />
-        <span className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${check.node.x}%`, top: `${check.node.y}%` }}>
-          <span className="relative flex h-5 w-5 items-center justify-center">
-            <span className="eb-ping absolute inline-flex h-full w-full rounded-full" style={{ background: check.color, opacity: check.strain ? 0.4 : 0.6, animationDuration: check.strain ? "2.4s" : "1.6s" }} />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: check.color, border: "2px solid white", boxShadow: `0 0 12px ${check.color}cc` }} />
-          </span>
-        </span>
-      </div>
-      {/* the lesson */}
+    <div className="eb-pop-in mt-3 flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: `color-mix(in srgb, ${check.color} 8%, white)`, border: `1px solid color-mix(in srgb, ${check.color} 30%, white)` }}>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white" style={{ background: check.color }}>
+        <Check size={15} />
+      </span>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Your body just felt that</p>
-        <p className="mt-0.5 text-sm font-semibold leading-snug" style={{ color: "var(--foreground)" }}>{check.effect}</p>
-        <p className="mt-0.5 text-xs italic leading-snug" style={{ color: "var(--muted-foreground)" }}>&ldquo;{check.ack}&rdquo;</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Logged for today</p>
+        <p className="mt-0.5 text-sm italic leading-snug" style={{ color: "var(--muted-foreground)" }}>&ldquo;{check.ack}&rdquo;</p>
       </div>
     </div>
   )
 }
 
-export function DailyRitual({ twin, streak = 0, authed = false, bare = false, figureSrc = "/images/couple-hero.png", onSignalsChange }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean; bare?: boolean; figureSrc?: string; onSignalsChange?: (ritual: RitualDay) => void }) {
+/*
+ * 0R-5 · `figureSrc` is gone from the props: the only thing this component drew
+ * a figure of the member's body FOR was `RitualBodyReaction`. A component that
+ * still accepted an image of the body would make redrawing it a one-line change.
+ */
+export function DailyRitual({ twin, streak = 0, authed = false, bare = false, onSignalsChange }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean; bare?: boolean; onSignalsChange?: (ritual: RitualDay) => void }) {
   const [ritual, setRitual] = useState<RitualDay>(EMPTY_RITUAL)
   /** The last check ticked — drives the inline body-pulse reaction. */
   const [reacted, setReacted] = useState<RitualCheck | null>(null)
@@ -108,7 +125,13 @@ export function DailyRitual({ twin, streak = 0, authed = false, bare = false, fi
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Daily ritual</p>
         <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>
-          {ritualComplete(ritual) ? "A full day — your Food System felt all of it." : "Tap what's true today. Your body reacts to each one."}
+          {/*
+            * 0R-5 · both halves asserted a bodily response to a checkbox:
+            * "your Food System felt all of it" and "Your body reacts to each
+            * one." The ritual is a record of what the member tells us, and
+            * that is what it now says.
+            */}
+          {ritualComplete(ritual) ? "A full day logged — all five." : "Tap what's true today. It all goes into the picture."}
         </h3>
       </div>
 
@@ -144,8 +167,8 @@ export function DailyRitual({ twin, streak = 0, authed = false, bare = false, fi
           })}
         </div>
 
-        {/* the body reacts — a pulse at the pathway this signal feeds + the lesson */}
-        {reacted && <RitualBodyReaction key={reacted.key} check={reacted} figureSrc={figureSrc} />}
+        {/* the Twin acknowledges the record — no figure, no coordinate */}
+        {reacted && <RitualLogged key={reacted.key} check={reacted} />}
 
         {/* rhythm bar */}
         <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-border pt-4">

@@ -50,6 +50,34 @@ const BIOTIC_DERIVED = [
   ["the weakest Biotic", /\bbiotics\s*\.\s*weakest\b/],
   ["the strongest Biotic", /\bbiotics\s*\.\s*strongest\b/],
   ["a Biotic key as a function parameter", /\b\w+\s*:\s*BioticKey\b/],
+  /*
+   * ── ADDED AT 0R-5 · THE PER-BIOTIC SCORE ITSELF ──────────────────────────
+   *
+   * 0R-2 wrote this list for `P0-SCIENCE-04`, where the member's weakest Biotic
+   * chooses a colour. `argmin` over three numbers is a comparative verdict, so
+   * naming it was enough. It is not the only derived form, and 0R-5's trace
+   * found the other one live:
+   *
+   *     lib/account/meal-impact.ts:57   level: levelFor(input.probiotic_score)
+   *
+   * A per-Biotic SCORE flowing into a band word and a chip colour is the same
+   * prohibited mapping with one fewer step — no `weakest`, no `BioticKey`, and
+   * invisible to all three rules above. The permanent product rule names this
+   * form explicitly: "not as a number, not as a bar, not as a band word".
+   */
+  [
+    "a per-Biotic score",
+    /*
+     * The plural matters, and the non-vacuity case below is what found it.
+     * Written first as `biotics\s*\.\s*(?:pre|pro|post)biotic\b`, which does
+     * NOT match `twin.biotics.prebiotics.score` — the trailing `s` defeats the
+     * word boundary — and that is the exact property path `twin-stage.tsx`'s
+     * `BioticBar` call sites used. The rule would have passed the worst live
+     * site in the product while describing itself as catching per-Biotic
+     * scores.
+     */
+    /\b(?:pre|pro|post)biotic_score\b|\bbiotics\s*\.\s*(?:pre|pro|post)biotics?\b/,
+  ],
 ] as const
 
 /**
@@ -60,6 +88,21 @@ const BIOTIC_DERIVED = [
  */
 const VISUAL_SINKS = [
   ["a colour or gradient", /\b(?:\w*[Gg]radient\w*|\w*[Cc]olou?r\w*|\w*[Tt]int\w*|\w*[Aa]ura\w*)\b/],
+  /*
+   * ── ADDED AT 0R-5 · EXTENT, WHICH THIS FILE ALWAYS CLAIMED ───────────────
+   *
+   * The header above states the form requirement as "colour, position, scale,
+   * opacity, duration, anatomy" — and then implemented colour. 0R-2 had a
+   * reason: `P0-SCIENCE-04` was a colour, and a sink nothing flowed into would
+   * have been untested. But a `ScoreBar`'s LENGTH is the oldest form of this
+   * claim in the product, and the register's own wording for the permanent rule
+   * puts "not as a bar" beside "not as a number".
+   *
+   * So the promise is now kept rather than restated. `width:` is the Tailwind /
+   * inline-style form; `strokeDasharray` is the SVG ring form that
+   * `live-dashboard.tsx` and `report-client.tsx` both use.
+   */
+  ["an extent — a bar length, a ring arc or a scale", /\bwidth\s*:|\bstrokeDasharray\b|\bscale\s*\(/],
 ] as const
 
 /**
@@ -100,57 +143,92 @@ const VISUAL_MODULES = [
   "lib/account/stage-mood.ts",
   "components/account/twin/twin-stage.tsx",
   "components/account/twin/daily-ritual.tsx",
+  /*
+   * ── ADDED AT 0R-5 ───────────────────────────────────────────────────────
+   *
+   * `lib/account/meal-impact.ts` produces the visual parameters for the
+   * QuickLog result and the Meal Reveal: a chip colour and a band level, both
+   * keyed off a per-Biotic score. `meal-impact.tsx` is the renderer that turns
+   * that level into "Strong lift" and a glow.
+   *
+   * Neither was in this list, and neither was in the Experience 0 register as
+   * its own finding — `biotic-claims.test.ts`'s ledger found the producer by
+   * its effect STRING and recorded it as `P0-SCIENCE-05`'s second producer.
+   * The mapping beside that string was never named.
+   */
+  "lib/account/meal-impact.ts",
+  "components/account/twin/meal-impact.tsx",
+  /*
+   * FOUND BY SABOTAGE CASE 1493, WHILE WRITING IT.
+   *
+   * `quick-log.tsx` rendered three per-Biotic rows — label, score, colour and a
+   * bar whose width was the score — from `BIOTIC_META`. It was repaired as
+   * `P0-SCIENCE-01`'s seventh site, and then the case that restores its
+   * contract had nothing to fail against, because the file was in no instrument
+   * at all. A repair without an instrument is a repair that lasts until the
+   * next edit.
+   */
+  "components/account/twin/quick-log.tsx",
 ]
 
-/* ── THE 0R-2 INVENTORY ──────────────────────────────────────────────────────
+/* ── THE 0R-2 INVENTORY — EMPTIED AND DELETED AT 0R-5 ────────────────────────
  *
- * Same contract as `EXPOSED_AT_0R1`: an entry is only allowed to exist while
- * its defect does, and the list MAY ONLY SHRINK. Both are deleted by 0R-5.
+ * 0R-2 opened this file with four inventoried encodings and the same contract
+ * as `EXPOSED_AT_0R1`: an entry may exist only while its defect does, the list
+ * may only shrink, and 0R-5 deletes it. They were:
+ *
+ *   lib/account/twin-visual.ts                     a Biotic chooses a colour
+ *   components/account/twin/twin-stage.tsx         a Biotic chooses a colour
+ *   lib/account/ritual.ts                          a self-report tap lights an
+ *   components/account/twin/twin-stage.tsx           anatomical coordinate
+ *
+ * 0R-5 repaired all four, so the inventory is gone rather than emptied: a
+ * zero-length allowlist with its branches still wired is an invitation to add a
+ * fifth. The assertions below are now unconditional, which is the whole point
+ * of the exercise.
+ *
+ * WHAT REPLACES THE INVENTORY'S ONE LOAD-BEARING PROPERTY. The membership test
+ * (sabotage 1461) existed because `it.each(VISUAL_MODULES)` only examines what
+ * the list names: dropping `twin-stage.tsx` from `VISUAL_MODULES` removed the
+ * worst encoding in the product from the instrument and broke nothing. With no
+ * inventory to cross-check against, that hole is closed by pinning the module
+ * set itself — a module may be ADDED, never silently removed.
  */
-const EXPOSED_VISUAL_ENCODINGS: readonly [file: string, why: string][] = [
-  // P0-SCIENCE-04. `auraGradientForBiotic(twin.biotics.weakest, …)` →
-  // twin-stage.tsx:284, applied at :330-331 as the breathing aura.
-  ["lib/account/twin-visual.ts", "a Biotic chooses a colour"],
-  ["components/account/twin/twin-stage.tsx", "a Biotic chooses a colour"],
-  // P0-SCIENCE-05. RITUAL_CHECKS carries `node: { x, y }` per check, lit on the
-  // body figure under "YOUR BODY JUST FELT THAT".
-  ["lib/account/ritual.ts", "a self-report tap lights an anatomical coordinate"],
-  /*
-   * FOUND BY THIS GUARD, NOT BY THE AUDIT.
-   *
-   * `twin-stage.tsx:243` declares `signals?: Array<{ key; node: { x; y }; color }>`
-   * — the consumer side of `ritualSignals()`. The register recorded
-   * `P0-SCIENCE-05` at the producer (`ritual.ts`) and at the rendered copy; the
-   * PROP CONTRACT that carries a body coordinate between them was not named.
-   *
-   * Recorded here rather than quietly folded in, because a guard finding a site
-   * its author missed is the only evidence that it is doing more than restating
-   * what was already known.
-   */
-  ["components/account/twin/twin-stage.tsx", "a self-report tap lights an anatomical coordinate"],
-]
-const VISUAL_ENTRIES_AT_OPEN = 4
+const MODULES_AT_0R5_CLOSE = [
+  "components/account/twin/daily-ritual.tsx",
+  "components/account/twin/meal-impact.tsx",
+  "components/account/twin/twin-stage.tsx",
+  "lib/account/meal-impact.ts",
+  "lib/account/ritual.ts",
+  "lib/account/stage-mood.ts",
+  "lib/account/system-map.ts",
+  "lib/account/twin-visual.ts",
+  "components/account/twin/quick-log.tsx",
+] as const
+
+/*
+ * ── AND THE PIN ITSELF MUST NOT BE EMPTIABLE — SABOTAGE 1462 ───────────────
+ *
+ * `MODULES_AT_0R5_CLOSE` replaced the deleted inventory as the thing that stops
+ * a module leaving the instrument, and on its first run it inherited the
+ * inventory's old weakness in a new shape: the test iterates the pin, so
+ * emptying the pin makes the test pass over zero entries. Case 1462 — repointed
+ * from the cap it used to raise — does exactly that, and slipped.
+ *
+ * Fixed with the contract this repository has now applied three times: a
+ * LITERAL that must EQUAL the list. Emptying the list fails (9 ≠ 0); lowering
+ * the literal fails (the list is still 9). Neither single edit gets through.
+ */
+const PINNED_MODULES_AT_0R5_CLOSE = 9
 
 describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
   it.each(VISUAL_MODULES)("%s maps no Biotic to a visual parameter", (file) => {
     const src = source(file)
-    const inventoried = EXPOSED_VISUAL_ENCODINGS.some(
-      ([f, w]) => f === file && w === "a Biotic chooses a colour",
-    )
     const derived = BIOTIC_DERIVED.filter(([, re]) => re.test(src)).map(([w]) => w)
     const sinks = VISUAL_SINKS.filter(([, re]) => re.test(src)).map(([w]) => w)
-    const flows = derived.length > 0 && sinks.length > 0
 
-    if (inventoried) {
-      expect(
-        flows,
-        `${file} is in EXPOSED_VISUAL_ENCODINGS but no longer maps a Biotic to a ` +
-          `visual parameter. The defect is GONE — DELETE the inventory entry.`,
-      ).toBe(true)
-      return
-    }
     expect(
-      flows,
+      derived.length > 0 && sinks.length > 0,
       `${file} maps ${derived.join(" + ")} onto ${sinks.join(" + ")}. ` +
         `A claim is still a claim when it is encoded through colour, motion, ` +
         `anatomy, position or scale rather than words.`,
@@ -158,63 +236,36 @@ describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
   })
 
   it.each(VISUAL_MODULES)("%s attaches no anatomical coordinate to self-report", (file) => {
-    const hit = ANATOMICAL_COORDINATE.test(source(file))
-    const inventoried = EXPOSED_VISUAL_ENCODINGS.some(
-      ([f, w]) => f === file && w === "a self-report tap lights an anatomical coordinate",
-    )
-    if (inventoried) {
-      expect(
-        hit,
-        `${file} is inventoried for an anatomical coordinate and no longer carries ` +
-          `one. The defect is GONE — DELETE the inventory entry.`,
-      ).toBe(true)
-      return
-    }
     expect(
-      hit,
+      ANATOMICAL_COORDINATE.test(source(file)),
       `${file} attaches a point on the member's body to something they reported. ` +
         `Nothing in that chain is measured.`,
     ).toBe(false)
   })
 
-  it("the inventory may only shrink, and carries no headroom", () => {
-    expect(
-      EXPOSED_VISUAL_ENCODINGS.length,
-      "a NEW visual encoding of a Biotic is a regression, not debt to record",
-    ).toBeLessThanOrEqual(VISUAL_ENTRIES_AT_OPEN)
-
-    // Same reasoning as `ENTRIES_AT_0R1_OPEN` in `biotic-claims.test.ts`, and
-    // the same sabotage case shape: `<=` alone leaves room for one new
-    // encoding once a repair shortens the list. Sabotage 1462 raises this
-    // constant, and slipped until the equality below existed.
-    expect(
-      VISUAL_ENTRIES_AT_OPEN,
-      `VISUAL_ENTRIES_AT_OPEN is ${VISUAL_ENTRIES_AT_OPEN} while the inventory ` +
-        `holds ${EXPOSED_VISUAL_ENCODINGS.length}. It moves DOWN only, with the ` +
-        `repair.`,
-    ).toBe(EXPOSED_VISUAL_ENCODINGS.length)
-  })
-
   /*
-   * ── AN INVENTORIED FILE MUST STILL BE UNDER TEST ────────────────────────────
+   * ── A MODULE MAY BE ADDED, NEVER SILENTLY REMOVED ────────────────────────
    *
-   * The second weak test sabotage found in this file. `it.each(VISUAL_MODULES)`
-   * only examines what the list names, so dropping `twin-stage.tsx` from
-   * `VISUAL_MODULES` while leaving it in `EXPOSED_VISUAL_ENCODINGS` removed the
-   * file from the instrument and broke nothing: the inventory still read four,
-   * every remaining module still passed, and the worst visual encoding in the
-   * product stopped being looked at. Sabotage 1461 is exactly that mutation.
-   *
-   * So membership is asserted both ways round. The inventory is the record of
-   * what is wrong; this is what keeps the record pointed at something.
+   * The successor to the membership test the inventory used to anchor. Sabotage
+   * 1461 dropped `twin-stage.tsx` from `VISUAL_MODULES` and nothing failed,
+   * because `it.each` examines only what the list names. The inventory caught
+   * that by cross-reference; with the inventory gone, the list is pinned
+   * directly.
    */
-  it("every inventoried file is still a module under test", () => {
-    for (const [file] of EXPOSED_VISUAL_ENCODINGS) {
+  it("no module leaves the instrument", () => {
+    expect(
+      MODULES_AT_0R5_CLOSE.length,
+      `the pin holds ${MODULES_AT_0R5_CLOSE.length} modules and the literal says ` +
+        `${PINNED_MODULES_AT_0R5_CLOSE}. Emptying the pin would make the loop ` +
+        `below iterate nothing and pass — which is what sabotage 1462 does.`,
+    ).toBe(PINNED_MODULES_AT_0R5_CLOSE)
+
+    for (const file of MODULES_AT_0R5_CLOSE) {
       expect(
         VISUAL_MODULES,
-        `${file} is inventoried as a known visual encoding but is not in ` +
-          `VISUAL_MODULES, so no assertion in this file examines it. Removing a ` +
-          `file from the instrument is not the same as repairing it.`,
+        `${file} was under this instrument at the 0R-5 close and is not any ` +
+          `more. Removing a file from the instrument is not the same as ` +
+          `repairing it.`,
       ).toContain(file)
     }
   })
@@ -227,11 +278,106 @@ describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
    * matched nothing would pass in exactly the way `P0-SCIENCE-04` survived four
    * claim sweeps.
    */
-  it("NON-VACUITY: the guard fires on the real mapping and not on education", () => {
-    const dirty = source("lib/account/twin-visual.ts")
-    expect(BIOTIC_DERIVED.some(([, r]) => r.test(dirty)), "no Biotic read found").toBe(true)
-    expect(VISUAL_SINKS.some(([, r]) => r.test(dirty)), "no visual sink found").toBe(true)
+  /*
+   * ── NON-VACUITY, AGAINST THE SHAPES THAT SHIPPED ─────────────────────────
+   *
+   * 0R-2 proved this instrument by pointing it at `lib/account/twin-visual.ts`
+   * and asserting it fired, which was right at the time: the file genuinely
+   * mapped a Biotic to a colour. 0R-5 repaired it, so that proof now fails for
+   * the best possible reason — and a guard proved against a FIXED file proves
+   * only that the file is fixed.
+   *
+   * So the subjects are the four real pre-repair source lines, held as
+   * literals. They exist nowhere in the tree any more; these strings ARE the
+   * regressions. Same contract as `PRE_REPAIR` in
+   * `live-dashboard-fabrication.test.ts`.
+   */
+  const PRE_REPAIR: readonly [why: string, shape: string][] = [
+    [
+      "P0-SCIENCE-04 · the weakest Biotic chose the stage aura (twin-stage.tsx:284)",
+      "      : auraGradientForBiotic(twin.biotics.weakest, visual.confidence)",
+    ],
+    [
+      "P0-SCIENCE-04 · the strongest Biotic computed TwinVisualState.auraGradient",
+      "    auraGradient: auraGradientForBiotic(twin.biotics.strongest, confidence),",
+    ],
+    [
+      "the signature that let either of them through",
+      "export function auraGradientForBiotic(biotic: BioticKey, intensity = 0.6): string {",
+    ],
+    /*
+     * This subject exists so the PER-BIOTIC SCORE rule has a case of its own.
+     * Found while writing sabotage 1507: nulling that rule broke nothing,
+     * because every other subject here also carries a `BioticKey` or a
+     * `weakest`/`strongest` read, so the older rules covered them. The
+     * meal-impact row is the one real shape whose only Biotic read is the score
+     * itself.
+     */
+    [
+      "P0-SCIENCE-05 · a per-Biotic score chose a band and a chip colour (meal-impact.ts)",
+      '    level: probioticBoost ? "strong" : levelFor(input.probiotic_score),\n    color: TEAL,',
+    ],
+    /*
+     * MALFORMED ON ITS FIRST RUN, AND CORRECTED RATHER THAN THE RULE WEAKENED.
+     *
+     * Written as the bar's `style` line alone, which carries no Biotic read:
+     * `score` is a bare parameter, and what made it a Biotic was the SIGNATURE
+     * and the CALL SITE, two other lines. These rules evaluate a whole file for
+     * co-occurrence, so a one-line subject tests something the instrument never
+     * claimed. The case now holds the three lines that together were the
+     * defect — which is also how the rule reads the real file.
+     *
+     * Fixing the case is also what exposed the plural gap in the rule above, so
+     * the two corrections are not independent: a malformed case found a real
+     * hole.
+     */
+    /*
+     * EXTENT-ONLY, AND DELIBERATELY SO — found by sabotage 1506.
+     *
+     * Nulling the extent sink broke nothing, because every other subject here
+     * also carries a colour word: the full `BioticBar` shape below has
+     * `backgroundColor`, so the colour sink covered it and the new sink was
+     * never load-bearing in the proof.
+     *
+     * This subject is the same real shape with the colour declaration dropped,
+     * so the ONLY sink in it is the bar's width. It is a trimmed shape rather
+     * than a line that ever shipped, and it is labelled as such; the untrimmed
+     * version is the next entry.
+     */
+    [
+      "the extent sink alone — a per-Biotic bar width with no colour beside it",
+      [
+        "function BioticBar({ biotic, score, delay }: { biotic: BioticKey; score: number; delay: number }) {",
+        'style={{ width: `${Math.max(4, Math.min(100, score))}%` }}',
+      ].join("\n"),
+    ],
+    [
+      "P0-SCIENCE-01 · a per-Biotic score drove a named bar's width (twin-stage.tsx BioticBar)",
+      [
+        "function BioticBar({ biotic, score, delay }: { biotic: BioticKey; score: number; delay: number }) {",
+        'style={{ width: `${Math.max(4, Math.min(100, score))}%`, backgroundColor: c }}',
+        "<BioticBar biotic=\"prebiotics\" score={twin.biotics.prebiotics.score} delay={700} />",
+      ].join("\n"),
+    ],
+  ]
 
+  it.each(PRE_REPAIR)("NON-VACUITY: the rules refuse the shape that shipped — %s", (_why, shape) => {
+    const derived = BIOTIC_DERIVED.some(([, r]) => r.test(shape))
+    const sink = VISUAL_SINKS.some(([, r]) => r.test(shape))
+    expect(derived || ANATOMICAL_COORDINATE.test(shape), `no Biotic read found in: ${shape}`).toBe(true)
+    expect(sink, `no visual sink found in: ${shape}`).toBe(true)
+  })
+
+  it("NON-VACUITY: the anatomical shapes that shipped are still refused", () => {
+    for (const shape of [
+      '{ key: "fermented", label: "Fermented food", node: { x: 54, y: 56 } }',
+      "signals?: Array<{ key: string; node: { x: number; y: number }; color: string }>",
+    ]) {
+      expect(ANATOMICAL_COORDINATE.test(shape), `missed: ${shape}`).toBe(true)
+    }
+  })
+
+  it("NON-VACUITY: the guard does not fire on education", () => {
     // `lib/pillars.ts` is the canonical education module: Biotic vocabulary,
     // no member data, no visual parameter. It must NOT fire.
     const clean = source("lib/pillars.ts")

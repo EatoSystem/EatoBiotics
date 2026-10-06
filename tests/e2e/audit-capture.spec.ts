@@ -529,6 +529,233 @@ test.describe("the recorded findings still reproduce", () => {
   })
 
   /*
+   * ══ 0R-5 · THE SCIENCE FINDINGS, RENDERED ═════════════════════════════════
+   *
+   * Every one of these operated on REAL member data, which is why 0R-4 could
+   * not close them and why source proof alone is insufficient here: the
+   * prohibited thing is the construct, not the provenance of the numbers in it.
+   *
+   * Truthful inputs can still produce an untruthful product claim.
+   */
+  test("P0-SCIENCE-01 · no live surface renders a personal per-Biotic bar", async ({ page }) => {
+    /*
+     * SEVEN live sites, three of which the Experience 0 register named. Covered
+     * per manifestation for the same reason `P0-TRUST-01` is: a single
+     * assertion would let somebody remove one and close the finding falsely.
+     */
+    for (const state of ["returning-no-meals-today", "member-with-biotics", "twin-present"] as const) {
+      await openFixture(page, state)
+      const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase()
+
+      /*
+       * Non-vacuity: the dashboard must have rendered at all. Matched on the
+       * score block rather than a tab name, which is the one thing every one of
+       * these states shows.
+       */
+      expect(body, `${state} · the dashboard did not render`).toMatch(/food system|biotics score|your score/)
+
+      for (const [why, pattern] of [
+        ["a Prebiotic bar or row label", /\bprebiotics?\b\s*\d/],
+        ["a Probiotic bar or row label", /\bprobiotics?\b\s*\d/],
+        ["a Postbiotic bar or row label", /\bpostbiotics?\b\s*\d/],
+      ] as const) {
+        expect(
+          body.match(pattern)?.[0] ?? null,
+          `${state} · ${why} renders. The values are REAL — that is what makes ` +
+            `this a science finding. A personal Prebiotic / Probiotic / ` +
+            `Postbiotic figure is prohibited whatever its provenance.`,
+        ).toBeNull()
+      }
+
+      // The first-use promise, at both of its sites.
+      expect(body, `${state} · the per-Biotic promise is back`).not.toContain(
+        "prebiotic, probiotic, and postbiotic value",
+      )
+      expect(body, `${state} · the possessive Biotics-score promise is back`).not.toContain(
+        "your biotics score is built",
+      )
+      expect(body, `${state} · step 2 still promises a per-Biotic breakdown`).not.toContain(
+        "biotics score breakdown",
+      )
+
+      // The member's own overall score is untouched — this removed a claim, not
+      // a result.
+      expect(body, `${state} · the overall score disappeared too`).toMatch(/\/100|\d{2}\s*\/\s*100|food system score/)
+    }
+  })
+
+  test("P0-SCIENCE-01 · the weakest-Biotic focus nudge is gone from the daily loop", async ({ page }) => {
+    /*
+     * The fifth site, in no register entry. `DailyLoopCard` rendered
+     * "Today's focus · Probiotics (23/100)" with a Biotic-coloured dot — the
+     * weakest Biotic named, scored and coloured. `PillarKey` is
+     * `"prebiotics" | "probiotics" | "postbiotics"`, so this printed a Biotic
+     * and not an observable domain.
+     */
+    for (const state of ["first-use-member", "sparse"] as const) {
+      await openFixture(page, state)
+      const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase()
+      expect(body, `${state} · the Biotic focus nudge is back`).not.toMatch(
+        /today'?s focus\s*·\s*(?:pre|pro|post)biotics/,
+      )
+      expect(body, `${state} · a per-Biotic score out of 100 is back`).not.toMatch(
+        /(?:pre|pro|post)biotics\s*\(\d+\/100\)/,
+      )
+    }
+  })
+
+  test("P0-SCIENCE-03 · the Monthly Focus mechanism is gone", async ({ page }) => {
+    for (const state of ["returning-no-meals-today", "member-with-biotics"] as const) {
+      await openFixture(page, state)
+      const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase()
+      for (const [why, fragment] of [
+        ["the causal mechanism between two Biotics", "pulling down your biotics"],
+        ["the undeived monthly heading", "this month's focus"],
+        ["the asserted personal gap", "fix your fermented food gap"],
+        ["the 30-day outcome promise", "30 days changes this"],
+      ] as const) {
+        expect(body, `${state} · ${why} is back`).not.toContain(fragment)
+      }
+    }
+  })
+
+  test("P0-SCIENCE-04 · the stage aura is not a Biotic verdict", async ({ page }) => {
+    /*
+     * ══ WHY THIS ASSERTION DISCRIMINATES ══════════════════════════════════
+     *
+     * The aura was `auraGradientForBiotic(twin.biotics.weakest, …)`. Every
+     * captured fixture has biotics `58/44/63`, so the weakest was PROBIOTICS,
+     * and the probiotics branch's inner colour is `rgba(45,170,110, …)` — the
+     * brand green. The resting aura is the lime base, `rgba(168,224,99, …)`.
+     *
+     * So the two states produce DIFFERENT colours, and asserting lime is a
+     * direct refutation of the old behaviour rather than a tautology. The
+     * invariance across a VARIED weakest Biotic is proved in
+     * `tests/unit/account-twin.test.ts`, because the fixture corpus cannot
+     * vary it — which is itself the fixture-design defect the register records.
+     */
+    await openFixture(page, "twin-present")
+
+    const aura = page.locator("#fs-stage .eb-aura").first()
+    await expect(aura, "the stage aura did not render — the assertion would be vacuous").toBeAttached()
+    const background = await aura.evaluate((el) => getComputedStyle(el).backgroundImage)
+
+    expect(
+      background,
+      "the stage aura did not render a radial gradient at all",
+    ).toMatch(/radial-gradient/)
+    /*
+     * ── IT IS THE INNER STOP THAT DISCRIMINATES, NOT ANY COLOUR PRESENT ────
+     *
+     * First written as "contains neither the probiotics green nor the
+     * postbiotics yellow", which FAILED against the correct output:
+     *
+     *   radial-gradient(circle, rgba(168,224,99,0.384) 0%,
+     *                           rgba(245,197,24,0.192) 44%, …)
+     *
+     * `rgba(245,197,24)` is the yellow MID of the lime tone and always has
+     * been — the lime and green tones share it, and only the amber tone uses
+     * it as its inner. So "contains yellow" says nothing. The assertion is on
+     * the FIRST COLOUR STOP, which is the one each tone owns:
+     *
+     *   lime   rgba(168,224,99)      green  rgba(45,170,110)
+     *   amber  rgba(245,197,24) inner, with rgba(245,166,35) as its mid
+     *
+     * Corrected rather than relaxed: the mistake was mine, and the inner-stop
+     * form is strictly stronger than what it replaced.
+     */
+    const innerStop = background.match(/radial-gradient\(circle,\s*(rgba?\([^)]*\))/)?.[1] ?? ""
+    expect(innerStop, "could not read the aura's first colour stop").toMatch(/^rgba?\(/)
+    expect(
+      innerStop,
+      "the aura's inner stop is the PROBIOTICS colour — which is the weakest " +
+        "Biotic in every captured fixture. P0-SCIENCE-04 has regressed: the " +
+        "colour of the glow around the member's body is a comparative personal " +
+        "Biotic verdict carrying no text at all.",
+    ).not.toContain("45, 170, 110")
+    expect(
+      innerStop,
+      "the aura's inner stop is the POSTBIOTICS colour",
+    ).not.toContain("245, 197, 24")
+    expect(
+      background,
+      "the aura carries the amber tone's mid stop, which only postbiotics used",
+    ).not.toContain("rgba(245, 166, 35")
+    expect(
+      innerStop,
+      "the resting aura is not the brand lime base",
+    ).toContain("168, 224, 99")
+  })
+
+  test("P0-SCIENCE-05 · a ritual tick claims no bodily response", async ({ page }) => {
+    await openFixture(page, "twin-present")
+
+    const tick = page.getByRole("button", { name: /Fermented food/i }).first()
+    await expect(tick, "the ritual check-in did not render").toBeVisible()
+    await tick.click()
+
+    const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").toLowerCase()
+
+    // Non-vacuity: the tick registered and the Twin acknowledged it.
+    expect(body, "ticking the check produced no acknowledgement at all").toContain("logged for today")
+
+    for (const [why, fragment] of [
+      ["the asserted bodily response", "your body just felt that"],
+      ["the Biotic mechanism", "lights up your probiotic network"],
+      ["the heading's bodily claim", "your body reacts to each one"],
+      ["the completed-day bodily claim", "felt all of it"],
+    ] as const) {
+      expect(body, `${why} is back on the daily ritual`).not.toContain(fragment)
+    }
+
+    /*
+     * ── AND THE ANATOMY ITSELF ─────────────────────────────────────────────
+     *
+     * MALFORMED ON ITS FIRST RUN, AND CORRECTED RATHER THAN DELETED. It read
+     *
+     *   page.locator('[style*="left: 54%"], … , [style*="left: 50%"]').count()
+     *
+     * and failed, because `left: 50%` is ordinary translate-centering used all
+     * over the page. A whole-page selector for a percentage cannot distinguish
+     * a body coordinate from a centred element.
+     *
+     * What the defect actually was: a FIGURE of the member's body inside the
+     * acknowledgement, with an aura and a ping placed on it. So the assertion
+     * is scoped to the acknowledgement and asks whether a figure is drawn
+     * there at all — which is the thing that cannot be true without anatomy.
+     */
+    const ack = page.locator("div", { hasText: /Logged for today/ }).last()
+    await expect(ack, "the acknowledgement did not render").toBeVisible()
+    expect(
+      await ack.locator("img").count(),
+      "the acknowledgement draws a figure of the member's body again. The " +
+        "reaction panel placed an aura and a ping at a RITUAL_CHECKS " +
+        "coordinate on it — the gut for a fermented food, the head for sleep.",
+    ).toBe(0)
+    expect(
+      await ack.locator(".eb-aura, .eb-ping").count(),
+      "a positioned pulse is back inside the ritual acknowledgement",
+    ).toBe(0)
+
+    // The ritual still works as a record: the streak and the rhythm bar remain.
+    expect(body, "the daily ritual lost its 7-day rhythm bar").toContain("last 7 days")
+  })
+
+  test("the Account and Twin surfaces remain functional after 0R-5", async ({ page }) => {
+    /*
+     * The removal half of the close criterion is above. This is the other half:
+     * a member may still see their observable facts, their actions and their
+     * truthful history.
+     */
+    await openFixture(page, "twin-present")
+    for (const tab of ["Overview", "My Meals", "Reports", "Consultations", "Account"] as const) {
+      await page.getByRole("button", { name: new RegExp(tab, "i") }).first().click()
+      const body = (await page.locator("body").innerText()).replace(/\s+/g, " ")
+      expect(body.length, `the ${tab} tab rendered nothing`).toBeGreaterThan(200)
+    }
+  })
+
+  /*
    * ── 0R-3 · P0-TRUST-05, ASSERTED AS REPAIRED ─────────────────────────────
    *
    * This is the one half of P0-TRUST-05 that was ever customer-reachable: the
@@ -586,17 +813,39 @@ test.describe("the recorded findings still reproduce", () => {
     }
   })
 
-  test("P0-SCIENCE-01 · first-use copy promises a per-Biotic breakdown", async ({ page }) => {
+  /*
+   * ── 0R-5 · INVERTED, AS THE 0R-4 PROOFS WERE ─────────────────────────────
+   *
+   * Written in Experience 0 to assert that the DEFECT reproduced — that the
+   * first-use block said "YOUR Biotics score is built one meal at a time" and
+   * promised "an instant breakdown of its Prebiotic, Probiotic, and Postbiotic
+   * value". 0R-5 repaired both, so this test failed, which is the right
+   * outcome and the same handling `P0-TRUST-01`'s proof got at 0R-4.
+   *
+   * It keeps a NON-VACUITY half: the block must still render and still promise
+   * the member something, or a repair that simply deleted the welcome copy
+   * would read as a pass.
+   */
+  test("P0-SCIENCE-01 · the first-use copy promises only what the product delivers", async ({ page }) => {
     await openFixture(page, "first-use-member")
 
     const body = (await page.locator("body").innerText()).replace(/\s+/g, " ")
 
-    // A meal-level construct called the person's own score.
-    expect(body, "the 'your Biotics score' phrasing changed — re-check P0-SCIENCE-01").toMatch(
-      /Your Biotics score/i,
-    )
+    // Non-vacuity: the first-use block is on screen and still welcomes them.
+    expect(body, "the first-use block did not render at all").toMatch(/Let's build your food system/i)
+
+    // The possessive construct: a MEAL-level score called the person's own.
+    expect(
+      body,
+      "'your Biotics score' is back. CLAUDE.md's rule is that one meal gets a " +
+        "Meal Biotics Score, never the person's Biotics Score™.",
+    ).not.toMatch(/Your Biotics score/i)
     // And the promise of the three values, which Gate 5 excludes from surfaces.
-    expect(body).toMatch(/Prebiotic, Probiotic, and Postbiotic value/i)
+    expect(body, "the per-Biotic breakdown is promised again").not.toMatch(
+      /Prebiotic, Probiotic, and Postbiotic value/i,
+    )
+    // The replacement names only what the product can observe.
+    expect(body, "the honest promise is missing").toMatch(/Meal Biotics Score/i)
   })
 
   /*

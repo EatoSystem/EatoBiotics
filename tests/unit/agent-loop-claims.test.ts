@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { execSync } from "node:child_process"
 import { buildBaseline } from "@/lib/agent-loop/baseline"
 import {
@@ -15,6 +15,8 @@ import { detectPatterns } from "@/lib/account/patterns"
 import { buildInsideYouChapters } from "@/lib/account/inside-you"
 import { buildWeekStory } from "@/lib/account/week-story"
 import { systemMapState } from "@/lib/account/system-map"
+import { mealImpact, type MealImpactInput } from "@/lib/account/meal-impact"
+import { RITUAL_CHECKS, ritualCount, EMPTY_RITUAL, type RitualDay } from "@/lib/account/ritual"
 import { loopBehaviour, mealBehaviour, behaviourFor } from "@/lib/agent-loop/behaviour"
 import { BIOTIC_LABELS } from "@/lib/agent-loop/biotics"
 import { pillarBehaviour } from "@/lib/pillars"
@@ -65,7 +67,26 @@ import type { BioticKey, BioticsSource } from "@/lib/agent-loop/types"
    ════════════════════════════════════════════════════════════════════════════ */
 
 const BIOTICS = "(?:Prebiotics|Probiotics|Postbiotics)"
-const BIOTICS_ANY = "(?:Prebiotics|Probiotics|Postbiotics|prebiotics?|probiotics?|postbiotics?)"
+/*
+ * ══ 0R-5 · THE CAPITALISED SINGULAR, FOUND BY SABOTAGE 1504 ═════════════════
+ *
+ * This read
+ *   "(?:Prebiotics|Probiotics|Postbiotics|prebiotics?|probiotics?|postbiotics?)"
+ * — capitalised PLURAL only, or lowercase either way. So "Prebiotic fibre
+ * flows down to feed your microbes" walked straight through it, which is the
+ * exact sentence `lib/account/meal-impact.ts` shipped on live `/account`, and
+ * case 1504 restores.
+ *
+ * Gate 3.7 already recorded this failure once, in the other direction: case
+ * 1097 slipped because "biotic" singular and lowercase was not in this
+ * alternation. The lowercase half was fixed and the capitalised singular was
+ * not, so the same hole stayed open on the other side of the case table for
+ * two more gates.
+ *
+ * Written with character classes rather than another hand-maintained list, so
+ * there is no fourth variant left to forget.
+ */
+const BIOTICS_ANY = "(?:[Pp]re|[Pp]ro|[Pp]ost)biotics?"
 
 /**
  * The rules, over GENERATED output.
@@ -735,6 +756,184 @@ describe("the other live account generators are clean", () => {
         ).toBeUndefined()
       }
     }
+  })
+})
+
+/* ── 5b · 0R-5 · the meal-impact producer and the daily ritual ───────────── */
+
+describe("0R-5 · a real per-Biotic score cannot reach a customer-facing claim", () => {
+  /*
+   * ══ WHY THIS ASSERTION EXISTS, AND WHY IT HAD TO BE BEHAVIOURAL ══════════
+   *
+   * `lib/account/meal-impact.ts` rendered this on live `/account`, inside the
+   * QuickLog result and the Meal Reveal:
+   *
+   *     Probiotic network   [STRONG LIFT]
+   *     A fermented food lights up your probiotic network
+   *
+   * Every number behind it was genuine. That is the whole point of 0R-5:
+   * TRUTHFUL INPUTS CAN STILL PRODUCE AN UNTRUTHFUL PRODUCT CLAIM. The row was
+   * a personal Biotic label, the chip was a personal Biotic band derived from
+   * `input.probiotic_score`, and the sentence was a personal Biotic mechanism.
+   *
+   * A source scan cannot establish the band's absence: "Strong lift" is a
+   * lookup in `meal-impact.tsx`'s `LEVEL_LABEL`, two modules from the score
+   * that chooses it — the same interpolation blindness that let 8 of 9 Gate 3.6
+   * claims through a corpus sweep. So this calls the function.
+   */
+
+  /** A meal whose observable signals are present, so the kept rows fire. */
+  const OBSERVABLE: MealImpactInput = {
+    meal_name: "Lentil, walnut and spinach bowl with olive oil",
+    tags: ["High Fibre", "Plant Diversity", "Omega-3s", "Protein Rich"],
+  }
+
+  /**
+   * The three fields are GONE from `MealImpactInput`, so they are supplied
+   * through a cast — which is the stronger test. It proves the function is
+   * invariant under them even when a caller still has them to hand, rather
+   * than proving only that TypeScript would complain.
+   *
+   * Varied deliberately: a hardcoded result cannot accidentally look correct,
+   * and the set spans every band boundary `levelFor` used (65 and 40) plus the
+   * `< 40 && < 40` strain gate.
+   */
+  const SCORE_SETS = [
+    { prebiotic_score: 0, probiotic_score: 0, postbiotic_score: 0 },
+    { prebiotic_score: 39, probiotic_score: 39, postbiotic_score: 39 },
+    { prebiotic_score: 40, probiotic_score: 40, postbiotic_score: 40 },
+    { prebiotic_score: 64, probiotic_score: 12, postbiotic_score: 88 },
+    { prebiotic_score: 65, probiotic_score: 100, postbiotic_score: 65 },
+    { prebiotic_score: 100, probiotic_score: 100, postbiotic_score: 100 },
+  ]
+
+  function withScores(input: MealImpactInput, scores: Record<string, number>): MealImpactInput {
+    return { ...input, ...scores } as MealImpactInput
+  }
+
+  it("mealImpact produces no Biotic-named row, band or mechanism", () => {
+    const rows = mealImpact(OBSERVABLE)
+    expect(rows.length, "mealImpact returned nothing, so this asserted nothing").toBeGreaterThan(0)
+    for (const r of rows) {
+      // The full generated-claim rule set, INCLUDING "names a Biotic at all".
+      // A per-meal row narrates this plate; it is not education, which is the
+      // same distinction the `meal-reveal.tsx` pin records.
+      assertClean(`meal-impact row ${r.key}`, [r.label, r.effect, r.why])
+    }
+  })
+
+  it("no per-Biotic score can change a single rendered field", () => {
+    const baseline = JSON.stringify(mealImpact(OBSERVABLE))
+    for (const scores of SCORE_SETS) {
+      expect(
+        JSON.stringify(mealImpact(withScores(OBSERVABLE, scores))),
+        `a per-Biotic score changed the meal-impact rows (${JSON.stringify(scores)}). ` +
+          `The label, the band and the chip colour must all derive from observable ` +
+          `food signals — tags and the meal name — never from a Biotic score.`,
+      ).toBe(baseline)
+    }
+  })
+
+  it("the strain row is gated on the observable signal, not on two Biotic scores", () => {
+    /*
+     * The strain gate read `strained && input.prebiotic_score < 40 &&
+     * input.probiotic_score < 40`, so whether a member was told their meal may
+     * strain the system depended on two per-Biotic numbers. An ultra-processed
+     * meal is observable on its own.
+     */
+    const upf: MealImpactInput = { meal_name: "Instant noodles and a soda", tags: [] }
+    const keys = (i: MealImpactInput) => mealImpact(i).map((r) => r.key)
+    expect(keys(upf), "the strain row no longer fires on an observable UPF meal").toContain("strain")
+    for (const scores of SCORE_SETS) {
+      expect(
+        keys(withScores(upf, scores)),
+        `the strain row appears or disappears with a Biotic score (${JSON.stringify(scores)})`,
+      ).toEqual(keys(upf))
+    }
+  })
+
+  it("a fermented food is not classified as a personal probiotic effect", () => {
+    /*
+     * `probioticBoost` fired from the tag `Fermented Foods` alone and set the
+     * row's level to "strong". That is the inference the standing constraints
+     * forbid by name: DO NOT treat fermented foods as automatically probiotic.
+     */
+    const fermented: MealImpactInput = {
+      meal_name: "Kimchi, kefir and sauerkraut plate",
+      tags: ["Fermented Foods", "Probiotics"],
+    }
+    const rows = mealImpact(fermented)
+    for (const r of rows) {
+      assertClean(`fermented row ${r.key}`, [r.label, r.effect, r.why])
+    }
+    expect(
+      rows.some((r) => /probiotic/i.test(r.key)),
+      "a fermented meal still produces a probiotic-keyed row",
+    ).toBe(false)
+  })
+})
+
+describe("0R-5 · the weakest-Biotic nudge producer is gone, not unwired", () => {
+  it("lib/habit.ts does not exist", () => {
+    /*
+     * Its entire exported surface was `focusPillar` — "the weakest pillar, the
+     * one with the most room to improve" — and `dailyNudge`, which returned
+     * that pillar with the member's score for it. `PillarKey` is a Biotic, so
+     * the module's only job was to compute a comparative personal Biotic
+     * verdict, and its only two callers rendered it on `DailyLoopCard`.
+     *
+     * Removed rather than left unwired, for the reason
+     * `live-dashboard-fabrication.test.ts` already records about
+     * `MOCK_CONSULTATIONS`: a dead construct is a re-wiring hazard, not
+     * harmless. A file-existence assertion is the only way to state this —
+     * a per-file source pin cannot read a file that should not be there.
+     */
+    expect(
+      existsSync("lib/habit.ts"),
+      "lib/habit.ts is back. Its purpose is a weakest-Biotic verdict; there is " +
+        "no version of it that the permanent product rule permits on a " +
+        "customer surface.",
+    ).toBe(false)
+  })
+})
+
+describe("0R-5 · a self-reported tap reaches no body coordinate and no Biotic", () => {
+  it("RITUAL_CHECKS carries no anatomical coordinate and no Biotic mechanism", () => {
+    expect(RITUAL_CHECKS.length, "RITUAL_CHECKS is empty, so this asserted nothing").toBeGreaterThan(0)
+    for (const c of RITUAL_CHECKS) {
+      const asRecord = c as unknown as Record<string, unknown>
+      expect(asRecord.node, `ritual check ${c.key} still carries a body coordinate`).toBeUndefined()
+      expect(asRecord.effect, `ritual check ${c.key} still carries an asserted bodily effect`).toBeUndefined()
+      assertClean(`ritual check ${c.key}`, [c.label, c.ack])
+    }
+  })
+
+  it("the stage is handed a count, not a list of points on the member", async () => {
+    /*
+     * ── THIS ASSERTION CHANGED SHAPE DURING THE REPAIR, AND THAT IS WORTH
+     *    RECORDING ────────────────────────────────────────────────────────────
+     *
+     * Written guards-first as "`ritualSignals` returns signals with no `node`",
+     * which assumed the fix would strip a field from the return type. Tracing
+     * the consumer showed that weaker: `ritualSignals`' ENTIRE return shape was
+     * the coordinate contract (`Array<{ key; node: { x; y }; color }>`), and
+     * `twin-stage.tsx` used it for exactly two things — positioning a lit node
+     * per tick, and `signals.length` in the aura's opacity.
+     *
+     * So the function is deleted and `TwinStage` takes `ritualCount: number`.
+     * The stage still brightens with the day's logged activity, which is the
+     * member's own report and the same kind of fact as the streak; a number
+     * cannot carry a body coordinate at all.
+     */
+    const all: RitualDay = { ...EMPTY_RITUAL, fermented: true, plants: true, moved: true, slept: true, feeling: true }
+    expect(
+      ritualCount(all),
+      "a fully completed ritual does not count as five",
+    ).toBe(RITUAL_CHECKS.length)
+    expect(
+      Object.keys(await import("@/lib/account/ritual")),
+      "ritualSignals is back — its whole return shape was the body-coordinate contract",
+    ).not.toContain("ritualSignals")
   })
 })
 

@@ -1,20 +1,57 @@
 /**
  * EatoBiotics — "What this meal does to your Food System" (pure, deterministic).
  *
- * Maps an analysed meal (the three biotic scores + the analyse-meal `tags` +
- * meal-name keywords) to visual impact rows the model can respond with:
- * probiotic network, fibre pathways, plant diversity, healthy fats, protein
- * balance, ultra-processed strain. Educational + non-medical ("supports",
- * "may strain") — every row carries its own "why this matters".
+ * Maps an analysed meal's OBSERVABLE signals — the analyse-meal `tags` and
+ * meal-name keywords — to the impact rows the QuickLog result and the Meal
+ * Reveal render: fibre, plant diversity, healthy fats, protein balance,
+ * ultra-processed strain. Educational and non-medical; every row carries its
+ * own "why this matters".
+ *
+ * ══ 0R-5 · THE PER-BIOTIC PIPELINE IS GONE ══════════════════════════════════
+ *
+ * This module was `P0-SCIENCE-05`'s second producer, recorded in
+ * `biotic-claims.test.ts`'s ledger for one sentence it shares with `ritual.ts`.
+ * The trace found the sentence was the small part. On live `/account`, inside
+ * the QuickLog result and the Meal Reveal, it produced:
+ *
+ *   Probiotic network    [STRONG LIFT]
+ *   A fermented food lights up your probiotic network
+ *
+ *   Postbiotic potential [MODERATE]
+ *   Well-fed microbes can give back — postbiotic potential rises
+ *
+ * Four prohibited forms in one pipeline: a Biotic-named personal ROW, a BAND
+ * WORD derived from `input.probiotic_score`, a possessive biological MECHANISM,
+ * and — in `probioticBoost` — a fermented food classified as a personal
+ * probiotic effect from a tag, which the standing constraints forbid by name.
+ *
+ * Every number behind it was genuine. That is the point of the tranche:
+ * TRUTHFUL INPUTS CAN STILL PRODUCE AN UNTRUTHFUL PRODUCT CLAIM.
+ *
+ * ── WHAT WAS REMOVED, AND WHAT DELIBERATELY WAS NOT ───────────────────────
+ *
+ *   gone    the `probiotic` and `postbiotic` rows, whole
+ *   gone    the three `*_score` fields, from the INPUT CONTRACT — the
+ *           `sequence-email.ts` precedent: a field this still accepted would be
+ *           an invitation to derive from it again
+ *   gone    `levelFor`, the score→band ladder
+ *   gone    the strain row's `prebiotic_score < 40 && probiotic_score < 40`
+ *           gate; an ultra-processed meal is observable on its own
+ *   gone    "Prebiotic fibre flows down to feed your microbes" (also a
+ *           fibre-is-prebiotic category claim) and "the postbiotic
+ *           follow-through"
+ *   kept    fibre, plants, fats, protein, strain — all read from tags and the
+ *           meal name, which is what the product can actually see
+ *
+ * NO RENAMED PROXY. The removed rows are not reappearing as "microbiome
+ * support", "gut network" or any other biological-state label. There is no row
+ * standing in for them, because there is nothing measured to put in one.
  */
 
 export type ImpactLevel = "strong" | "moderate" | "low" | "strain"
 
 export interface MealImpactInput {
   meal_name: string
-  prebiotic_score: number
-  probiotic_score: number
-  postbiotic_score: number
   tags?: string[]
 }
 
@@ -31,11 +68,9 @@ export interface MealImpactRow {
 
 const LIME = "#A8E063"
 const GREEN = "#4CB648"
-const TEAL = "#2DAA6E"
+// TEAL went with the probiotic row it coloured.
 const YELLOW = "#F5C518"
 const ORANGE = "#F5A623"
-
-const levelFor = (score: number): ImpactLevel => (score >= 65 ? "strong" : score >= 40 ? "moderate" : "low")
 
 const hasTag = (tags: string[], ...names: string[]) => names.some((n) => tags.includes(n))
 const nameHas = (name: string, ...words: string[]) => {
@@ -49,26 +84,21 @@ export function mealImpact(input: MealImpactInput): MealImpactRow[] {
   const tags = input.tags ?? []
   const rows: MealImpactRow[] = []
 
-  /* Probiotic network */
-  const probioticBoost = hasTag(tags, "Probiotics", "Fermented Foods") || nameHas(input.meal_name, "kefir", "kimchi", "yoghurt", "yogurt", "kombucha", "sauerkraut", "miso", "tempeh")
-  rows.push({
-    key: "probiotic",
-    label: "Probiotic network",
-    level: probioticBoost ? "strong" : levelFor(input.probiotic_score),
-    color: TEAL,
-    effect: probioticBoost || input.probiotic_score >= 40 ? "A fermented food lights up your probiotic network" : "Quiet on the probiotic side this time",
-    why: "Foods transformed by fermentation are the one pathway that brings microbial material in from outside rather than only feeding what is already there — one serving a day is one of the fastest levers your Food System has.",
-  })
+  /*
+   * Fermented food is OBSERVABLE and stays observable: it is a fact about the
+   * plate. What is gone is the row that turned it into a statement about the
+   * member — see the header. Nothing replaces it.
+   */
 
-  /* Fibre / prebiotic pathways */
-  const fibreBoost = hasTag(tags, "Prebiotics", "High Fibre") || nameHas(input.meal_name, "bean", "lentil", "oat", "chickpea", "wholegrain", "barley", "leek", "onion", "garlic", "asparagus")
+  /* Fibre — read from the tags and the meal name, not from a score. */
+  const fibreBoost = hasTag(tags, "High Fibre") || nameHas(input.meal_name, "bean", "lentil", "oat", "chickpea", "wholegrain", "barley", "leek", "onion", "garlic", "asparagus")
   rows.push({
     key: "fibre",
-    label: "Fibre pathways",
-    level: fibreBoost ? "strong" : levelFor(input.prebiotic_score),
+    label: "Fibre",
+    level: fibreBoost ? "strong" : "low",
     color: LIME,
-    effect: fibreBoost || input.prebiotic_score >= 40 ? "Prebiotic fibre flows down to feed your microbes" : "Not much fibre reached your microbes here",
-    why: "Prebiotic fibre is the food your resident microbes actually eat. Beans, lentils, oats and a variety of plants keep those pathways glowing.",
+    effect: fibreBoost ? "Beans, grains or vegetables brought fibre to this plate" : "Not much fibre in this one",
+    why: "Fibre is what plants bring to a meal. Beans, lentils, oats, wholegrains and a wide variety of vegetables are the richest everyday sources.",
   })
 
   /* Plant diversity / polyphenols */
@@ -93,7 +123,7 @@ export function mealImpact(input: MealImpactInput): MealImpactRow[] {
       level: "strong",
       color: YELLOW,
       effect: "Omega-rich fats support the calm, steady side of the system",
-      why: "Olive oil, oily fish, nuts and avocado bring fats associated with a calmer, better-supported system — they help the postbiotic follow-through land.",
+      why: "Olive oil, oily fish, nuts and avocado bring fats associated with a calmer, better-supported system.",
     })
   }
 
@@ -111,7 +141,7 @@ export function mealImpact(input: MealImpactInput): MealImpactRow[] {
 
   /* Ultra-processed strain */
   const strained = hasTag(tags, "Needs Work", "Low Biotics") || nameHas(input.meal_name, ...UPF_WORDS)
-  if (strained && input.prebiotic_score < 40 && input.probiotic_score < 40) {
+  if (strained) {
     rows.push({
       key: "strain",
       label: "Ultra-processed strain",
@@ -121,19 +151,6 @@ export function mealImpact(input: MealImpactInput): MealImpactRow[] {
       why: "Heavily processed meals give your microbes little to work with and may strain the system's rhythm. No guilt — the next plant-rich meal starts the recovery.",
     })
   }
-
-  /* Postbiotic potential — the follow-through */
-  rows.push({
-    key: "postbiotic",
-    label: "Postbiotic potential",
-    level: levelFor(input.postbiotic_score),
-    color: YELLOW,
-    effect:
-      input.postbiotic_score >= 40
-        ? "Well-fed microbes can give back — postbiotic potential rises"
-        : "Low follow-through — feed the first two and this rises",
-    why: "When fibre and fermented foods both feature regularly, your microbes typically produce postbiotic compounds associated with comfort and steady energy — the system giving back.",
-  })
 
   // Strongest signals first; strain always surfaces near the top.
   const order: Record<ImpactLevel, number> = { strain: 0, strong: 1, moderate: 2, low: 3 }

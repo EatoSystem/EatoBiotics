@@ -1822,3 +1822,205 @@ somebody audits it, because the tab set is pinned: the close claim does not
 silently extend to a surface nobody checked.
 
 ---
+
+## 0R-5 · SITE-LEVEL CLOSE RECORD
+
+> **Real data does not legitimise an invalid construct.** A personal Biotic
+> score, ranking, biological-state visual, anatomical response or causal
+> statement remains prohibited even when every underlying number is genuine.
+>
+> **Truthful inputs can still produce an untruthful product claim.**
+
+Nothing 0R-5 removed was fabricated. That is what separates it from 0R-4, and it
+is also why 0R-4 could not close any of it: a guard that refuses *invented*
+member data passes every construct below.
+
+### The trace found SEVEN live sites of `P0-SCIENCE-01`'s class. The register named three.
+
+| # | site | in the Experience 0 register? | what rendered |
+|---|---|---|---|
+| 1 | `live-dashboard.tsx` · `MealCard` | **yes** (`P0-SCIENCE-01`) | three per-Biotic `ScoreBar`s from `meal.biotics` |
+| 2 | `live-dashboard.tsx` · `FirstMealCelebration` | no | the same triple from `result.*_score`, on the activation moment |
+| 3 | `live-dashboard.tsx` · logger result | no | the same triple from `r.*_score` |
+| 4 | `components/account/daily-loop-card.tsx` | **no** | *"Today's focus · Probiotics (23/100)"* + a Biotic-coloured dot |
+| 5 | `components/account/twin/twin-stage.tsx` · `BioticBar` | **no** | the Biotic **named**, the score as a **number**, a per-Biotic **colour**, and a **bar whose width is the score** — ungated, for every member with a Twin |
+| 6 | `components/account/twin/quick-log.tsx` · `BIOTIC_META` | **no** | the same four forms on every QuickLog result |
+| 7 | `lib/account/meal-impact.ts` | ledger only | a Biotic-named **row**, a score-derived **band word**, a possessive **mechanism** |
+
+Plus one **latent**: `app/account/report/[id]/report-client.tsx:342-344`.
+`lib/v1-surface.ts:360` classifies `/account/report/[id]` as `POST_V1`, so
+`isServableInV1` is false and `proxy.ts:152` refuses it in every environment.
+Recorded with its reachability and **not repaired** — the `P0-SCIENCE-07`
+precedent.
+
+**The 0R-4 close record above says "three per-Biotic `ScoreBar` triples survive".
+That count was wrong: there were four, and the fourth is the latent one.** The
+statement is corrected here rather than edited there, because the 0R-4 record is
+what was measured at the time.
+
+#### Why sites 4, 5 and 6 escaped two audits
+
+| | |
+|---|---|
+| **site 4** | `PillarKey` is `"prebiotics" \| "probiotics" \| "postbiotics"`, so `t.pillars[focus.key]` printed a **Biotic**, not an observable domain — and the words were in an i18n dictionary, not in the component |
+| **site 5** | `twin-stage.tsx` was **source-only** audited in Experience 0, because `/account/twin` is `POST_V1`. The component is mounted on live `/account` by `live-dashboard.tsx:1113`, so the audit read the right file in the wrong context. And `BIOTIC_NAME[biotic]` is a lookup table: a corpus scan sees `${BIOTIC_NAME[biotic]}` and no Biotic at all |
+| **site 6** | `BIOTIC_META`'s labels are data, and its values arrive through `pick: (r) => r.probiotic_score` |
+
+Sites 5 and 6 are the **ninth and tenth** instances of the interpolation
+blindness this programme has now hit repeatedly, and the reason
+`tests/unit/agent-loop-claims.test.ts` exists. Site 5 was found by widening
+`biotic-visual-encoding.test.ts`'s sinks from colour to **extent** — which is
+the promise that file's own header made in 0R-2 and did not implement.
+
+#### How site 4 was reachable, and why that is familiar
+
+`DailyLoopCard` renders under `!twin && dailyLoop`, and its focus needed
+`bioticsProfile`. Those look mutually exclusive and are not:
+
+| query | scope |
+|---|---|
+| `bioticsProfile` | the last **five** analyses, **no date window** |
+| `recentAnalyses` | the last **seven days** |
+
+A member whose most recent meal is eight days old and who never completed the
+assessment has `twinScore == null` and `recentAnalyses.length === 0` — so no
+Twin — and a non-null `bioticsProfile`. **Two queries over one table with
+different filters, one of them feeding a render gate**: the identical asymmetry
+that made `P0-TRUST-02` reachable in production, with a date window in place of
+a null check.
+
+### Entire findings closed
+
+| finding | sites closed | evidence |
+|---|---|---|
+| `P0-SCIENCE-01` | **7 live** (the register's 3 + 4 it never named) | source pins + rendered proof per manifestation |
+| `P0-SCIENCE-03` | the last site, `:1896` → `:1935-1958` | retired whole; see below |
+| `P0-SCIENCE-04` | **2** — `twin-stage.tsx:284` (live) and `TwinVisualState.auraGradient` (computed, zero consumers) | rendered aura colour + a varied-Biotics unit proof |
+| `P0-SCIENCE-05` | **4** — `ritual.ts` coordinates, the `twin-stage.tsx` `signals` prop contract, `daily-ritual.tsx`'s asserted response, and `meal-impact.ts`'s whole per-Biotic pipeline | rendered tick + behavioural assertions |
+
+**`P0-SCIENCE-05` was broader than the sentence the register named**, and this is
+recorded deliberately. The register named `ritual.ts`'s coordinates;
+`biotic-claims.test.ts`'s derived ledger found the `effect` string beside them
+and a second producer, `meal-impact.ts`, carrying the identical sentence.
+Tracing those two ledger entries is what exposed `meal-impact.ts`'s band word,
+its Biotic-named row, and its fermented-food-implies-probiotic inference — none
+of which any register entry contained.
+
+### `P0-SCIENCE-03:1896` — retired, not reworded
+
+The "Monthly Focus" card, at `:1935-1958` after the 0R-4 repairs:
+
+> *"Your Prebiotics have been strong but your Probiotics are pulling down your
+> Biotics Score™. One fermented food daily for 30 days changes this."*
+
+Four prohibited constructs in two sentences: two personal per-Biotic states, a
+**causal mechanism** between them, and a 30-day outcome promise.
+
+**Derivation: none.** `twin`, `displayBiotics` and every per-Biotic field appear
+**zero times** in the block — the eyebrow, the heading, both sentences and the
+link were all literals. Identical in shape to `P0-TRUST-03`, and retired for the
+identical reason: there was no computation to correct and no member-specific
+content to preserve. The member's genuine next action is derived by
+`TwinNextAction` and is unaffected.
+
+*Consequence, recorded rather than claimed as a repair:* the block's
+`<Link href="#">` was one of the dead destinations inventoried for 0R-8 and goes
+with the card.
+
+### `lib/habit.ts` is deleted
+
+Its entire exported surface was `focusPillar` — *"the weakest pillar, the one
+with the most room to improve"* — and `dailyNudge`, which returned that pillar
+with the member's score for it. `PillarKey` is a Biotic, so the module's only
+job was a comparative personal Biotic verdict, and its only two callers rendered
+it on `DailyLoopCard`. Removed rather than left unwired, on the
+`MOCK_CONSULTATIONS` precedent: a dead construct is a re-wiring hazard, not
+harmless. Asserted absent by a file-existence check, because a source pin cannot
+read a file that should not be there.
+
+### What a member can still see
+
+The removal half of the close criterion is above; this is the other half, and it
+is the part a repair can get wrong by over-reaching.
+
+| kept | where |
+|---|---|
+| the meal's own Meal Biotics Score, as a ring and a number | `MealCard`, `FirstMealCelebration`, the logger result, `QuickLog` |
+| Meal Quality — Diversity, Anti-inflammatory | the same cards, through the same shared `ScoreBar` |
+| Nutrition Context, insight, tags | unchanged |
+| the Food System Score, the delta since baseline, the 14-day meal-signal sparkline, the next best action | the Twin stage cockpit |
+| the five ritual taps, the streak, the 7-day rhythm bar | `DailyRitual` — all genuine self-report |
+| the observable meal-impact rows: fibre, plants, fats, protein, processing | `MealImpactChips` |
+| general Three-Biotics education | `/biotics`, the framework cards, hotspot `what` copy — untouched |
+
+The hotspot tint a member sees on **tapping** a hotspot is unchanged: the
+colours are byte-identical, keyed now on a static `AuraTone` declared beside the
+hotspot rather than on a `BioticKey`.
+
+### Instrument defects 0R-5 found in its own guards
+
+Recorded rather than smoothed over, as every tranche in this programme has done.
+
+| # | defect | how it was found |
+|---|---|---|
+| 1 | `BIOTICS_ANY` matched the capitalised **plural** and lowercase either way, but **not the capitalised singular** — so *"Prebiotic fibre flows down to feed your microbes"*, the exact sentence shipped on live `/account`, walked through the behavioural guard. **Gate 3.7's case 1097 recorded this hole on the lowercase side and it stayed open on the other side for two more gates.** Now a character class, so there is no fourth variant to forget | sabotage 1504 |
+| 2 | the widened per-Biotic-score rule missed the **plural property path** `twin.biotics.prebiotics.score` — the trailing `s` defeats the word boundary, and that is the exact path the worst live site used | its own non-vacuity case |
+| 3 | the first `live-dashboard.tsx` pin flagged `MealEntry`, which is `MOCK_MEALS`' own type and 0R-9's. **The `BioticsProgressPanel` lesson from case 1080 repeated**: pin the signature, not the word. The rule was narrowed rather than the scope widened | first run of the pin |
+| 4 | the non-vacuity case for the bar was a **single `style` line**, which carries no Biotic read at all — the signature and the call site were the other two thirds of the flow. Malformed case, corrected rather than the rule weakened | first run |
+| 5 | **no non-vacuity subject isolated the extent sink.** Every subject also carried a colour word, so nulling the new sink broke nothing | sabotage 1506 |
+| 6 | `quick-log.tsx` was repaired as site 6 and was **in no instrument at all**, so the case restoring its contract had nothing to fail against | writing sabotage 1493 |
+| 7 | `MODULES_AT_0R5_CLOSE`, which replaced the deleted inventory, inherited the inventory's old weakness in a new shape: the test iterates the pin, so **emptying the pin makes it pass over zero entries** | sabotage 1462, repointed |
+
+### A limitation of `EXPOSED_AT_0R1`, reported rather than worked around
+
+`isExposedAt0R1(file, rule)` suspends a rule for a whole **file**, and
+`live-dashboard.tsx` carried **two distinct defects under one rule**
+(*"a Biotic claimed as a person's own"*): `MOCK_MEALS`' fabricated insight —
+*"the kimchi lifts your probiotic score significantly"*, which is 0R-9's — and
+the Monthly Focus sentence, which was 0R-5's. **Repairing one cannot be proved
+through that ledger, because the other keeps the rule matching.**
+
+The inventory already carries an `example` per entry and does not consult it.
+Scoping the suspension to the matched text — over `matchAll`, not the first hit
+— is the strengthening this wants. It is deliberately **not** done in 0R-5: it
+changes the ledger's semantics for all nineteen entries. The one sentence 0R-5
+owns is pinned in `NO_PERSONAL_BIOTIC_NUMBER` instead, where the proof is
+unambiguous, and the strengthening is recorded here as the fix.
+
+### A limitation of the sabotage harness, also reported
+
+The assertion that `lib/habit.ts` does not exist **cannot be sabotaged**.
+`tools/sabotage/run.py` mutates a find/replace inside an existing file; it
+cannot create one, and `collectable()` refuses targets outside `tests/**`. A
+case that pretended to restore the module would be testing the harness's own
+plumbing. Recorded in `cases_0r.py` instead of engineered around.
+
+### New debt recorded, not repaired
+
+`components/account/live-dashboard.tsx` carries a **second** fabricated member
+meal, as an **inline literal**:
+
+```tsx
+const r = liveResult ?? {
+  meal_name: "Mackerel, kimchi & asparagus", biotics_score: 71,
+  prebiotic_score: 72, probiotic_score: 18, postbiotic_score: 41,
+  insight: "Your mackerel is delivering omega-3s…", …
+}
+```
+
+0R-4's fabrication guard keys on the `MOCK_`/`DEMO_` **naming convention**, so
+not one assertion in it could see this shape — which is how a complete
+fabricated meal survived a tranche whose whole subject was fabricated meals.
+
+**It appears structurally unreachable.** `loggerState` becomes `"result"` only at
+`handleAnalyse`'s `setLiveResult(data); setLoggerState("result")`, and
+`/api/analyse-meal:124` is the single 200 response, returning a non-null object
+— so `liveResult` is never falsy while that branch renders.
+
+It is still debt: an unreachable fabricated literal is one API change from being
+a reachable one. Inventoried beside `DEBT-CODE-01`, shrink-only, cap equal to
+list, reaching **zero at 0R-9**. The guard gap is closed now — the rule reads the
+literal's **values**, so a zero-filled default (`?? { calories: 0, … }`) is
+absence and a non-zero figure or non-empty string is content.
+
+---

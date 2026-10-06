@@ -372,6 +372,143 @@ describe("0R-4 · no live member surface consumes a mock member-history constant
     ).toEqual([])
   })
 
+  /*
+   * ══ 0R-5 · THE NAMING-CONVENTION BLIND SPOT, CLOSED ═══════════════════════
+   *
+   * Everything above keys on the `MOCK_`/`DEMO_` naming convention, and the
+   * rule one screen up calls itself "deliberately blunt". 0R-5's trace found
+   * what blunt instrument it actually is:
+   *
+   *     const r = liveResult ?? {
+   *       meal_name: "Mackerel, kimchi & asparagus", biotics_score: 71,
+   *       prebiotic_score: 72, probiotic_score: 18, postbiotic_score: 41,
+   *       insight: "Your mackerel is delivering omega-3s…", …
+   *     }
+   *
+   * A complete fabricated member meal — name, scores, nutrition, insight prose
+   * and tags — written as an INLINE LITERAL. It is not called `MOCK_` anything,
+   * so not one assertion in this file could see it, and it sat four lines above
+   * a block 0R-5 had to edit anyway.
+   *
+   * ── WHY IT IS INVENTORIED AND NOT DELETED HERE ───────────────────────────
+   *
+   * It appears structurally UNREACHABLE. `loggerState` becomes `"result"` only
+   * at `handleAnalyse`'s `setLiveResult(data); setLoggerState("result")`, and
+   * `/api/analyse-meal`'s single 200 response is `NextResponse.json(result)`
+   * with `result` a non-null object — so `liveResult` is never falsy while the
+   * branch renders. Deleting it would change what that branch renders, which is
+   * a product-behaviour change outside this tranche's four authorised items.
+   *
+   * It is still debt. An unreachable fabricated literal is one API change from
+   * being a reachable one, and it must stay VISIBLE until the debt tranche
+   * removes it with `MOCK_MEALS`. Shrink-only, cap equal to list, zero at 0R-9.
+   *
+   * ── WHAT THE RULE DISTINGUISHES, AND WHY THAT LINE IS THE RIGHT ONE ──────
+   *
+   * Not every object-literal fallback is a fabrication. Four lines of the same
+   * file read:
+   *
+   *     nutrition: a.nutrition_json ?? { calories: 0, protein: 0, fat: 0, … }
+   *
+   * Zeros are ABSENCE rendered as absence — the thing 0R-4 asked for. What is
+   * forbidden is substituting CONTENT: a non-zero figure or a non-empty string
+   * nobody logged. So the rule reads the VALUES, not the shape.
+   */
+  const INLINE_FABRICATION_SITES: readonly [snippet: string, why: string][] = [
+    [
+      'meal_name: "Mackerel, kimchi & asparagus"',
+      "DEBT-CODE-01's twin — the `liveResult ?? {…}` logger-result fallback, unreachable while /api/analyse-meal's only 200 returns a non-null object. 0R-9 deletes it with MOCK_MEALS.",
+    ],
+  ]
+  const INLINE_FABRICATION_SITES_AT_0R5_CLOSE = 1
+
+  /** Every `?? { … }` fallback in the file, as balanced source text. */
+  function objectLiteralFallbacks(src: string): string[] {
+    const out: string[] = []
+    const re = /\?\?\s*\{/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(src)) !== null) {
+      let depth = 0
+      let i = m.index + m[0].length - 1
+      for (; i < src.length; i++) {
+        if (src[i] === "{") depth++
+        else if (src[i] === "}") {
+          depth--
+          if (depth === 0) break
+        }
+      }
+      out.push(src.slice(m.index, i + 1))
+    }
+    return out
+  }
+
+  /** Content, not absence: a non-zero figure or a non-empty string. */
+  function substitutesContent(literal: string): boolean {
+    return /:\s*-?[1-9]\d*(?:\.\d+)?\b/.test(literal) || /:\s*"[^"]+"/.test(literal)
+  }
+
+  it("no inline object literal substitutes fabricated member content", () => {
+    const src = rendered(DASHBOARD)
+    const fallbacks = objectLiteralFallbacks(src)
+    expect(
+      fallbacks.length,
+      "no `?? { … }` fallback was found at all, so this assertion examined nothing",
+    ).toBeGreaterThan(0)
+
+    const fabrications = fallbacks
+      .filter(substitutesContent)
+      .filter((lit) => !INLINE_FABRICATION_SITES.some(([snippet]) => lit.includes(snippet)))
+
+    expect(
+      fabrications.map((f) => f.slice(0, 120)),
+      `an inline object literal substitutes invented member content for missing ` +
+        `data. The 0R-4 rules key on the MOCK_/DEMO_ naming convention and ` +
+        `cannot see this shape — which is how one survived 0R-4 entirely. ` +
+        `Render absence, or inventory it with its reachability.`,
+    ).toEqual([])
+  })
+
+  it("the inline-fabrication inventory may only shrink, and carries no headroom", () => {
+    const found = objectLiteralFallbacks(rendered(DASHBOARD)).filter(substitutesContent)
+    expect(
+      found.length,
+      "a NEW inline fabricated literal is a regression, not debt to record",
+    ).toBeLessThanOrEqual(INLINE_FABRICATION_SITES_AT_0R5_CLOSE)
+    expect(
+      INLINE_FABRICATION_SITES_AT_0R5_CLOSE,
+      `the cap is ${INLINE_FABRICATION_SITES_AT_0R5_CLOSE} while ${found.length} ` +
+        `inline fabrications remain. It moves DOWN only, and reaches zero at 0R-9.`,
+    ).toBe(found.length)
+  })
+
+  it("every inventoried inline fabrication still exists", () => {
+    const src = rendered(DASHBOARD)
+    for (const [snippet, why] of INLINE_FABRICATION_SITES) {
+      expect(
+        src.includes(snippet),
+        `an inventoried inline fabrication is gone — DELETE its entry: ${why}`,
+      ).toBe(true)
+    }
+  })
+
+  it("NON-VACUITY: the rule tells invented content from rendered absence", () => {
+    const fabrication =
+      '?? { meal_name: "Mackerel, kimchi & asparagus", biotics_score: 71, prebiotic_score: 72 }'
+    const absence = "?? { calories: 0, protein: 0, carbs: 0, fat: 0, fibre: 0 }"
+    const emptyStrings = '?? { meal_name: "", insight: "" }'
+    expect(substitutesContent(fabrication), "missed the literal that shipped").toBe(true)
+    expect(substitutesContent(absence), "flagged a zero-filled default — absence is not fabrication").toBe(false)
+    expect(substitutesContent(emptyStrings), "flagged empty strings").toBe(false)
+  })
+
+  it("NON-VACUITY: the brace matcher reads a nested literal whole", () => {
+    const src = 'const r = liveResult ?? { a: 1, nutrition: { calories: 385 }, tags: ["x"] }\nconst q = 2'
+    const [found] = objectLiteralFallbacks(src)
+    expect(found, "the matcher stopped at the inner closing brace").toBe(
+      '?? { a: 1, nutrition: { calories: 385 }, tags: ["x"] }',
+    )
+  })
+
   it("MOCK_CONSULTATIONS is gone entirely, declaration included", () => {
     /*
      * Unlike MOCK_MEALS it had no surviving reader once the fabricated count

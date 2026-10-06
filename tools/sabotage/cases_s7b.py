@@ -101,6 +101,8 @@ EARLYT = ["tests/unit/early-access.test.ts"]
 SURFACET = ["tests/unit/v1-surface.test.ts"]
 HIER = ["tests/unit/score-hierarchy.test.ts"]
 BIOTIC = ["tests/unit/biotic-claims.test.ts"]
+# 0R-5: case 1007 was repointed here — see its note below.
+RITUAL = "lib/account/ritual.ts"
 RETIRED = ["tests/unit/retired-vocabulary.test.ts"]
 VOCAB = ["tests/unit/retired-vocabulary.test.ts"]
 
@@ -684,9 +686,27 @@ CASES = [
 
     # ── Tranche 2D — account, twin, condition and demo surfaces ─────────────
 
-    (1007, "a meal insight asserts colonisation again", MEALIMPACT,
-     '    why: "Foods transformed by fermentation are the one pathway that brings microbial material in from outside',
-     '    why: "Fermented foods carry living microbes that join and diversify your inner community, bringing material in from outside',
+    # ── REPOINTED AT 0R-5, AND THE FIRST ATTEMPT WAS WRONG ─────────────────
+    #
+    # The anchor was the `why` of `meal-impact.ts`'s PROBIOTIC row, which 0R-5
+    # deleted whole: the row was `P0-SCIENCE-05`'s live per-Biotic construct —
+    # a Biotic-named label, a band word from `input.probiotic_score`, and a
+    # possessive mechanism. The anchor vanished because the row did, which is
+    # the outcome this case wanted.
+    #
+    # First re-aimed at the FIBRE row's `why` in the same file, and it SLIPPED.
+    # The rule that caught the original is "fermented food asserted to deliver
+    # or contain live organisms", and it needs the word FERMENTED — which 0R-5
+    # removed from that module along with the row. Moving the claim to a fibre
+    # row changed the property, not just the anchor.
+    #
+    # Re-aimed instead at `lib/account/ritual.ts`, which still names a fermented
+    # food on a live surface, so the property keeps a real subject. The earlier
+    # miss is left recorded: a lexically-keyed rule follows the WORD, and
+    # repointing a case must follow the word too.
+    (1007, "a self-report acknowledgement says a fermented food delivers live organisms", RITUAL,
+     '''  { key: "fermented", label: "Fermented food", ack: "Noted — that's today's fermented food logged.", color: "#2DAA6E" },''',
+     '''  { key: "fermented", label: "Fermented food", ack: "Noted — that fermented food delivers live cultures into your gut.", color: "#2DAA6E" },''',
      BIOTIC),
 
     (1008, "the dashboard says a food delivers live cultures", SCOREPREVIEW,

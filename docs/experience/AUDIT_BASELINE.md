@@ -605,3 +605,111 @@ under *0R-4 · Site-level close record*. In summary: `P0-TRUST-01`, `-02` and
 `P0-SCIENCE-03` closed at `:1757` and `:1885` only, with **`:1896` remaining
 0R-5's**; `P0-SCIENCE-01`, `-04`, `-05` untouched; `DEBT-CODE-01` remaining
 0R-9's.
+
+---
+
+## 14 · Experience 0R-5 (`P0-SCIENCE-01/-03:1896/-04/-05`) — the gate
+
+### The red state, measured before any product code changed
+
+Guards first, and the numbers recorded so the enforcement is demonstrably
+load-bearing rather than retrospectively green:
+
+| instrument | red |
+|---|---|
+| `biotic-visual-encoding.test.ts` | **5 failed / 19** |
+| `biotic-claims.test.ts` | **4 failed / 506** |
+| `agent-loop-claims.test.ts` | **6 failed / 63** |
+| `live-dashboard-fabrication.test.ts` | 28 passed — the `:1482` inline fabrication is **inventoried** debt, not a regression; the rule is proved non-vacuous against the literal that shipped |
+
+The widened per-Biotic-score rule is what found `lib/account/meal-impact.ts`
+mapping a score to a band and a chip colour — a site no inventory had named.
+
+### The gate on the committed head
+
+| | |
+|---|---|
+| `tsc --noEmit` | **clean** |
+| `npx eslint .` | **0 errors**, **96 warnings** — exactly the `ef17b98` baseline, diffed by file and rule: **nothing appeared, nothing disappeared** |
+| unit suite | **229 files · 6602 passed · 2 skipped** |
+| `check-ai-guard` · `check-schema-drift` · `check-supabase-scoping` | **all three pass** |
+| `next build` | **succeeds** |
+| Playwright, full suite | **266 / 266** (6.9m) — six more than 0R-4's 260, the six new science proofs |
+| **new** cases `1482–1509` (27 cases; `1505` is a documented harness limitation, not a case) | **27 / 27 caught**, on their own line and NOT folded into the suite result |
+| `run_0r`, whole suite | **59 / 59** |
+| base | **26 / 26** |
+| `v1` · `s3` · `s4` · `s5` · `s6` · `s7` | **10/10 · 12/12 · 8/8 · 10/10 · 14/14 · 30/30** |
+| `s7b` | **171 / 171** |
+| `g4` · `g5` · `g6` · `g61` | **44/44 · 65/65 · 18/18 · 22/22** |
+| **`s3a`** | **2 / 35 caught, 33 broken** — reported separately, never folded into "all green" |
+
+**Thirteen suites at full count, one documented exception. No new slip survives.**
+
+### `s3a` — the standing exception, with a correction to how it has been described
+
+The same 33 ids as every close since Gate 6.0: `336–358`, `360`, `362–370`.
+**Not an 0R-5 regression.** But the 0R-4 ledger called them "every one a
+`FILE MISSING` anchor against unmerged PR #274", and measured now that is not
+quite true:
+
+| mode | count |
+|---|---|
+| `FILE MISSING` (unmerged PR #274) | **31** |
+| `ANCHOR MISSING` in `package.json` | **2** — cases `364` (`"pdfjs-dist": "4.10.38"`) and `365` (`"node": ">=20 <21"`), both superseded by the Node 24 pin move |
+
+The count and the ids are unchanged; only the earlier characterisation was
+imprecise, and it is corrected here from evidence rather than repeated.
+
+### Four sabotage cases repointed, and one that had to be repointed twice
+
+Anchors that vanished **because 0R-5 repaired the defect they attacked** —
+`ANCHOR MISSING`, not a slip, and handled on the Gate 4 precedent of repointing
+with the reason inline rather than retiring the property:
+
+| case | its anchor | where it points now |
+|---|---|---|
+| `1462` | `VISUAL_ENTRIES_AT_OPEN = 4` — the inventory cap, deleted with the inventory | `MODULES_AT_0R5_CLOSE`, its successor. **Then genuinely SLIPPED**, because emptying the new pin made the test iterate nothing; the pin now has a literal that must equal its length |
+| `1463` | `biotic: BioticKey` on `SystemHotspot`, removed | puts the key **back** beside the static `tone`, so the property is unchanged |
+| `1465` | the `ritual.ts` ledger entry, closed | `lib/assessment-scoring.ts`, the one 0R-2 finding still open |
+| `1007` | the probiotic row's `why` in `meal-impact.ts`, deleted | **first re-aimed at the fibre row in the same file and slipped** — the rule that catches it is *"fermented food asserted to deliver or contain live organisms"* and needs the word **fermented**, which 0R-5 removed from that module with the row. Re-aimed at `lib/account/ritual.ts`, which still names a fermented food on a live surface |
+
+`1007` is the useful one: **a lexically-keyed rule follows the word, so
+repointing a case must follow the word too.** Moving the claim to a fibre row
+changed the property rather than the anchor, and the miss is left recorded in
+the case file.
+
+### The lint delta, attributed rather than reported
+
+The rule adopted at the 0R-4 close was applied. The count went **96 → 100**
+mid-tranche, and the diff by file and rule named all four:
+
+```
+APPEARED:
+  +1  app/account/today/page.tsx                   [no-unused-vars]  bioticsProfile
+  +1  lib/account/meal-impact.ts                   [no-unused-vars]  TEAL
+  +2  components/account/twin/daily-ritual.tsx     [no-unused-vars]  Image, figureSrc
+```
+
+All four were **leftovers of 0R-5's own repairs** — a query with no reader, the
+colour of a deleted row, and the image of a body the component no longer draws.
+Each was removed with the thing it belonged to, which is not "cleaning unrelated
+warnings": it is reading what the warning said about the change in hand. The
+count returned to 96 with a zero diff both ways.
+
+### Instrument defects found, and two limitations reported
+
+Seven defects in 0R-5's own guards, each recorded in the register's close record
+with how it was found — including `BIOTICS_ANY` missing the capitalised singular
+(the Gate 3.7 case-1097 hole, still open on the other side two gates later), a
+per-Biotic rule that missed the plural property path the worst live site used,
+and a replacement pin that passed when emptied.
+
+Two properties an existing instrument could not express were **reported rather
+than worked around**, as the brief required: `EXPOSED_AT_0R1`'s file-level
+granularity, and the harness's inability to sabotage a file-absence assertion.
+
+### The capture corpus
+
+Playwright regenerates part of `docs/experience/audit/`. That is the measured
+`NOTE-CAPTURE-01` residual: the frozen corpus is the *before* evidence, so it is
+**restored, not committed**.

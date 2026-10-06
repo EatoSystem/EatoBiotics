@@ -1269,6 +1269,142 @@ const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
     "the generated image must not read a sub-score from the query string; old links still carry them and are ignored",
     [/searchParams\.get\(\s*"(feed|seed|heal|prebiotics|probiotics|postbiotics)"/, /\bpScore\b/],
   ],
+
+  /* ══ FOUR PINS ADDED AT 0R-5 ═══════════════════════════════════════════════
+   *
+   * ── WHY THESE ARE PINS AND NOT PROSE RULES ───────────────────────────────
+   *
+   * `P0-SCIENCE-01`'s surviving constructs render REAL member data. Nothing is
+   * fabricated, which is precisely why 0R-4 could not close them and why the
+   * prose rules cannot see them: the word "Prebiotic" is a `label` prop beside
+   * a number that arrives from the database, and the band word is a lookup in
+   * another module. This table exists for invariants about a FILE'S WIRING, and
+   * these are four of those.
+   *
+   * ── A LIMITATION OF `EXPOSED_AT_0R1`, RECORDED RATHER THAN WORKED AROUND ──
+   *
+   * `isExposedAt0R1(file, rule)` suspends a rule for a whole FILE, and
+   * `live-dashboard.tsx` now carries TWO distinct defects under the single rule
+   * "a Biotic claimed as a person's own": `MOCK_MEALS`' fabricated insight
+   * ("the kimchi lifts your probiotic score significantly" — 0R-9's) and the
+   * Monthly Focus sentence ("your Probiotics are pulling down your Biotics
+   * Score™" — 0R-5's). Repairing one cannot be PROVED through that ledger,
+   * because the other keeps the rule matching.
+   *
+   * The inventory already carries an `example` per entry and does not consult
+   * it. Scoping the suspension to the matched text — over `matchAll`, not the
+   * first hit — is the strengthening this wants, and it is deliberately NOT
+   * done here: it changes the ledger's semantics for all nineteen entries, and
+   * 0R-5 is not the tranche for that. It is recorded in the register as an
+   * instrument limitation with its fix, and the one sentence 0R-5 owns is
+   * pinned below where the proof is unambiguous.
+   */
+  [
+    "components/account/live-dashboard.tsx",
+    "live /account must not render a personal per-Biotic bar, promise a per-Biotic breakdown, or carry the Monthly Focus mechanism — the values being REAL is what makes this a science finding rather than a trust one",
+    [
+      /*
+       * The three live `ScoreBar` triples — `MealCard`, `FirstMealCelebration`
+       * and the logger result. One rule covers all three because the construct
+       * is identical and the label is the only thing in the source that names a
+       * Biotic. The Meal Quality bars (`Diversity`, `Anti-inflammatory`) use
+       * the same shared component and must keep passing.
+       */
+      /<ScoreBar\s+label="(?:Pre|Pro|Post)biotic"/,
+      /*
+       * …and the card must not be STRUCTURALLY capable of carrying them.
+       *
+       * THE SIGNATURE, NOT THE WORD — the `BioticsProgressPanel` lesson from
+       * case 1080, and this pin repeated the mistake on its first run. Written
+       * as `/biotics:\s*\{\s*prebiotic:\s*number/`, it flagged `MealEntry`,
+       * which is `MOCK_MEALS`' OWN TYPE and is 0R-9's to delete with the
+       * constant. The rule was narrowed rather than the scope widened — the
+       * same correction 0R-4 made to its first `ScoreBar` rule.
+       */
+      /function MealCard\([^)]*biotics/,
+      /^\s*biotics\?:/m,
+      /\bmeal\.biotics\b/,
+      // The first-use promise, at both of its sites.
+      /Prebiotic, Probiotic, and Postbiotic value/,
+      /Your Biotics score is built/,
+      /Biotics score breakdown/,
+      // `P0-SCIENCE-03`'s third site — the Monthly Focus card, every string of
+      // which is a literal: `twin` and `displayBiotics` appear zero times in it.
+      /pulling down/,
+      /This month(?:&apos;|')s focus/,
+      /fermented food gap/,
+      /30 days changes this/,
+    ],
+  ],
+  [
+    "lib/account/meal-impact.ts",
+    "the meal-impact producer may describe the meal; it must not describe the member's Biotic biology — no Biotic-named row, no score-derived band, no possessive mechanism, and no fermented-food-implies-probiotic-effect inference",
+    [
+      /*
+       * The three score fields go from the INPUT CONTRACT, not merely from the
+       * rows — the `sequence-email.ts` precedent two pins up: "a field it still
+       * accepted would be an invitation to render it again".
+       */
+      /\b(?:pre|pro|post)biotic_score\b/,
+      // The two Biotic-named rows.
+      /Probiotic network/,
+      /Postbiotic potential/,
+      // The possessive mechanisms, including the one the 0R-2 ledger found.
+      /your probiotic network/,
+      /Prebiotic fibre flows down/,
+      /postbiotic potential rises/,
+      /postbiotic follow-through/,
+      // Fermented food classified as a personal probiotic effect.
+      /\bprobioticBoost\b/,
+    ],
+  ],
+  [
+    "lib/account/ritual.ts",
+    "a self-reported tap may be recorded; it may not be given a body coordinate or a Biotic mechanism",
+    [
+      /\bnode\s*:\s*\{\s*x\s*:/,
+      /lights up your probiotic network/,
+      /\beffect\s*:/,
+    ],
+  ],
+  /*
+   * ── THE FIFTH SITE, FOUND BY 0R-5'S TRACE AND IN NO REGISTER ENTRY ───────
+   *
+   * `DailyLoopCard` rendered "Today's focus · Probiotics (23/100)" with a
+   * Biotic-coloured dot, on live `/account`. `PillarKey` is
+   * `"prebiotics" | "probiotics" | "postbiotics"`, so this was the weakest
+   * Biotic named, scored and coloured — and `lib/habit.ts` existed for no other
+   * purpose, so it is deleted (asserted in `agent-loop-claims.test.ts`).
+   *
+   * Pinned at the card AND at both producers, because the construct needs
+   * three files to exist and removing any one of them alone leaves the rest
+   * waiting.
+   */
+  [
+    "components/account/daily-loop-card.tsx",
+    "the daily loop card reports the streak; it must not name, score or colour a Biotic",
+    [/\bfocus\b/, /\bPillarKey\b/, /t\.pillars\[/, /t\.pillarNudges\[/, /\/100\)/],
+  ],
+  [
+    "app/account/page.tsx",
+    "the live account page must not compute a weakest-Biotic nudge, nor hand the dashboard a per-Biotic profile",
+    [/\bdailyNudge\b/, /\bfocusPillar\b/, /@\/lib\/habit/, /biotics=\{/],
+  ],
+  [
+    "app/account/today/page.tsx",
+    "the second producer of the same nudge — POST_V1-refused, and repaired with the live one so it cannot come back through the shared card",
+    [/\bdailyNudge\b/, /\bfocusPillar\b/, /@\/lib\/habit/],
+  ],
+  [
+    "components/account/twin/daily-ritual.tsx",
+    "the ritual acknowledges what the member reported, never what their body did",
+    [
+      /Your body just felt that/i,
+      /Your body reacts to each one/i,
+      /felt all of it/i,
+      /check\.node/,
+    ],
+  ],
 ]
 
 describe("no Biotic carries a personal number", () => {
@@ -1637,17 +1773,22 @@ const KNOWN_UNCORRECTED: readonly [file: string, rule: string][] = [
    * invisible to this ledger until `PERSONAL_BIOTIC_STATE` was added to it.
    * Each is deleted by the 0R stage that repairs it — the test below refuses a
    * stale entry, so none can outlive its defect.
+   *
+   * ── TWO OF THE THREE ARE CLOSED AT 0R-5, AND THE LEDGER EARNED ITS KEEP ──
+   *
+   * Both entries read "a Biotic claimed as a person's own" for the one sentence
+   * `lib/account/meal-impact.ts` and `lib/account/ritual.ts` shared:
+   * "A fermented food lights up your probiotic network".
+   *
+   * Tracing those two entries is what found `P0-SCIENCE-05` to be far broader
+   * than the sentence the register named — `meal-impact.ts` also produced a
+   * Biotic-named ROW, a BAND WORD from `input.probiotic_score`, and a
+   * fermented-food-implies-probiotic inference, all live on `/account`. The
+   * entries are removed because the defects are; the rule is now pinned
+   * per-file in `NO_PERSONAL_BIOTIC_NUMBER` so neither can return quietly.
+   *
+   * `lib/assessment-scoring.ts` below remains, and is 0R-7's.
    */
-
-  // "A fermented food lights up your probiotic network" — the SAME sentence as
-  // `ritual.ts` below, in a second module. `P0-SCIENCE-05` was recorded at one
-  // producer; this is the other. 0R-5.
-  ["lib/account/meal-impact.ts", "a Biotic claimed as a person's own"],
-
-  // `RITUAL_CHECKS`. The register named this file for its anatomical `node`
-  // coordinates; the ledger finds it for the effect STRING beside them.
-  // Both halves, one repair. 0R-5.
-  ["lib/account/ritual.ts", "a Biotic claimed as a person's own"],
 
   /*
    * THE ONE THAT IS GENUINELY NEW.

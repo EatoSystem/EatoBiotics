@@ -96,8 +96,20 @@ describe("systemMapState", () => {
     expect(state.length).toBe(SYSTEM_HOTSPOTS.length)
 
     const byKey = Object.fromEntries(state.map((h) => [h.key, h]))
-    // The key survives: it is how a hotspot picks its food action.
-    expect(byKey.digestion.biotic).toBe("prebiotics")
+    /*
+     * 0R-5 · this asserted `byKey.digestion.biotic === "prebiotics"` — the
+     * Gate 3.6 data key that "survives: it is how a hotspot picks its food
+     * action". By 0R-5 that was no longer true: `action` is a literal on each
+     * hotspot, nothing was looked up, and the only reader left was
+     * `twin-stage.tsx` passing it into a colour function. The hotspot now
+     * carries a static palette `tone` instead, so the same colour appears when
+     * a member taps it without a `BioticKey` in the path at all.
+     */
+    expect(
+      (byKey.digestion as unknown as Record<string, unknown>).biotic,
+      "the BioticKey data key is back on the hotspot",
+    ).toBeUndefined()
+    expect(byKey.digestion.tone, "the hotspot lost its static tint").toBe("lime")
 
     for (const h of state) {
       /*
@@ -107,7 +119,7 @@ describe("systemMapState", () => {
        * field that was merely blanked, and a blanked field is one line away
        * from being filled in again.
        */
-      for (const banned of ["score", "level", "bioticLabel"]) {
+      for (const banned of ["score", "level", "bioticLabel", "biotic"]) {
         expect(
           (h as unknown as Record<string, unknown>)[banned],
           `a hotspot still carries ${banned}`,

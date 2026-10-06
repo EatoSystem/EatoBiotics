@@ -6,6 +6,59 @@ git history. This file starts it. Entries are newest first.
 
 ---
 
+## 2026-10-06 — Two engineering rules adopted at the Experience 0R-5 close
+
+Both are **review discipline** rather than product design, so they sit here
+beside the warning-counts rule below rather than in
+`EXPERIENCE_CONSTITUTION.md`. Both were paid for: each one names a construct
+that survived a tranche aimed directly at it.
+
+### 1 · An inventory keyed on a naming convention cannot see a construct written inline
+
+0R-4's fabrication guard calls itself "deliberately blunt": it refuses any
+`MOCK_*` or `DEMO_*` constant read anywhere on the live dashboard, whatever it
+is called and whatever it feeds. That blunt instrument missed a complete
+fabricated member meal — name, scores, nutrition, insight prose and tags —
+sitting four lines from a block 0R-5 had to edit, because it was written as an
+inline object literal and was therefore called nothing at all.
+
+> **A rule that keys on how something is NAMED is a rule about naming.** When
+> the property is "no fabricated member content reaches this surface", the rule
+> must read the content: a non-zero figure or a non-empty string nobody logged.
+> A zero-filled default is absence and must keep passing.
+
+The same failure shape appears in `EXPOSED_AT_0R1`, which suspends a rule for a
+whole **file** while carrying an `example` per entry that it never consults —
+so a file with two distinct defects under one rule cannot prove either repair.
+Reported in the register with its fix rather than patched mid-tranche.
+
+### 2 · A source-only audit records the file, not the surface
+
+`components/account/twin/twin-stage.tsx` was audited source-only in Experience
+0 because `/account/twin` is `POST_V1`-refused. The component is mounted on live
+`/account` by `live-dashboard.tsx:1113`, and it rendered — ungated, for every
+member with a Twin — the Biotic named, the member's score as a number, a
+per-Biotic colour and a bar whose width was the score. The audit read the right
+file in the wrong context, and the construct it had retired from one component
+was already rebuilt in another.
+
+> **Classify the SURFACE a file renders on, not the route it is named after.**
+> A component mounted by a live page is a live surface however many refused
+> routes also mount it. Before calling a construct retired, grep for every
+> mount point — the fourth rebuild of one construct in this programme was found
+> that way, and the first three were found the same way.
+
+### And a note on where the find came from
+
+Site 5 above was not found by reading the code again. It was found by widening
+`tests/unit/biotic-visual-encoding.test.ts`'s sinks from colour to **extent** —
+a bar's `width:` — which is a promise that file's own 0R-2 header had made and
+not implemented. The instrument found the defect its author had not; that is
+the argument for writing the header's full claim as assertions rather than as
+prose.
+
+---
+
 ## 2026-10-05 — Engineering rule adopted: warning counts are not waivers
 
 Adopted at the Experience 0R-4 close, and general beyond it. This sits beside
