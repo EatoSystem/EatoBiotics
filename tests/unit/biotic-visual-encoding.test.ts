@@ -49,7 +49,42 @@ function source(file: string): string {
 const BIOTIC_DERIVED = [
   ["the weakest Biotic", /\bbiotics\s*\.\s*weakest\b/],
   ["the strongest Biotic", /\bbiotics\s*\.\s*strongest\b/],
-  ["a Biotic key as a function parameter", /\b\w+\s*:\s*BioticKey\b/],
+  /*
+   * ══ 0R-6R · "a Biotic key as a function parameter" IS RETIRED ════════════
+   *
+   * The rule was `\w+: BioticKey`, written for `P0-SCIENCE-04`:
+   *
+   *     auraGradientForBiotic(biotic: BioticKey, intensity = 0.6)
+   *
+   * 0R-5 deleted that function. Measured across all thirteen modules now in the
+   * list, the rule fires on exactly four things and NOT ONE of them is a
+   * defect:
+   *
+   *   lib/account/system-map.ts      the COMMENT recording its own removal
+   *   lib/account/twin-visual.ts     the COMMENT recording its own removal
+   *   build-food-system-report.ts    `const biotic: BioticKey` coercing a
+   *                                  FOOD's classification
+   *   lib/pdf/report-pdf.tsx         a food card's own classification, used to
+   *                                  colour "Oats · PREBIOTIC"
+   *
+   * Two comments and two taxonomy keys. It kept `report-pdf.tsx` red after the
+   * "Your 3 Biotics" panel was deleted, which means it could not distinguish
+   * the repaired file from the one that shipped the bar.
+   *
+   * ── AND THE SHAPE IT WAS BUILT FOR IS STILL CAUGHT ────────────────────────
+   *
+   * 0R-2's actual finding was `auraGradientForBiotic(twin.biotics.weakest, …)`,
+   * and `biotics.weakest` is the rule that sees it — at the CALL SITE, which is
+   * where the defect is. 0R-5's own note said so: "while a `BioticKey` could
+   * reach a colour function, `twin.biotics.weakest` could reach it too, and in
+   * the very next branch it did." The parameter type was never the claim.
+   *
+   * The `PRE_REPAIR` subject that justified this rule went with it, and its
+   * removal is recorded there: it asserted that a SIGNATURE was a defect, and
+   * the identical signature — `bioticAccent(key: BioticScoreKey)` in
+   * `lib/report/visual-token.ts` — is the product's legitimate education
+   * palette, which colours all three pathways symmetrically.
+   */
   /*
    * ── ADDED AT 0R-5 · THE PER-BIOTIC SCORE ITSELF ──────────────────────────
    *
@@ -78,6 +113,84 @@ const BIOTIC_DERIVED = [
      */
     /\b(?:pre|pro|post)biotic_score\b|\bbiotics\s*\.\s*(?:pre|pro|post)biotics?\b/,
   ],
+  /*
+   * ── ADDED AT 0R-6R · `BioticScoreKey`, THE REPORT LAYER'S OWN NAME ───────
+   *
+   * The rule above it reads "a Biotic key as a function parameter" and matches
+   * `\w+: BioticKey`. The report layer does not use that type. It uses
+   * `BioticScoreKey` (`lib/report/subscores.ts:50`) — the same three keys,
+   * a different name — and `BioticKey` is not a substring of it, so the rule
+   * that exists to catch "a Biotic key reaching a colour" could not see a
+   * single site in the entire Report family.
+   *
+   * Both shapes the report renderers actually use:
+   *
+   *   pathway: BioticScoreKey                       the prop form
+   *   scores: Record<BioticScoreKey, number>        the record form, which is
+   *   states: Partial<Record<BioticScoreKey, …>>    three per-Biotic values
+   *                                                 handed to a renderer at once
+   *
+   * One rule for a type name, found by adding three modules to this list and
+   * watching two of them pass.
+   */
+  [
+    "a RECORD of per-Biotic values",
+    /*
+     * ── NARROWED AFTER THE REPAIR, AND THE NARROWING IS THE FINDING ────────
+     *
+     * Written first as `\w+: (Partial<)?Record<BioticScoreKey…` OR
+     * `\w+: BioticScoreKey`, and the second half was wrong. It caught the three
+     * renderers while they carried the defect — which is how two of them were
+     * found at all, because the pre-existing rules could not see them — and then
+     * it could not go green after the repair, because what still matches is
+     *
+     *     pathway: BioticScoreKey        WHICH of the three a node is
+     *
+     * which is taxonomy. `visual-token.ts` exists to colour all three pathways
+     * symmetrically, this file's own 0R-6 note says that is education, and the
+     * ring under the body figure is now exactly that: three names, three
+     * colours, no state.
+     *
+     * A rule that cannot be satisfied by any correct version of a file cannot
+     * tell a repaired file from an unrepaired one, which is the one thing this
+     * instrument exists to do. So the derived form is the RECORD — three
+     * per-Biotic values handed to a renderer in one object, which is the
+     * construct — and not the key type, which is a label.
+     *
+     * Same correction as case 1080's "pin the signature, not the word".
+     *
+     * ── NARROWED A SECOND TIME, AND THE SECOND TIME IS THE REAL FINDING ────
+     *
+     * The narrowing above moved the rule from the KEY TYPE to the RECORD, and
+     * stopped one level short. `Record<BioticScoreKey, …>` with ANY value type
+     * still matched three content catalogues in the builder alone:
+     *
+     *     PATHWAY_PLAIN: Record<BioticScoreKey, string>
+     *     PATHWAY_WHY:   Record<BioticScoreKey, string>
+     *     TOOLS:         Record<BioticScoreKey, ReportFoodTool[]>
+     *
+     * — reviewed wording and a reviewed food catalogue, organised by pathway.
+     * That is the taxonomy distinction the ruling states in its own words:
+     * CONTENT TAXONOMY MAY ORGANISE REVIEWED MATERIAL. A catalogue keyed by
+     * pathway is the legitimate half of exactly that sentence.
+     *
+     * And it had a consequence worth naming, because it was holding an
+     * inventory green: `BLOCKED_AT_0R6` required the builder to STILL map a
+     * Biotic to a visual parameter, and after `primaryAccent` became the static
+     * brand accent the entry stayed satisfied — by `PATHWAY_PLAIN` plus the word
+     * "gradient" in `gradient: GRADIENT`. The inventory could not have detected
+     * its own repair. It is deleted below, and this is why it could not have
+     * told me to delete it.
+     *
+     * So the prohibited record is three per-Biotic values that are MEMBER
+     * STATE: a `number` triple, or a `Partial<…>` map, which is sparse-by-shape
+     * and therefore per-member rather than a catalogue. Measured against both
+     * trees: the rule fires on `scores: Record<BioticScoreKey, number>` in
+     * `food-system-section.tsx` and on `scores`/`states` in `food-system-pdf.tsx`
+     * as they shipped, and on nothing anywhere in the repaired tree.
+     */
+    /\b\w+\s*:\s*Record<\s*BioticScoreKey\s*,\s*number\s*>|\b\w+\s*:\s*Partial<\s*Record<\s*BioticScoreKey\b/,
+  ],
 ] as const
 
 /**
@@ -102,7 +215,28 @@ const VISUAL_SINKS = [
    * inline-style form; `strokeDasharray` is the SVG ring form that
    * `live-dashboard.tsx` and `report-client.tsx` both use.
    */
-  ["an extent — a bar length, a ring arc or a scale", /\bwidth\s*:|\bstrokeDasharray\b|\bscale\s*\(/],
+  [
+    "a DERIVED extent — a bar length, a ring arc or a scale computed from a value",
+    /*
+     * ── ALSO NARROWED AT 0R-6R, FOR THE SAME REASON ───────────────────────
+     *
+     * This was `\bwidth\s*:` — ANY width. That was adequate while every module
+     * in the list was a Twin component whose widths were score-derived, and it
+     * is what caught `BioticBar`'s `width: ${score}%` at 0R-5.
+     *
+     * Pointing the instrument at a PDF broke it: `lib/pdf/report-pdf.tsx` is
+     * three thousand lines of react-pdf stylesheets, and `width: 80` on a table
+     * column is not a claim about anybody. The file stayed red after its
+     * "Your 3 Biotics" panel — name, number, colour and `width: \`${score}%\``
+     * — was deleted, because a static column width still matched.
+     *
+     * An extent is only a claim when its VALUE comes from somewhere. So the
+     * rule now requires interpolation or arithmetic, which is what
+     * `width: \`${score}%\`` has and `width: 80` does not. The non-vacuity
+     * subjects below hold both shapes so this narrowing cannot quietly widen.
+     */
+    /\bwidth\s*:\s*(?:`[^`]*\$\{|\$\{|\w+\s*[*+]|[`"']?\$)|\bstrokeDasharray\s*:\s*(?:`|\{|\w)|\bscale\s*\(\s*(?:\$\{|\w+\s*[*+]|[a-z])/,
+  ],
 ] as const
 
 /**
@@ -192,6 +326,43 @@ const VISUAL_MODULES = [
    * prohibited is a RANKED key choosing a colour.
    */
   "lib/report/build-food-system-report.ts",
+  /*
+   * ── ADDED AT 0R-6R · THE THREE LIVE PAID RENDERERS ───────────────────────
+   *
+   * 0R-6 added the BUILDER and stopped there, on the reasoning that the builder
+   * is where the construct is composed. That reasoning was wrong in one
+   * specific way, and the way matters: a renderer does not have to be handed a
+   * ranked key to encode a personal Biotic state. It can be handed the three
+   * SCORES and do the ranking, the colouring and the bar itself.
+   *
+   * All three of these did, on the money path, while this instrument reported
+   * green over the builder beside them:
+   *
+   *   components/report/food-system-section.tsx
+   *     PathwayScores   three numerals "71/100", each in bioticAccent(key)
+   *     NodeCard        a state-coloured band word + {node.score}/100
+   *     RingNode        the three states captioned on a ring around a figure
+   *                     of the member's body, each in its Biotic's colour
+   *
+   *   lib/pdf/food-system-pdf.tsx
+   *     BodyFigure      the same three scores and band words, drawn ON the
+   *                     body figure inside three rings, in the downloadable PDF
+   *
+   *   lib/pdf/report-pdf.tsx
+   *     "Your 3 Biotics"  weakest-first rows: name + per-Biotic colour +
+   *                     A BAR WHOSE WIDTH IS THE SCORE + the number. This is
+   *                     the `BioticBar` construct 0R-5 deleted from
+   *                     twin-stage.tsx, reconstructed in the live paid PDF —
+   *                     and it is the EXTENT sink this file gained at 0R-5,
+   *                     which was never pointed at a PDF.
+   *
+   * The lesson, recorded rather than smoothed over: 0R-5 widened the sinks and
+   * 0R-6 widened the modules, and the gap between the two widenings was exactly
+   * where the worst remaining instance lived.
+   */
+  "components/report/food-system-section.tsx",
+  "lib/pdf/food-system-pdf.tsx",
+  "lib/pdf/report-pdf.tsx",
 ]
 
 /* ── THE 0R-2 INVENTORY — EMPTIED AND DELETED AT 0R-5 ────────────────────────
@@ -229,6 +400,10 @@ const MODULES_AT_0R5_CLOSE = [
   "components/account/twin/quick-log.tsx",
   // 0R-6 · the paid Report, added with the money-path coverage gap above.
   "lib/report/build-food-system-report.ts",
+  // 0R-6R · the three live paid renderers. See the block in VISUAL_MODULES.
+  "components/report/food-system-section.tsx",
+  "lib/pdf/food-system-pdf.tsx",
+  "lib/pdf/report-pdf.tsx",
 ] as const
 
 /*
@@ -244,40 +419,41 @@ const MODULES_AT_0R5_CLOSE = [
  * LITERAL that must EQUAL the list. Emptying the list fails (9 ≠ 0); lowering
  * the literal fails (the list is still 9). Neither single edit gets through.
  */
-const PINNED_MODULES_AT_0R5_CLOSE = 10
+const PINNED_MODULES_AT_0R5_CLOSE = 13
 
-/* ── THE 0R-6 BLOCKED INVENTORY ──────────────────────────────────────────────
+/* ── THE 0R-6 BLOCKED INVENTORY — DELETED AT 0R-6R ─────────────────────
  *
- * 0R-5 deleted this file's inventory because all four of its entries were
- * repaired, and said so: "a zero-length allowlist with its branches still
- * wired is an invitation to add a fifth." 0R-6 re-introduces exactly one entry,
- * and the justification is different in kind — this is not debt nobody got to,
- * it is debt that CANNOT be repaired inside this tranche.
+ * 0R-6 recorded one entry, and recorded it honestly as debt that could not be
+ * repaired inside that tranche:
  *
  *   lib/report/build-food-system-report.ts:518
  *     primaryAccent: bioticAccent(priorityPathway)
  *
- * `priorityPathway` is `orderedByNeed(biotics)[0][0]` — an argmin over the
- * member's three Biotic scores — so the paid Report's accent colour is a
- * comparative personal Biotic verdict encoded as colour. It is the Report
- * analogue of `P0-SCIENCE-04`, which 0R-5 closed on the Twin, and it is folded
- * into `P0-SCIENCE-06` as another site of one construct: one unsupported
- * personal inference may have textual, behavioural and visual outputs, and
- * those outputs remain manifestations of the same construct.
+ * `priorityPathway` was `orderedByNeed(biotics)[0][0]` — an argmin over the
+ * member's three Biotic scores — so the paid Report's accent colour was a
+ * comparative personal Biotic verdict encoded as colour.
  *
- * It is held because retiring `priorityPathway` requires a selection source
- * the repository does not have — the FSS-v1 weights refuse to score outside a
- * DEV_ONLY fixture context, and the deterministic Report core is
- * pre-activation with Migrations 48/49 unapplied. See the long note in
- * `tests/unit/agent-loop-claims.test.ts`.
+ * 0R-6R repaired it. `orderedByNeed` is deleted from `lib/report/subscores.ts`,
+ * the builder reads no per-Biotic score at all, and `primaryAccent` is
+ * `GRADIENT[0]` — the brand accent, identical for every reader.
  *
- * SAME CONTRACT AS EVERY INVENTORY IN THIS REPOSITORY: an entry may exist only
- * while its defect does, the list may only shrink, and the cap EQUALS the list.
+ * The inventory is therefore DELETED rather than emptied, which is 0R-5's own
+ * rule about this file applied to itself: a zero-length allowlist with its
+ * branches still wired is an invitation to add a fifth. The assertions below
+ * are unconditional again.
+ *
+ * ── AND IT COULD NOT HAVE TOLD ME THIS ITSELF ──────────────────────────────
+ *
+ * Worth recording, because the inventory's contract says an entry may exist
+ * only while its defect does, and this entry outlived its defect silently. The
+ * blocked branch required `flows === true`, and after the repair that stayed
+ * true — on `PATHWAY_PLAIN: Record<BioticScoreKey, string>` (a reviewed wording
+ * catalogue) plus the word "gradient" in `gradient: GRADIENT` (the static brand
+ * palette). Narrowing the record rule to per-Biotic NUMBERS is what made the
+ * branch finally fail and say "the defect is GONE: DELETE the entry".
+ *
+ *     AN INVENTORY IS ONLY SELF-RETIRING IF ITS RULE CAN GO GREEN.
  */
-const BLOCKED_AT_0R6: readonly [file: string, why: string][] = [
-  ["lib/report/build-food-system-report.ts", "a ranked Biotic chooses the paid Report's accent colour"],
-]
-const BLOCKED_ENTRIES_AT_0R6 = 1
 
 describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
   it.each(VISUAL_MODULES)("%s maps no Biotic to a visual parameter", (file) => {
@@ -285,17 +461,6 @@ describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
     const derived = BIOTIC_DERIVED.filter(([, re]) => re.test(src)).map(([w]) => w)
     const sinks = VISUAL_SINKS.filter(([, re]) => re.test(src)).map(([w]) => w)
     const flows = derived.length > 0 && sinks.length > 0
-
-    const blocked = BLOCKED_AT_0R6.find(([f]) => f === file)
-    if (blocked) {
-      expect(
-        flows,
-        `${file} is in BLOCKED_AT_0R6 — "${blocked[1]}" — and no longer maps a ` +
-          `Biotic to a visual parameter. The defect is GONE: DELETE the entry ` +
-          `and drop the cap to match.`,
-      ).toBe(true)
-      return
-    }
 
     expect(
       flows,
@@ -322,26 +487,6 @@ describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
    * that by cross-reference; with the inventory gone, the list is pinned
    * directly.
    */
-  it("the blocked inventory may only shrink, and carries no headroom", () => {
-    expect(
-      BLOCKED_AT_0R6.length,
-      "a NEW blocked visual encoding is a regression, not debt to record",
-    ).toBeLessThanOrEqual(BLOCKED_ENTRIES_AT_0R6)
-    expect(
-      BLOCKED_ENTRIES_AT_0R6,
-      `BLOCKED_ENTRIES_AT_0R6 is ${BLOCKED_ENTRIES_AT_0R6} while the inventory ` +
-        `holds ${BLOCKED_AT_0R6.length}. It moves DOWN only, with the repair.`,
-    ).toBe(BLOCKED_AT_0R6.length)
-  })
-
-  it("every blocked file is still a module under test", () => {
-    // The sabotage-1461 lesson: an inventoried file that leaves VISUAL_MODULES
-    // leaves the instrument, and the inventory would still read one.
-    for (const [file] of BLOCKED_AT_0R6) {
-      expect(VISUAL_MODULES, `${file} is inventoried but not under test`).toContain(file)
-    }
-  })
-
   it("no module leaves the instrument", () => {
     expect(
       MODULES_AT_0R5_CLOSE.length,
@@ -391,10 +536,18 @@ describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
       "P0-SCIENCE-04 · the strongest Biotic computed TwinVisualState.auraGradient",
       "    auraGradient: auraGradientForBiotic(twin.biotics.strongest, confidence),",
     ],
-    [
-      "the signature that let either of them through",
-      "export function auraGradientForBiotic(biotic: BioticKey, intensity = 0.6): string {",
-    ],
+    /*
+     * 0R-6R · the third subject is GONE, with the rule it justified.
+     *
+     *   ["the signature that let either of them through",
+     *    "export function auraGradientForBiotic(biotic: BioticKey, …): string {"]
+     *
+     * It claimed a signature was the defect. It is not: `bioticAccent(key:
+     * BioticScoreKey)` has the same shape and is the education palette every
+     * Report surface uses to tell three pathways apart. The two subjects above
+     * carry `biotics.weakest` and `biotics.strongest` — the actual reads — and
+     * those are what `BIOTIC_DERIVED` must refuse.
+     */
     /*
      * This subject exists so the PER-BIOTIC SCORE rule has a case of its own.
      * Found while writing sabotage 1507: nulling that rule broke nothing,
@@ -434,11 +587,42 @@ describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
      * than a line that ever shipped, and it is labelled as such; the untrimmed
      * version is the next entry.
      */
+    /*
+     * 0R-6R · re-aimed. The first line used to be `BioticBar`'s SIGNATURE,
+     * whose only Biotic read was `biotic: BioticKey` — and retiring that rule
+     * left this subject with no Biotic read at all, which the non-vacuity
+     * assertion caught immediately.
+     *
+     * The shape is now the pair that actually shipped on `/account`: a
+     * per-Biotic score read out of the twin, and the bar width computed from
+     * it. That is the real two-part flow the per-file scan exists to see, and
+     * its Biotic read is the SCORE PATH rather than a type name.
+     */
     [
-      "the extent sink alone — a per-Biotic bar width with no colour beside it",
+      "the extent sink alone — a per-Biotic score read, then a bar width from it",
       [
-        "function BioticBar({ biotic, score, delay }: { biotic: BioticKey; score: number; delay: number }) {",
+        "const score = twin.biotics.prebiotics.score",
         'style={{ width: `${Math.max(4, Math.min(100, score))}%` }}',
+      ].join("\n"),
+    ],
+    /*
+     * 0R-6R · THE RECORD FORM'S OWN SUBJECT, because the rule above it was
+     * narrowed twice and after the second narrowing no subject here carried the
+     * shape at all. Case 1507's lesson, in a new place: a rule with no subject
+     * of its own can be nulled with nothing failing, because the other rules
+     * cover every remaining case.
+     *
+     * This is the real `PathwayScores` signature from
+     * `components/report/food-system-section.tsx:150` as it shipped, with the
+     * line that coloured each numeral in its own Biotic's accent. Three
+     * per-Biotic NUMBERS in one object, reaching a colour.
+     */
+    [
+      "P0-SCIENCE-07 · a record of three per-Biotic scores reached a colour (food-system-section.tsx PathwayScores)",
+      [
+        "function PathwayScores({ scores }: { scores: Record<BioticScoreKey, number> }) {",
+        "              style={{ color: accentText(accent) }}",
+        "              {scores[key]}",
       ].join("\n"),
     ],
     [

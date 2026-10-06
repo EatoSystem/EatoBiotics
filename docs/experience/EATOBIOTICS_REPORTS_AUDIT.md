@@ -116,6 +116,15 @@ Pinned at source by `audit-capture-reports.spec.ts` so the claim cannot rot.*
 ### `P0-SCIENCE-07` · The dev-flow Report renders three per-Biotic scores out of 100
 #### **P0 — latent production hazard · NOT currently customer-reachable**
 
+> **CORRECTED AT 0R-6R.** The heading is accurate about *this renderer* and wrong
+> about *the construct*: the identical construct was live on the €49
+> `/assessment/report` in `food-system-section.tsx` (three forms), in
+> `food-system-pdf.tsx`'s body figure, and in `report-pdf.tsx`'s "Your 3 Biotics"
+> bars — eleven sites in all, folded into this same finding by ruling and closed
+> at the canonical Report type. See the 0R-6R close record in
+> [`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).
+> This section is left as measured; the correction is the record.
+
 Rendered, at 1280, under **"PILLAR BREAKDOWN · Your Pillar Deep-Dives"**:
 
 > **Probiotics 33/100** · **Prebiotics 50/100** · **Postbiotics 61/100**
@@ -292,8 +301,8 @@ Destinations are named. Nothing is kept because it was expensive to build.
 | concept | where it lives | disposition | destination |
 |---|---|---|---|
 | Repeated overall score | both clients | **MERGE** — one rendering | → Score |
-| Per-Biotic scores / bars | `full-report-client` | **RETIRE** — `P0-SCIENCE-07` | — |
-| Strongest / weakest pathway ranking | `build-food-system-report` | **RETIRE** — `P0-SCIENCE-06`, under D1 | — |
+| Per-Biotic scores / bars | `full-report-client` **— and, found at 0R-6R, `food-system-section`, `food-system-pdf` and `report-pdf`** | **RETIRED at 0R-6R** — `P0-SCIENCE-07`, closed at the canonical type | — |
+| Strongest / weakest pathway ranking | `build-food-system-report` | **RETIRED at 0R-6R** — `P0-SCIENCE-06`; `orderedByNeed` deleted, six consumers de-ranked, nothing replaced it | — |
 | Score projections | legacy prose | **RETIRE** | — |
 | Mechanistic food claims | food tool data | **EVOLVE** — rewrite to the hedged register, pending review | → Learn / Report |
 | 12 foods, ranked | `build-food-system-report` | **EVOLVE** — keep the list, drop "ranked for your profile" | → optional Report |

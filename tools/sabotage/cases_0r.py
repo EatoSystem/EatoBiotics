@@ -208,7 +208,7 @@ CASES = [
      '  "components/account/twin/daily-ritual.tsx",',
      V),
 
-    (1462, "the visual cap is raised to buy room for a new encoding", VISUAL,
+    (1462, "the module pin drops its three newest entries", VISUAL,
      # REPOINTED AT 0R-5, not retired. This read
      #   find "const VISUAL_ENTRIES_AT_OPEN = 4" → "= 8"
      # and its property was "the inventory cap can be raised to buy room for a
@@ -223,7 +223,16 @@ CASES = [
      # `VISUAL_MODULES` itself.
      # 0R-6 · the tail of MODULES_AT_0R5_CLOSE gained the paid Report, so the
      # old two-line anchor no longer matched. Same lesson as 1456 above.
-     '  "components/account/twin/quick-log.tsx",\n  // 0R-6 · the paid Report, added with the money-path coverage gap above.\n  "lib/report/build-food-system-report.ts",\n] as const',
+     #
+     # 0R-6R · AND AGAIN, for the third time, which is the lesson itself: AN
+     # ANCHOR PINNED TO A SHRINKING NUMBER HAS TO FOLLOW THE NUMBER. Three
+     # modules were added at 0R-6R, so the tail moved once more. The attack and
+     # the contract are unchanged — drop entries and the literal stops equalling
+     # the list.
+     '  // 0R-6R · the three live paid renderers. See the block in VISUAL_MODULES.\n'
+     '  "components/report/food-system-section.tsx",\n'
+     '  "lib/pdf/food-system-pdf.tsx",\n'
+     '  "lib/pdf/report-pdf.tsx",\n] as const',
      "] as const",
      V),
 
@@ -243,10 +252,26 @@ CASES = [
      # passing it into a colour function, and it now passes a static `tone`.
      #
      # The PROPERTY is unchanged and still worth attacking: a module that holds
-     # a Biotic key and also produces a colour completes the prohibited flow.
-     # So the mutation puts the key BACK, beside the `tone` already there.
+     # a per-Biotic value and also produces a colour completes the prohibited
+     # flow. So the mutation puts such a field BACK, beside the `tone` already
+     # there.
+     #
+     # ── RE-AIMED AT 0R-6R, AND IT SLIPPED FIRST ───────────────────────────
+     #
+     # The mutation was `biotic: BioticKey`, and 0R-6R RETIRED the rule that saw
+     # it after measuring that the rule fires on exactly four things in the whole
+     # module list and not one is a defect: two comments recording removals, and
+     # two taxonomy keys. Its own `PRE_REPAIR` subject asserted that a SIGNATURE
+     # was the defect, and the identical signature — `bioticAccent(key:
+     # BioticScoreKey)` — is the product's legitimate education palette.
+     #
+     # So the case was aimed at the wrong thing, which is the one condition
+     # under which a slip is fixed in the CASE rather than the test. 0R-2's
+     # actual finding was always the per-Biotic READ at the call site, and that
+     # is what this now restores: the real `meal-impact.ts` shape, a per-Biotic
+     # score on a record that also carries a colour.
      "  tone: AuraTone",
-     "  tone: AuraTone\n  /** The biotic this system leans on most. */\n  biotic: BioticKey",
+     "  tone: AuraTone\n  /** Derived from the member's per-Biotic score. */\n  prebiotic_score: number",
      V),
 
     # ── 7 · THE LEDGER'S GRANULARITY ────────────────────────────────────────
@@ -531,9 +556,28 @@ CASES = [
      V),
 
     # ── C · the Biotic → colour flow ────────────────────────────────────────
-    (1494, "the aura takes a BioticKey again", TWIN_VISUAL,
+    # ── RE-AIMED AT 0R-6R, FOR THE SAME REASON AS 1463, AND IT SLIPPED FIRST ─
+    #
+    # The mutation was the SIGNATURE: `auraGradientForTone(tone: AuraTone)` back
+    # to `(biotic: BioticKey)`. The rule that saw that was retired at 0R-6R as a
+    # false-positive generator, so the case stopped landing — and the case was
+    # the thing that was wrong, because `twin-visual.ts`'s own repair note says
+    # so in as many words: "`AuraTone` is a name for a colour and nothing else.
+    # `twin.biotics.weakest` is a verdict."
+    #
+    # The defect is the READ, so the mutation is now the read: a convenience
+    # wrapper that re-derives the tone from a per-Biotic score, which is how this
+    # construct returned in four separate components after each earlier removal.
+    # Case 1495 attacks the call site; this one attacks the producer.
+    (1494, "the aura is re-derived from a per-Biotic score inside twin-visual", TWIN_VISUAL,
      "export function auraGradientForTone(tone: AuraTone, intensity = 0.6): string {",
-     "export function auraGradientForTone(biotic: BioticKey, intensity = 0.6): string {",
+     "export function auraGradientForBiotic(\n"
+     "  twin: { biotics: { prebiotics: { score: number } } },\n"
+     "  intensity = 0.6,\n"
+     "): string {\n"
+     '  return auraGradientForTone(twin.biotics.prebiotics.score >= 50 ? "warm" : "cool", intensity)\n'
+     "}\n\n"
+     "export function auraGradientForTone(tone: AuraTone, intensity = 0.6): string {",
      V),
 
     (1495, "the stage aura is chosen by the weakest Biotic again", TWIN_STAGE,
@@ -619,9 +663,16 @@ CASES = [
     # way the construct can return as a module.
 
     # ── the instruments themselves: can 0R-5's own proofs be switched off? ──
-    (1506, "the extent sink leaves the form track", VISUAL,
-     '  ["an extent — a bar length, a ring arc or a scale", /\\bwidth\\s*:|\\bstrokeDasharray\\b|\\bscale\\s*\\(/],',
-     "",
+    # ── RE-AIMED AT 0R-6R · THE SINK WAS NARROWED, SO ITS ANCHOR MOVED ─────
+    #
+    # 0R-6R narrowed this sink from ANY `width:` to a DERIVED extent, because
+    # pointing the instrument at a PDF made `width: 80` on a table column match
+    # and kept `report-pdf.tsx` red after its "Your 3 Biotics" bar was deleted.
+    # The case's purpose is unchanged — null the sink and the extent-only
+    # non-vacuity subject must fail — and it is re-anchored on the narrower rule.
+    (1506, "the extent sink is nulled, leaving colour as the only sink", VISUAL,
+     "    /\\bwidth\\s*:\\s*(?:`[^`]*\\$\\{|\\$\\{|\\w+\\s*[*+]|[`\"']?\\$)|\\bstrokeDasharray\\s*:\\s*(?:`|\\{|\\w)|\\bscale\\s*\\(\\s*(?:\\$\\{|\\w+\\s*[*+]|[a-z])/,",
+     "    /(?!x)x/,",
      V),
 
     (1507, "the per-Biotic score rule leaves the form track", VISUAL,
@@ -722,65 +773,259 @@ CASES = [
      "const PATHWAY_TAG_SURFACES = [] as const",
      VOCAB),
 
-    # ── H · `P0-SCIENCE-06` · THE HELD ENTRY, ATTACKED AS DEBT ─────────────
+    # ── H · `P0-SCIENCE-06` AND `-07` · THE PAID PATH, AFTER THE REPAIR ────
     #
-    # `-06` is blocked: retiring the Biotic ranking requires a selection source
-    # the repository is not authorised to use. The guards are therefore RED and
-    # held — three `it.fails` in the behavioural suite, one entry in
-    # `BLOCKED_AT_0R6`. What must be impossible is QUIETLY DROPPING either.
+    # 0R-6 held `-06` as measured debt: three `it.fails` in the behavioural
+    # suite and one entry in `BLOCKED_AT_0R6`. 0R-6R closed it instead, on the
+    # ruling that
+    #
+    #     the absence of an authorised replacement selector is a legitimate
+    #     blocker to REPLACEMENT. It is not permission to retain the invalid
+    #     selector.
+    #
+    # So the three held assertions are plain `it`s, the blocked inventory is
+    # DELETED, and `orderedByNeed` no longer exists. Cases 1518-1521 were aimed
+    # at the HELD state and all four anchors vanished with it — which is the
+    # correct outcome for a case aimed at debt that has been paid, and the
+    # reason they are re-aimed here rather than deleted: the properties they
+    # proved (an instrument cannot be switched off, a proof cannot become a
+    # tautology) outlive the particular defect.
 
-    (1518, "the blocked visual inventory grows a second entry", VISUAL,
-     '  ["lib/report/build-food-system-report.ts", "a ranked Biotic chooses the paid Report\'s accent colour"],',
-     '  ["lib/report/build-food-system-report.ts", "a ranked Biotic chooses the paid Report\'s accent colour"],\n'
-     '  ["lib/account/twin-visual.ts", "newly excused"],',
+    # The record rule is the one 0R-6R added and then narrowed twice, and after
+    # the second narrowing it is the ONLY rule that sees the shape the three
+    # paid renderers shipped. Case 1507's lesson in a new place: nulling it must
+    # fail, which is what the `PathwayScores` non-vacuity subject is for.
+    (1518, "the per-Biotic RECORD rule is nulled", VISUAL,
+     "    /\\b\\w+\\s*:\\s*Record<\\s*BioticScoreKey\\s*,\\s*number\\s*>|\\b\\w+\\s*:\\s*Partial<\\s*Record<\\s*BioticScoreKey\\b/,",
+     "    /(?!x)x/,",
      V),
 
-    (1519, "the paid Report leaves the form instrument while staying inventoried", VISUAL,
-     '   * prohibited is a RANKED key choosing a colour.\n   */\n  "lib/report/build-food-system-report.ts",\n]',
-     "   * prohibited is a RANKED key choosing a colour.\n   */\n]",
+    # Same property as 1461 and 1508 — a module may be ADDED to the instrument,
+    # never silently removed — pointed at the three renderers 0R-6R added. These
+    # are the files where the construct was found live on the money path, so
+    # they are the three most consequential to be able to drop.
+    (1519, "the three live paid renderers leave VISUAL_MODULES", VISUAL,
+     '   */\n  "components/report/food-system-section.tsx",\n'
+     '  "lib/pdf/food-system-pdf.tsx",\n  "lib/pdf/report-pdf.tsx",\n]',
+     "   */\n]",
      V),
 
-    # The held red assertion, converted to a plain `it`. This is the one edit
-    # that would make the suite report a repair that has not happened: `it.fails`
-    # passes while the defect lives, so flipping it to `it` is indistinguishable
-    # from "0R-6 closed -06" unless the runner disagrees. It must go RED.
-    (1520, "a held BLOCKED assertion is converted to a passing test", LOOP[0],
-     'it.fails("BLOCKED · permuting WHICH Biotic is weakest cannot change the Report"',
-     'it("BLOCKED · permuting WHICH Biotic is weakest cannot change the Report"',
+    # ── A PROOF THAT CAN BECOME A TAUTOLOGY IS NOT A PROOF ─────────────────
+    #
+    # 1520 used to convert the held `it.fails` to a plain `it`. That conversion
+    # has HAPPENED, so the case was re-aimed at the weakness writing it exposed:
+    # the permutation assertion reads `new Set(...).size === 1` over
+    # `PERMUTATIONS`, and with one entry that is trivially true. Truncating the
+    # array turns the close proof for the whole `-06` repair into a tautology in
+    # a single edit — the `it.each` weakness in a different shape.
+    #
+    # Both files that carry the six orderings gained a pin: six entries, six
+    # distinct orderings, one shared multiset. This is what holds it.
+    (1520, "the permutation set is truncated, making the close proof vacuous", LOOP[0],
+     "    { prebiotics: 23, probiotics: 48, postbiotics: 71 },\n"
+     "    { prebiotics: 48, probiotics: 71, postbiotics: 23 },\n"
+     "    { prebiotics: 23, probiotics: 71, postbiotics: 48 },\n"
+     "    { prebiotics: 71, probiotics: 48, postbiotics: 23 },\n"
+     "    { prebiotics: 48, probiotics: 23, postbiotics: 71 },\n  ]",
+     "  ]",
      LOOP),
 
-    # ── AND THE INVERSE: DOES THE HELD ASSERTION FIRE ON A REAL REPAIR? ────
+    # ── AND THE OTHER DIRECTION: DOES THE PROOF NOTICE A RESTORED SELECTOR? ─
     #
-    # `it.fails` is only a safe way to hold a red assertion if it ERRORS the
-    # moment the defect goes. Proving that needs a mutation that actually
-    # repairs `-06`, and the first attempt was not one: replacing
-    # `priorityPathway = ranked[0][0]` with a constant left `strongestPathway`
-    # and `dominantPattern` ranking exactly as before, so the Report still
-    # varied across permutations, the assertion still failed, and `it.fails`
-    # still passed. The suite was right and the case was aimed at half a
-    # construct — one of the two rankings, which is not a repair.
+    # 1521's history is this tranche's most useful record of a case being
+    # wrong twice. It first replaced `priorityPathway` alone, leaving
+    # `strongestPathway` — half a construct, so the Report still varied and the
+    # held assertion still failed. Re-aimed at `orderedByNeed`, it STILL
+    # varied, because the report object carried `score` and `state` per Biotic;
+    # measuring why is what found `P0-SCIENCE-07` live on the paid path. It then
+    # settled on `dominantPattern`, whose ranking sentence 0R-6R deleted.
     #
-    # Re-aiming it at `orderedByNeed` did not work either, and MEASURING WHY
-    # produced this tranche's most serious finding. With the sort neutralised
-    # the Report STILL varied across permutations, because the report object
-    # carries, for each of the three Biotics, `score: 71` and
-    # `state: "strong"` — a per-Biotic number and a band word, on the LIVE PAID
-    # path, rendered by `food-system-section.tsx:392` (`PathwayScores`, three
-    # numerals "71/100" in each Biotic's own colour) and :488/:505
-    # (`NodeCard`, a StateBadge plus "{node.score}/100"). So the whole-report
-    # invariance assertion cannot go green until THOSE go, which no mutation of
-    # the ranking can achieve. The suite was right twice; the case was wrong
-    # twice, and the second wrong answer is in the close record as
-    # `P0-SCIENCE-07-LIVE`.
-    #
-    # Aimed, finally, at the one held assertion a single edit CAN flip: the
-    # first reads only `systemSnapshot.dominantPattern`. Make that sentence name
-    # no Biotic and it goes green, which means `it.fails` must ERROR and force
-    # the conversion to a plain `it`. That is the direction being proved — that
-    # a held red assertion cannot silently stay held after its defect is gone.
-    (1521, "dominantPattern stops ranking, so the held assertion must stop being held",
+    # So it is re-aimed a third time, at the selector site that survives as a
+    # single edit: `toolOrder`. Sorting the five foods a paying customer is
+    # shown by the member's three sub-scores is the clearest form of the hidden
+    # ranking, and the permutation assertion must see it return.
+    (1521, "the five foods are ordered by the member's sub-scores again",
      "lib/report/build-food-system-report.ts",
-     '      ? `Your answers describe an uneven system — ${PATHWAY_LABEL[strongestPathway]} is well supported while ${PATHWAY_LABEL[priorityPathway]} is thinner. Uneven is easier to improve than uniformly low, because the strong pathway is already doing work the weaker one can build on.`',
-     '      ? "Your answers describe an uneven system. Uneven is easier to improve than uniformly low, because the stronger parts are already doing work the thinner ones can build on."',
+     "  const toolOrder = Object.keys(TOOLS) as BioticScoreKey[]",
+     "  const _s = input.subScores as Record<string, number>\n"
+     "  const toolOrder = (Object.keys(TOOLS) as BioticScoreKey[]).sort(\n"
+     "    (a, b) => Number(_s[a] ?? 0) - Number(_s[b] ?? 0),\n  )",
      LOOP),
+
+    # ── I · 0R-6R · THE TYPE BOUNDARY ──────────────────────────────────────
+    #
+    # The ruling that set the depth of the `-07` repair:
+    #
+    #     IF A PRODUCT TYPE SAYS A PERSONAL CONSTRUCT EXISTS, EVERY DOWNSTREAM
+    #     CONSUMER IS INVITED TO TREAT IT AS TRUTH.
+    #
+    # `FoodSystemReport` is read by the web section, both PDFs, the fallback
+    # report, the add-on lens and the AI merge. These two cases restore the
+    # fields rather than any sentence, because the point of closing at the model
+    # is that no renderer can be handed the construct in the first place.
+
+    (1522, "the canonical Report type can represent three per-Biotic scores again",
+     "lib/report/food-system-report-types.ts",
+     "  /** The Biotics Score™ — one whole-system figure, and the product sold. */\n"
+     "  overallScore: number",
+     "  /** The Biotics Score™ — one whole-system figure, and the product sold. */\n"
+     "  overallScore: number\n"
+     "  bioticScores: { prebiotics: number; probiotics: number; postbiotics: number }",
+     VOCAB),
+
+    (1523, "a Report node can carry a per-Biotic score again",
+     "lib/report/food-system-report-types.ts",
+     "  explanation: string\n  visualToken: ReportVisualToken\n}",
+     "  score: number\n  explanation: string\n  visualToken: ReportVisualToken\n}",
+     VOCAB),
+
+    # Deleting the function is what makes "Report construction cannot recreate
+    # the ranking" a property of the code rather than a claim in a document. An
+    # exported sort over three per-Biotic scores, in the module every report
+    # surface already imports, is one line from being called again.
+    (1524, "orderedByNeed is restored to the module every Report surface imports",
+     SUBSCORES,
+     "export function normalizeToBiotics(sub: IncomingSubScores | null | undefined): BioticScores | null {",
+     "export function orderedByNeed(sub: BioticScores) {\n"
+     "  return Object.entries(sub).sort((a, b) => a[1] - b[1])\n}\n\n"
+     "export function normalizeToBiotics(sub: IncomingSubScores | null | undefined): BioticScores | null {",
+     VOCAB),
+
+    # Step one of recreating the whole construct, and the step that is easiest
+    # to justify in a review: "the builder just needs the scores for X". It
+    # needs them for nothing. The builder reads `input.overall` and no more.
+    (1525, "the builder reads the three sub-scores again",
+     "lib/report/build-food-system-report.ts",
+     "  const snapshotOneLine = `Your answers give ${who} food system a Biotics Score",
+     "  const biotics = normalizeToBiotics(input.subScores)\n"
+     "  const snapshotOneLine = `Your answers give ${who} food system a Biotics Score",
+     VOCAB),
+
+    # ── J · 0R-6R · THE FOUR LIVE RENDERERS ────────────────────────────────
+    #
+    # One case each, in the form the file actually shipped. A band word is the
+    # construct in words — "not as a number, not as a bar, not as a band word"
+    # — so these restore a band word rather than a score, which is the smaller
+    # and therefore more likely regression.
+
+    (1526, "the web Report's ring captions each pathway with a band word again",
+     "components/report/food-system-section.tsx",
+     '      <span className="min-w-0">\n'
+     '        <span className="block text-sm font-bold text-foreground">\n'
+     "          {PATHWAY_LABEL[pathway]}\n        </span>\n      </span>",
+     '      <span className="min-w-0">\n'
+     '        <span className="block text-sm font-bold text-foreground">\n'
+     "          {PATHWAY_LABEL[pathway]}\n        </span>\n"
+     '        <span className="block text-xs text-muted-foreground">Well supported</span>\n'
+     "      </span>",
+     ["tests/unit/food-system-section.test.ts"]),
+
+    # `BodyFigure` drew the three scores and their band words ON a figure of the
+    # member's body, inside three rings — the anatomy construct `P0-SCIENCE-05`
+    # removed from the Twin, in the downloadable PDF.
+    (1527, "the PDF body figure regains a band word under each pathway",
+     "lib/pdf/food-system-pdf.tsx",
+     "            <Text style={s.scoreLabel}>{PATHWAY_LABEL[k]}</Text>",
+     "            <Text style={s.scoreLabel}>{PATHWAY_LABEL[k]}</Text>\n"
+     "            <Text style={s.scoreLabel}>Well supported</Text>",
+     ["tests/unit/paid-pdf-biotic-claims.test.ts"]),
+
+    # The TENTH site of this tranche, and the one found by rendering rather than
+    # by reading: the web boundary was closed and the PDF cover read
+    # `profile.tagline` directly. The refused string names no Biotic and
+    # contains no band word, so every other rule in that file passes it.
+    (1528, "the PDF cover prints the authored tagline instead of the refusal",
+     "lib/pdf/report-pdf.tsx",
+     "      {heroTaglineFor({ profile }) && (\n"
+     "        <Text style={styles.coverTagline}>{heroTaglineFor({ profile })}</Text>",
+     "      {profile.tagline && (\n"
+     "        <Text style={styles.coverTagline}>{profile.tagline}</Text>",
+     ["tests/unit/paid-pdf-biotic-claims.test.ts"]),
+
+    # `heroTaglineFor` was going to be deleted outright, until removing its
+    # `mixed` override exposed what the override had been covering: for a high
+    # scorer `getProfile` authors "all three pathways being well supported" — a
+    # band word over the member's three Biotics. The function's whole remaining
+    # job is to refuse that and the "one pathway thinner than the rest" shape.
+    (1529, "heroTaglineFor stops refusing and passes the authored ranking through",
+     "lib/report/framing.ts",
+     "  if (PERSONAL_PATHWAY_STATE.test(authored)) return null\n  return authored",
+     "  return authored",
+     ["tests/unit/hero-tagline-agreement.test.ts",
+      "tests/unit/paid-report-presentation.test.ts"]),
+
+    # ── K · 0R-6R · THE BOUNDARY THAT PROTECTS A PROTECTED ROUTE ───────────
+    #
+    # `generate-pdf.ts` exists to drop `freeScores.subScores` between the
+    # protected `submit-deep-assessment` route and a component that may no
+    # longer see it. Both shapes typecheck, so only a runtime guard can tell
+    # them apart — and the obvious proof does not work: `renderToBuffer` is not
+    # byte-deterministic even for identical input, which was measured, not
+    # assumed.
+    (1530, "the PDF boundary forwards freeScores whole, sub-scores and all",
+     "lib/pdf/generate-pdf.ts",
+     "    freeScores: { overall: freeScores.overall, profile: freeScores.profile },",
+     "    freeScores,",
+     ["tests/unit/pdf-boundary-subscores.test.ts"]),
+
+    # ── L · 0R-6R · THE FALLBACK REPORT AND THE LENS ───────────────────────
+    #
+    # `fallback-paid-report.ts` is what a paying customer receives WHEN
+    # GENERATION FAILS, so its ~30 ranked sentences were live and deterministic.
+    (1531, "the fallback report's opening names the thinnest pathway again",
+     "lib/fallback-paid-report.ts",
+     "  const scoreLead = `Your ${ctx.input.profile.type} score of ${ctx.input.overall}/100 suggests ${who} food system`",
+     "  const _ranked = Object.entries((ctx.input.subScores ?? {}) as Record<string, number>).sort(\n"
+     "    (a, b) => a[1] - b[1],\n  )\n"
+     "  const scoreLead = `Your ${ctx.input.profile.type} score of ${ctx.input.overall}/100 suggests ${who} food system, with ${_ranked[0]?.[0]} the thinnest pathway in your answers,`",
+     ["tests/unit/fallback-report-pathways.test.ts"]),
+
+    # The lens's own comment always said a lens may not nominate its priority.
+    # 0R-6R added the half that was missing: neither may the core.
+    (1532, "the lens chapter names a pathway in its priority connection again",
+     "lib/report/addon-lens.ts",
+     "      why: `This lens meets your Food System score through all three pathways. ${body.priorityWhy}`,",
+     "      why: `Prebiotics is where this lens meets your Food System score. ${body.priorityWhy}`,",
+     ["tests/unit/addon-lens.test.ts"]),
+
+    # ── M · 0R-6R · THE FROZEN AUDIT EVIDENCE ──────────────────────────────
+    #
+    # `docs/experience/audit/screenshots/`, `manifest.json` and
+    # `SCREENSHOT_INDEX.md` were last written at the Experience 0 freeze, and
+    # EVERY Playwright run since rewrote them — six tranches each left those
+    # files dirty and each restored them by hand. The gate is one exact-string
+    # check and three call sites, so each is attacked separately.
+
+    (1533, "the frozen-write gate becomes a truthiness check",
+     "tests/e2e/audit-manifest.ts",
+     '  return process.env[WRITE_FROZEN_FLAG] === "1"',
+     "  return Boolean(process.env[WRITE_FROZEN_FLAG])",
+     ["tests/unit/audit-evidence-immutability.test.ts"]),
+
+    # Found while writing this case: nothing CALLED `copyToCommitted`, so
+    # deleting the one statement that declines the write broke no assertion.
+    # The suite now exercises the function against a temporary directory.
+    (1534, "copyToCommitted copies into the frozen tree unconditionally",
+     "tests/e2e/audit-manifest.ts",
+     '  if (!frozenWritesAllowed()) return "archive-only"\n',
+     "",
+     ["tests/unit/audit-evidence-immutability.test.ts"]),
+
+    (1535, "the manifest target is hard-coded back to the frozen file",
+     "tests/e2e/audit-manifest.ts",
+     "  return frozenWritesAllowed() ? MANIFEST_JSON : `${CORPUS_ROOT}/manifest.json`",
+     "  return MANIFEST_JSON",
+     ["tests/unit/audit-evidence-immutability.test.ts"]),
+
+    (1536, "the screenshot index is written to its hard-coded frozen path",
+     "tests/e2e/audit-capture.spec.ts",
+     "    screenshotIndexTarget(),",
+     '    "docs/experience/audit/SCREENSHOT_INDEX.md",',
+     ["tests/unit/audit-evidence-immutability.test.ts"]),
+
+    (1537, "a capture spec writes the committed set directly again",
+     "tests/e2e/audit-capture-reports.spec.ts",
+     "    ? copyToCommitted(path, COMMITTED, file)",
+     "    ? copyFileSync(path, `${COMMITTED}/${file}`)",
+     ["tests/unit/audit-evidence-immutability.test.ts"]),
 ]

@@ -996,55 +996,86 @@ describe("0R-6 · P0-SCIENCE-06 · the paid Report does not rank the member's Bi
   ]
 
   /*
-   * ══ BLOCKED, AND HELD AS RED RATHER THAN SOFTENED ═════════════════════════
+   * ── THE PERMUTATION SET ITSELF IS PINNED — FOUND WRITING SABOTAGE 1520 ────
    *
-   * The three assertions below are the real invariants and they currently FAIL.
-   * `it.fails` says so in the runner: the suite is green while the defect
-   * exists, and the moment the defect is repaired `it.fails` errors and forces
-   * each one back to a plain `it`. That is the same contract `EXPOSED_AT_0R1`
-   * and `EXPOSED_VISUAL_ENCODINGS` carry — AN ENTRY MAY ONLY EXIST WHILE ITS
-   * DEFECT DOES — expressed by the test runner instead of by a list, so it
-   * cannot be left behind.
+   * The invariance assertion below reads `new Set(...).size === 1` over
+   * `PERMUTATIONS`. With one entry that is trivially true, so truncating this
+   * array turns the close proof for the whole `-06` repair into a tautology —
+   * one edit, no failure. The same weakness `it.each` has, in a different
+   * shape, and the same remedy this repository has used three times: pin the
+   * set, and pin what makes it a valid set.
    *
-   * ── WHY THE REPAIR IS NOT IN 0R-6 ────────────────────────────────────────
-   *
-   * Not because it is hard. Because retiring the ranking means the paid Report
-   * must select its content from something else, and NOTHING IN THIS
-   * REPOSITORY IS AUTHORISED TO DO SO:
-   *
-   *   lib/fss/action/priority.ts    domain-keyed, which is the right shape, but
-   *                                 its scores come from lib/fss/engine/weights.ts,
-   *                                 which refuses to score outside an explicit
-   *                                 DEV_ONLY fixture context — "there is no
-   *                                 scientific reviewer and no weight has a
-   *                                 rationale. That is the blocker, not this
-   *                                 function." Consumed only inside lib/fss/*.
-   *
-   *   lib/report/deterministic/     pre-activation: Migrations 48 and 49 are
-   *   priority.ts                   drafted-and-not-applied, with an ordered
-   *                                 prerequisite list and the `constraints-known`
-   *                                 acknowledgement blocker outstanding
-   *                                 (Phase 4A-S2R1). Consumed only by its own
-   *                                 composer.
-   *
-   * Reported rather than designed around, on instruction. 0R-6 does not invent
-   * a selection source for the money path, and it does not take the other
-   * available option either — hiding the Biotic name while the same hidden
-   * ranking keeps choosing the member's plan — because that is the thing the
-   * founder's ruling forbids outright:
-   *
-   *     An unsupported inference does not become acceptable because its output
-   *     is hidden. Internal state may organise the product; it may not secretly
-   *     make a personal conclusion the product is forbidden to present.
+   * Three properties, because any one alone can be satisfied by a bad array:
+   * SIX entries, all DISTINCT orderings, and all the SAME multiset — the last
+   * being what makes every difference between two renders a ranking and not a
+   * response to how high the scores are.
    */
-  it.fails("BLOCKED · the snapshot sentence names no Biotic and ranks nothing", () => {
+  it("the permutation set is six distinct orderings of one score multiset", () => {
+    expect(PERMUTATIONS).toHaveLength(6)
+
+    const keys = ["prebiotics", "probiotics", "postbiotics"] as const
+    const orderings = new Set(PERMUTATIONS.map((p) => keys.map((k) => p[k]).join("-")))
+    expect(orderings.size, "two permutations are the same ordering").toBe(6)
+
+    const multisets = new Set(
+      PERMUTATIONS.map((p) =>
+        keys
+          .map((k) => p[k])
+          .sort((a, b) => a - b)
+          .join("-"),
+      ),
+    )
+    expect(
+      multisets.size,
+      "the permutations do not all hold the same three numbers, so a difference " +
+        "between two renders need not be a ranking",
+    ).toBe(1)
+  })
+
+  /*
+   * ══ HELD RED AT 0R-6, RESOLVED AT 0R-6R ═══════════════════════════════════
+   *
+   * At `175f53d` these three were held in the runner as expected-failures: the
+   * real invariants, failing, so the suite stayed green while the defect lived
+   * and would error the moment it was repaired. 0R-6 reported that retiring the
+   * ranking needed a selection source nothing in the repository is authorised
+   * to provide — the FSS-v1 weights refuse to score outside a DEV_ONLY fixture
+   * context, and the deterministic Report core is pre-activation with
+   * Migrations 48/49 unapplied.
+   *
+   * ── THE RULING THAT CLOSED IT, AND WHY HOLDING WAS THE WRONG ANSWER ──────
+   *
+   * The absence of an authorised replacement is a legitimate blocker to
+   * REPLACEMENT. It is not permission to retain the invalid selector:
+   *
+   *     No authorised selector means NO PERSONALISED SELECTION — not continued
+   *     use of an invalid one.
+   *
+   * And the near-miss worth recording, because it was the obvious move and it
+   * was refused. The trace found `PILLAR_BEHAVIOUR` (lib/pillars.ts), whose own
+   * docblock says it exists "for naming a person's priority without naming a
+   * personal Biotic state", which is reviewed copy and live on /account.
+   * Reusing it would have kept the argmin and renamed its output from
+   * "Probiotics" to "fermented foods":
+   *
+   *     A SAFER LABEL DOES NOT LEGITIMISE AN UNSUPPORTED SELECTOR.
+   *     Content taxonomy may organise reviewed material. It does not
+   *     automatically confer authority to choose what is personally most
+   *     important.
+   *
+   * So `orderedByNeed` is deleted from `lib/report/subscores.ts` and the Report
+   * reads no per-Biotic score at all. The third assertion below — permutation
+   * invariance across six orderings of ONE score multiset — is the close proof,
+   * and it can only pass because the capability is gone rather than unused.
+   */
+  it("the snapshot sentence names no Biotic and ranks nothing", () => {
     const report = reportFor(PERMUTATIONS[0])
     const sentence = report.systemSnapshot.dominantPattern
     expect(sentence.length, "dominantPattern was empty, so this asserted nothing").toBeGreaterThan(0)
     assertClean("systemSnapshot.dominantPattern", [sentence])
   })
 
-  it.fails("BLOCKED · no customer-facing Report string names a Biotic as strongest or first", () => {
+  it("no customer-facing Report string names a Biotic as strongest or first", () => {
     const report = reportFor(PERMUTATIONS[0])
     for (const [label, text] of [
       ["systemSnapshot.oneLine", report.systemSnapshot.oneLine],
@@ -1055,7 +1086,7 @@ describe("0R-6 · P0-SCIENCE-06 · the paid Report does not rank the member's Bi
     }
   })
 
-  it.fails("BLOCKED · permuting WHICH Biotic is weakest cannot change the Report", () => {
+  it("permuting WHICH Biotic is weakest cannot change the Report", () => {
     /*
      * The ruling this asserts: an unsupported inference does not become
      * acceptable because its output is hidden. `priorityPathway` is an argmin

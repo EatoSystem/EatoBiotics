@@ -69,13 +69,13 @@ describe("buildFoodSystemReport", () => {
       profile: { type: "t", tagline: "tag", description: "desc" },
     })
     expect(foodSystemReportSchema.safeParse(report).success).toBe(true)
-    expect(report.bioticScores).toEqual({ prebiotics: 0, probiotics: 0, postbiotics: 0 })
+    // 0R-6R · `bioticScores` left the contract, so there is no zero-filled
+    // default to assert. The schema accepting the report IS the assertion.
   })
 
   it("contains every chapter the brief requires", () => {
     const r = buildYou()
     expect(r.systemSnapshot.oneLine.length).toBeGreaterThan(20)
-    expect(r.foodSystemMap.length).toBe(3)
     expect(r.educationModules.length).toBe(3)
     expect(r.bodySignalMap.length).toBeGreaterThan(0)
     expect(r.priorityLever.firstStep.length).toBeGreaterThan(10)
@@ -99,17 +99,23 @@ describe("buildFoodSystemReport", () => {
       overall,
       profile: getProfile(overall, subScores),
     })
-    expect(r.systemSnapshot.priorityPathway).toBe("probiotics")
-    expect(r.systemSnapshot.strongestPathway).not.toBe("probiotics")
-    expect(r.priorityLever.title).toContain("Probiotics")
+    /*
+     * 0R-6R · this asserted that a weak probiotics score made probiotics the
+     * priority pathway and put "Probiotics" in the priority chapter's title.
+     * That behaviour was `P0-SCIENCE-06`. The inverted invariant:
+     */
+    expect(r.priorityLever.title).toBe("Start Here")
+    expect(r.priorityLever.title).not.toMatch(/\b(?:[Pp]re|[Pp]ro|[Pp]ost)biotics?\b/)
+    expect(r.systemSnapshot).not.toHaveProperty("priorityPathway")
+    expect(r.systemSnapshot).not.toHaveProperty("strongestPathway")
   })
 
   it("uses real scores, never invented ones", () => {
     const { subScores, overall, profile } = youResult(2)
     const r = buildFoodSystemReport({ mode: "you", subScores, overall, profile })
-    expect(r.bioticScores.prebiotics).toBe(subScores.prebiotics)
-    expect(r.bioticScores.probiotics).toBe(subScores.probiotics)
-    expect(r.bioticScores.postbiotics).toBe(subScores.postbiotics)
+    // 0R-6R · the three per-Biotic scores are no longer carried at all, so
+    // "uses real scores" is now only about the one score the product sells.
+    expect(r).not.toHaveProperty("bioticScores")
     expect(r.overallScore).toBe(overall)
   })
 })
@@ -244,9 +250,10 @@ describe("mergeGeneratedNarrative", () => {
       },
     } as never)
     expect(merged.overallScore).toBe(base.overallScore)
-    expect(merged.bioticScores).toEqual(base.bioticScores)
-    expect(merged.systemSnapshot.priorityPathway).toBe(base.systemSnapshot.priorityPathway)
-    expect(merged.systemSnapshot.strongestPathway).toBe(base.systemSnapshot.strongestPathway)
+    // 0R-6R · generation cannot reintroduce what the contract no longer has.
+    expect(merged).not.toHaveProperty("bioticScores")
+    expect(merged.systemSnapshot).not.toHaveProperty("priorityPathway")
+    expect(merged.systemSnapshot).not.toHaveProperty("strongestPathway")
     expect(merged.systemSnapshot.oneLine).toBe("kept")
   })
 

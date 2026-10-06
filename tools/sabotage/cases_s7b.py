@@ -636,9 +636,22 @@ CASES = [
      '    "Probiotics are the live cultures in fermented foods.',
      BIOTIC),
 
+    # ── RE-AIMED AT 0R-6R · ITS ANCHOR WAS A DELETED CONSTRUCT ──────────────
+    #
+    # The anchor was a `BAND_SUGGESTS` branch — per-Biotic possessive prose keyed
+    # by the member's band for one pathway — and 0R-6R deleted `BAND_SUGGESTS`
+    # with the rest of `P0-SCIENCE-07`. The case reported ANCHOR MISSING, which
+    # is the honest outcome: no mutation landed, so nothing was proved.
+    #
+    # The PROPERTY is untouched by that repair and still matters. "Live foods" as
+    # a category is the fermented-implies-probiotic equivalence `biotic-claims`
+    # refuses, and the builder still teaches the fibre-plus-fermented pair in
+    # several reviewed sentences. So the case is re-anchored on one of the
+    # sentences that survived — week 1 of the thirty-day loop, which every reader
+    # of the paid Report now receives.
     (999, "the Report reintroduces live foods as a category", REPORTBUILD,
-     '      "Your answers suggest fermented foods are rare at the moment.',
-     '      "Your answers suggest live foods are rare at the moment.',
+     '      action: "Add one fibre-rich food and one fermented food to meals you already eat every day.",',
+     '      action: "Add one fibre-rich food and one live food to meals you already eat every day.",',
      BIOTIC),
 
     (1000, "a swap reason asserts a live-culture count again", SWAPS,

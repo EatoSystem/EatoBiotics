@@ -95,8 +95,12 @@ export interface ReportVisualToken {
 export interface FoodSystemNode {
   id: string
   label: string
-  state: "strong" | "building" | "strained" | "unknown"
-  score?: number
+  /*
+   * 0R-6R · `state` and `score` are gone. See the block above the report
+   * interface. A node is now a label, a reviewed explanation and a token —
+   * which is what a body signal honestly is, and all a pathway node could
+   * honestly be.
+   */
   explanation: string
   visualToken: ReportVisualToken
 }
@@ -111,7 +115,13 @@ export interface EducationModule {
   visualToken: ReportVisualToken
   plainEnglish: string
   whyItMatters: string
-  whatYourAnswersSuggest: string
+  /*
+   * 0R-6R · `whatYourAnswersSuggest` is gone. It was
+   * `BAND_SUGGESTS[pathway][band(score)]` — a possessive sentence about this
+   * member's state in one Biotic, rendered under the label "What your answers
+   * suggest" on the web and in the PDF. The other three fields are general
+   * education and are untouched.
+   */
   actionBridge: string
 }
 
@@ -222,9 +232,16 @@ export interface FoodSystemLens {
   }>
   /** 2–3 things worth noticing. Observations, never diagnoses. */
   signals: Array<{ label: string; whatToNotice: string }>
-  /** The one connection that matters most, derived from the priority pathway. */
+  /*
+   * 0R-6R · `pathway` is gone.
+   *
+   * This field's own docstring said "derived from the priority pathway", which
+   * is the core report's argmin — printed by `lens-section.tsx:99` and by the
+   * PDF as "Where it matters most: Prebiotics". `pathwayConnections` above is
+   * untouched: it connects the lens to all three symmetrically, which is
+   * education, and the prohibited thing was singling one out as this reader's.
+   */
   priorityConnection: {
-    pathway: BioticScoreKey
     why: string
   }
   /**
@@ -245,6 +262,62 @@ export interface FoodSystemLens {
   accent: string
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   0R-6R · `P0-SCIENCE-07` AND `P0-SCIENCE-06` ARE CLOSED AT THIS BOUNDARY.
+
+   This file is the product model five surfaces read: the web section, both
+   PDFs, the fallback report, the add-on lens and the AI merge. While it carried
+   three per-Biotic numbers and three band states, removing them from two
+   renderers would have been a decision not to show today what the model still
+   asserted exists.
+
+       IF A PRODUCT TYPE SAYS A PERSONAL CONSTRUCT EXISTS, EVERY DOWNSTREAM
+       CONSUMER IS INVITED TO TREAT IT AS TRUTH.
+
+   ── WHAT LEFT THE CONTRACT, AND WHAT IT WAS RENDERING ──────────────────────
+
+     bioticScores                three numerals "71/100" in food-system-section
+                                 (PathwayScores) and on the body figure in both
+                                 PDFs, each in that Biotic's colour.
+     FoodSystemNode.state        a band word per Biotic — "Well supported",
+                                 "Room to grow" — coloured by STATE_ACCENT, on
+                                 the web NodeCard, the PDF node cards and the
+                                 ring around the figure of the member's body.
+     FoodSystemNode.score        "{node.score}/100" beside it.
+     EducationModule
+       .whatYourAnswersSuggest   BAND_SUGGESTS[pathway][band(score)] — possessive
+                                 per-Biotic prose under "What your answers
+                                 suggest".
+     systemSnapshot
+       .strongestPathway         the argmax, and
+       .priorityPathway          the argmin, over three unmeasured scores. They
+                                 chose the snapshot sentence, the main lever,
+                                 the accent colour, the five foods, the priority
+                                 chapter and all four weeks of the 30-day loop.
+
+   `bodySignalMap` kept its nodes and lost the same two fields: its `state` was
+   `BAND_STATE[band(biotics[driver])]`, so four body signals each exposed the
+   band of a driver Biotic and the set reconstructed the triple. The test
+   applied to every field was: WOULD THIS ALLOW A DOWNSTREAM CONSUMER TO
+   RECONSTRUCT OR ASSERT A PERSONAL BIOTIC STATE?
+
+   ── WHAT THE REPORT MAY STILL CARRY ───────────────────────────────────────
+
+   `overallScore` — the Biotics Score™, which is the product EatoBiotics
+   actually sells — observable food-system facts, reviewed general Three-Biotics
+   education (`plainEnglish`, `whyItMatters`, `actionBridge`), non-ranked
+   actions, and taxonomy keys used only to organise reviewed material.
+
+   ── AND WHY NOTHING REPLACED THE SELECTOR ─────────────────────────────────
+
+   No authorised selector exists: the FSS-v1 weights refuse to score outside a
+   DEV_ONLY fixture context, and the deterministic Report core is pre-activation.
+   `PILLAR_BEHAVIOUR` would have supplied a safer LABEL for the same argmin, and
+   that was refused — A SAFER LABEL DOES NOT LEGITIMISE AN UNSUPPORTED SELECTOR.
+   Personalised priority may return when a reviewed decision rule exists over a
+   construct the product is entitled to rank.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 export interface FoodSystemReport {
   mode: ReportMode
   title: string
@@ -252,15 +325,12 @@ export interface FoodSystemReport {
   /** ISO 8601. */
   generatedAt: string
   confidence: ReportConfidence
+  /** The Biotics Score™ — one whole-system figure, and the product sold. */
   overallScore: number
-  /** Three pathways only — "synbiotic" classifies a food, not a score. */
-  bioticScores: Record<BioticScoreKey, number>
 
   /** Chapter 1 — the one-line story, before any detail. */
   systemSnapshot: {
     oneLine: string
-    strongestPathway: BioticScoreKey
-    priorityPathway: BioticScoreKey
     dominantPattern: string
     mainLever: string
   }
@@ -271,8 +341,18 @@ export interface FoodSystemReport {
     gradient: VisualAccent[]
   }
 
-  /** Chapter 2 — inputs → microbes → outputs → signals → next action. */
-  foodSystemMap: FoodSystemNode[]
+  /*
+   * 0R-6R · `foodSystemMap` is gone.
+   *
+   * It held the three pathway nodes — Chapter 2, "Your Food System, Part by
+   * Part — where each pathway stands right now" — and every field that made a
+   * node worth rendering was the prohibited construct: a per-Biotic band, a
+   * per-Biotic score, and `BAND_SUGGESTS[pathway][band]`.
+   *
+   * It is removed rather than left as an always-empty array. An empty array is
+   * a field waiting to be filled, and the schema's own `.min(1)` said what the
+   * contract expected — which is how emptying it was caught.
+   */
   /** Chapters 2–4 — teach before recommending. */
   educationModules: EducationModule[]
   /** Chapter 5 — body signals, phrased as food-pattern clues, never diagnoses. */
@@ -352,8 +432,6 @@ export const visualTokenSchema = z.object({
 const nodeSchema = z.object({
   id: z.string().min(1).max(60),
   label: z.string().min(1).max(120),
-  state: z.enum(["strong", "building", "strained", "unknown"]),
-  score: z.number().min(0).max(100).optional(),
   explanation: z.string().min(1),
   visualToken: visualTokenSchema,
 })
@@ -363,7 +441,6 @@ const educationModuleSchema = z.object({
   visualToken: visualTokenSchema,
   plainEnglish: z.string().min(1),
   whyItMatters: z.string().min(1),
-  whatYourAnswersSuggest: z.string().min(1),
   actionBridge: z.string().min(1),
 })
 
@@ -405,15 +482,8 @@ export const foodSystemReportSchema = z.object({
   generatedAt: z.string().min(1),
   confidence: z.enum(["snapshot", "pattern", "tracked"]),
   overallScore: scoreSchema,
-  bioticScores: z.object({
-    prebiotics: scoreSchema,
-    probiotics: scoreSchema,
-    postbiotics: scoreSchema,
-  }),
   systemSnapshot: z.object({
     oneLine: z.string().min(1),
-    strongestPathway: pathwaySchema,
-    priorityPathway: pathwaySchema,
     dominantPattern: z.string().min(1),
     mainLever: z.string().min(1),
   }),
@@ -422,7 +492,6 @@ export const foodSystemReportSchema = z.object({
     bodyAssetPath: z.string().min(1),
     gradient: z.array(accentSchema).min(1),
   }),
-  foodSystemMap: z.array(nodeSchema).min(1),
   educationModules: z.array(educationModuleSchema).min(1),
   bodySignalMap: z.array(nodeSchema).min(1),
   priorityLever: z.object({
@@ -490,7 +559,7 @@ export const foodSystemReportSchema = z.object({
         .array(z.object({ label: z.string().min(1), whatToNotice: z.string().min(20) }))
         .min(2)
         .max(3),
-      priorityConnection: z.object({ pathway: pathwaySchema, why: z.string().min(20) }),
+      priorityConnection: z.object({ why: z.string().min(20) }),
       loopAdditions: z
         .array(z.object({ week: z.number().int().min(1).max(4), action: z.string().min(20) }))
         .min(2)

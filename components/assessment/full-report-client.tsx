@@ -288,7 +288,10 @@ function FullReportSections({
               Your Top 12 Foods
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Ranked by impact for your specific profile — start here.
+              {/* 0R-6R · was "Ranked by impact for your specific profile". The
+                * list is ordered by the catalogue's own reviewed priority, which
+                * is a property of each food and the same for every reader. */}
+              A practical starting set — what each one does, and how to use it.
             </p>
           </ScrollReveal>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -355,7 +358,9 @@ function FullReportSections({
               5 Easy Food Swaps
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Simple substitutions targeted at your weakest pillar — no willpower required.
+              {/* 0R-6R · "targeted at your weakest pillar" named a ranking the
+                * product may not make. The swaps themselves are unchanged. */}
+              Simple substitutions — no willpower required.
             </p>
           </ScrollReveal>
           <div className="mt-6 space-y-3">
@@ -423,7 +428,9 @@ function FullReportSections({
               Your 30-Day Plan
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Four weeks of targeted habits built around your weakest pillars. One week at a time.
+              {/* 0R-6R · "built around your weakest pillars" named the same
+                * ranking; the four weeks are now the same for every reader. */}
+              Four weeks of habits, one week at a time.
             </p>
           </ScrollReveal>
           {claudeReport?.rhythmInsight && (

@@ -1118,6 +1118,111 @@ describe("0R-6 · P0-SCIENCE-07 · no per-Biotic score out of 100 in the Report"
     ).toBe(false)
   })
 
+  /*
+   * ══ 0R-6R · THE CANONICAL TYPE IS THE BOUNDARY ════════════════════════════
+   *
+   * 0R-6 closed `-07` in `components/assessment/full-report-client.tsx`, the
+   * LATENT dev-flow renderer, and left the identical construct live on the paid
+   * path in two other renderers because the register classified `-07` as "not
+   * currently customer-reachable". The register was describing one file.
+   *
+   * The ruling that moved the boundary:
+   *
+   *     IF A PRODUCT TYPE SAYS A PERSONAL CONSTRUCT EXISTS, EVERY DOWNSTREAM
+   *     CONSUMER IS INVITED TO TREAT IT AS TRUTH.
+   *
+   * So the test is no longer "does this renderer print it" but "can the
+   * canonical Report type REPRESENT it". `FoodSystemReport` is the product
+   * model the web section, the PDF, the fallback report, the add-on lens and
+   * the AI merge all read; while it carries three per-Biotic numbers and three
+   * band states, removing them from two renderers is a decision not to show
+   * today what the model still asserts exists.
+   *
+   * The test for a field, from the ruling: WOULD THIS FIELD ALLOW A DOWNSTREAM
+   * CONSUMER TO RECONSTRUCT OR ASSERT A PERSONAL BIOTIC STATE? `bodySignalMap`
+   * is the one that needed it rather than being obvious — its `state` was
+   * `BAND_STATE[band(biotics[driver])]`, so four body signals each exposed the
+   * band of a driver Biotic, and the set reconstructs the triple.
+   */
+  it("the canonical Report type cannot represent a personal per-Biotic score or state", () => {
+    const types = readFileSync("lib/report/food-system-report-types.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    // NON-VACUITY: the module and both declarations must still be there.
+    expect(/export interface FoodSystemReport \{/.test(types), "FoodSystemReport is gone").toBe(true)
+    expect(/export interface FoodSystemNode \{/.test(types), "FoodSystemNode is gone").toBe(true)
+
+    for (const [why, rule] of [
+      ["FoodSystemReport.bioticScores — three per-Biotic numbers on the product model", /\bbioticScores\b/],
+      ["a per-Biotic band state on a node", /\bstate\s*:\s*"strong"/],
+      ["a per-Biotic score on a node", /^\s*score\??\s*:\s*number/m],
+      ["EducationModule.whatYourAnswersSuggest — BAND_SUGGESTS keyed per Biotic", /\bwhatYourAnswersSuggest\b/],
+    ] as const) {
+      expect(
+        rule.test(types),
+        `lib/report/food-system-report-types.ts still declares ${why}. A type ` +
+          `that says the construct exists invites every consumer to render it, ` +
+          `which is why 0R-6R closed this at the model rather than at two of ` +
+          `its five readers.`,
+      ).toBe(false)
+    }
+  })
+
+  it("Report construction reads no per-Biotic score, and cannot rank one", () => {
+    const builder = readFileSync("lib/report/build-food-system-report.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    expect(/export function buildFoodSystemReport/.test(builder), "the builder is gone").toBe(true)
+
+    for (const [why, rule] of [
+      ["orderedByNeed — the argmin/argmax over three unmeasured scores", /\borderedByNeed\b/],
+      ["normalizeToBiotics — the three scores entering the builder at all", /\bnormalizeToBiotics\b/],
+      ["a priorityPathway", /\bpriorityPathway\b/],
+      ["a strongestPathway", /\bstrongestPathway\b/],
+      ["BAND_SUGGESTS — per-Biotic possessive prose keyed by band", /\bBAND_SUGGESTS\b/],
+    ] as const) {
+      expect(
+        rule.test(builder),
+        `lib/report/build-food-system-report.ts still carries ${why}. No ` +
+          `authorised selector means no personalised selection — not a safer ` +
+          `label on the same selector.`,
+      ).toBe(false)
+    }
+  })
+
+  it("orderedByNeed no longer exists for any Report surface to call", () => {
+    /*
+     * COMMENTS STRIPPED, and this rule is why the habit is now a reflex.
+     *
+     * `subscores.ts` carries a long block recording the deletion, and that
+     * block names `orderedByNeed` six times. On its first run this assertion
+     * read the raw file and failed against the record of its own repair.
+     *
+     * That is the FOURTH time in two tranches: the `-07` reachability pin read
+     * `paid-flow-policy.ts`'s doc comment at 0R-6, the `PillarDeepDive`
+     * structural rule needed the same treatment, and the form track's
+     * `BioticKey` rule was firing on two comments in `system-map.ts` and
+     * `twin-visual.ts` — which is part of why it was retired.
+     *
+     *     A COMMENT RECORDING A DEFECT IS NOT THE DEFECT.
+     *
+     * A structural rule reads code. Only a prose rule reads prose.
+     */
+    const sub = readFileSync("lib/report/subscores.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    expect(/export function normalizeToBiotics/.test(sub), "subscores.ts is gone").toBe(true)
+    expect(
+      /\borderedByNeed\b/.test(sub),
+      "lib/report/subscores.ts still exports orderedByNeed. Deleting the " +
+        "function is what makes 'Report construction cannot recreate the " +
+        "ranking' structural rather than asserted.",
+    ).toBe(false)
+  })
+
   it("the dev flow cannot serve the Report in production, under any environment", () => {
     /*
      * The spec's close condition for `-07` is two-part: the construct gone AND

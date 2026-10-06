@@ -62,9 +62,30 @@ describe("generate-report prompt", () => {
     expect(prompt).toContain(`Postbiotics (recovery, rhythm, resilience): ${biotics.postbiotics}/100`)
   })
 
-  it("names a real pathway as weakest, never a legacy pillar", () => {
+  /*
+   * 0R-6R · INVERTED. This required the prompt to contain
+   *
+   *     Weakest pathway: Probiotics (23/100)
+   *     Strongest pathway: Prebiotics (71/100)
+   *
+   * — the argmin and argmax over three unmeasured scores, handed to a model
+   * with the instruction "every sentence should feel earned by their actual
+   * numbers". The legacy-pillar half of the assertion is kept: its concern was
+   * that the prompt resolve real keys rather than `undefined`, and that is
+   * still worth holding.
+   */
+  it("the prompt ranks nothing, and still names no legacy pillar", () => {
     const prompt = buildPrompt(body, normalizeToBiotics(subScores)!)
-    expect(prompt).toMatch(/Weakest pathway: (Prebiotics|Probiotics|Postbiotics) \(\d+\/100\)/)
+
+    // NON-VACUITY: it is still a real prompt about this customer's scores.
+    expect(prompt.length).toBeGreaterThan(400)
+    expect(prompt).toContain("Overall Food System Score")
+
+    expect(prompt).not.toMatch(/Weakest pathway:/)
+    expect(prompt).not.toMatch(/Strongest pathway:/)
+    // And it tells the model not to invent the ranking either.
+    expect(prompt).toMatch(/Do NOT rank the three pathways against each other/)
+
     for (const legacy of ["Diversity Score", "Feeding Score", "Adding Score", "Feeling Score"]) {
       expect(prompt).not.toContain(legacy)
     }
@@ -340,12 +361,26 @@ describe("no surface is still keyed on the legacy five pillars", () => {
         } as never),
       )
 
-      expect(rendered, flow).toContain("Your 3 Biotics")
-      expect(rendered, flow).toContain("Prebiotics")
-      expect(rendered, flow).toContain("Probiotics")
-      expect(rendered, flow).toContain("Postbiotics")
+      /*
+       * 0R-6R · INVERTED, and this is the strongest rendered proof in the
+       * tranche because it walks the real element tree of the real PDF.
+       *
+       * It used to REQUIRE "Your 3 Biotics" and all three pathway names in the
+       * legacy PDF — the panel whose rows were a Biotic name, a per-Biotic
+       * colour, a bar of width `${score}%` and the score, sorted weakest
+       * first. The panel is deleted.
+       *
+       * The undefined-label check is kept: its concern was that every rendered
+       * row resolve a real label, and a report that renders "undefined" to a
+       * paying customer is still a defect.
+       */
+      expect(rendered, flow).not.toContain("Your 3 Biotics")
       expect(rendered, flow).not.toContain("Your 5 Pillars")
-      // The symptom of the bug: rows whose label resolved to undefined.
+
+      // NON-VACUITY: the PDF still rendered a substantial document.
+      expect(rendered.length, flow).toBeGreaterThan(80)
+      expect(rendered.join(" "), flow).toContain("Your Assessment")
+
       expect(rendered.some((v) => v.includes("undefined")), flow).toBe(false)
     }
   })
@@ -360,7 +395,17 @@ describe("no surface is still keyed on the legacy five pillars", () => {
     expect(src).not.toMatch(/Object\.entries\(subScores\)/)
     // Labels must come from the shared pathway map, not a local legacy one.
     expect(src).not.toMatch(/PILLAR_LABELS\s*[:=]/)
-    expect(src).toContain("normalizeToBiotics")
+    /*
+     * 0R-6R · the last line required `normalizeToBiotics` to be IMPORTED here,
+     * which was the fix for the legacy-pillar bug: read sub-scores through one
+     * normaliser rather than indexing a shape. The panel that needed it is
+     * gone, so the import is gone, and requiring it now would require the
+     * module to keep a reader for the three scores it may no longer show.
+     *
+     * The invariant becomes the stronger one: this PDF cannot reach them.
+     */
+    expect(src).not.toContain("normalizeToBiotics")
+    expect(src).not.toMatch(/\bsubScores\b/)
   })
 
   it("food swaps differ by pathway instead of always returning 'feeding'", async () => {
@@ -514,9 +559,8 @@ describe("paid PDF: Food System chapters", () => {
     for (const mod of fs.educationModules) {
       expect(joined).toContain(mod.title)
       expect(joined).toContain(mod.plainEnglish)
-      expect(joined).toContain(mod.whatYourAnswersSuggest)
     }
-    for (const node of [...fs.foodSystemMap, ...fs.bodySignalMap]) {
+    for (const node of fs.bodySignalMap) {
       expect(joined).toContain(node.label)
       expect(joined).toContain(node.explanation)
     }

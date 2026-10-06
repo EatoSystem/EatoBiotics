@@ -1,7 +1,7 @@
 import type { AddonType } from "@/lib/addon-types"
 import { lensQuestionId, type LensSlot } from "@/lib/assessment/addon-questions"
 import { SYSTEMS } from "@/lib/systems"
-import { PATHWAY_LABEL, type BioticScoreKey } from "@/lib/report/subscores"
+import type { BioticScoreKey } from "@/lib/report/subscores"
 import type { FoodSystemLens, FoodSystemReport, LensEvidenceNote } from "@/lib/report/food-system-report-types"
 
 /**
@@ -252,8 +252,15 @@ export interface BuildLensInput {
   /** Sanitized lens answers, keyed by wire id — see sanitizeLensAnswers()
    *  in lib/assessment/addon-questions.ts. Never the raw request body. */
   answers: Answers
-  /** The already-built core report. Read-only here. */
-  foodSystem: Pick<FoodSystemReport, "systemSnapshot" | "bioticScores">
+  /*
+   * The already-built core report. Read-only here.
+   *
+   * 0R-6R · `bioticScores` left `FoodSystemReport`, and `systemSnapshot` no
+   * longer carries a ranked pathway, so a lens has nothing per-Biotic to read
+   * even if it wanted one. The Pick is kept rather than widened: it is the
+   * declaration that a lens sees the core report's narrative and nothing else.
+   */
+  foodSystem: Pick<FoodSystemReport, "systemSnapshot">
   isFamily?: boolean
 }
 
@@ -293,7 +300,7 @@ interface LensBody {
   pathwayCopy: Record<BioticScoreKey, string>
 }
 
-function stabilityBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+function stabilityBody(r: SlotReader, v: Voice): LensBody {
   const rhythm = r.one(1)
   const timing = r.one(2)
   const have = r.many(3)
@@ -371,12 +378,15 @@ function stabilityBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensB
     patternSummary: `${rhythmLine} ${timingLine}`,
     signals,
     loopAdditions,
+    /*
+     * 0R-6R · all twelve branches of this field said "<Biotic> is the thinnest
+     * pathway underneath this lens" — the core report's argmin, restated in the
+     * lens chapter. The replacement keeps each lens's own reviewed tail, which
+     * is what the sentence was actually for, and drops the ranking clause that
+     * carried it.
+     */
     priorityWhy:
-      priority === "probiotics"
-        ? "Live-culture exposure is the thinnest part of the food system underneath this, so it is where a change is most likely to show up in comfort and regularity."
-        : priority === "prebiotics"
-        ? "Fibre variety is the thinnest part of the food system underneath this, and it is the substrate the whole pattern runs on."
-        : "Rhythm and recovery are the thinnest part of the food system underneath this, which is the same lever this lens keeps returning to.",
+      "All three pathways feed comfort and regularity, and rhythm is the lever this lens keeps returning to.",
     pathwayCopy: {
       prebiotics: "Fibre variety is the raw material digestion works with; range tends to matter more than any single high-fibre food.",
       probiotics: "Live cultures add microbial exposure rather than only feeding what is already present.",
@@ -385,7 +395,7 @@ function stabilityBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensB
   }
 }
 
-function glucoseBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+function glucoseBody(r: SlotReader, v: Voice): LensBody {
   const energy = r.one(1)
   const breakfast = r.one(2)
   const craving = r.one(3)
@@ -471,12 +481,15 @@ function glucoseBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBod
     patternSummary: `${energyLine} ${breakfastLine}`,
     signals,
     loopAdditions,
+    /*
+     * 0R-6R · all twelve branches of this field said "<Biotic> is the thinnest
+     * pathway underneath this lens" — the core report's argmin, restated in the
+     * lens chapter. The replacement keeps each lens's own reviewed tail, which
+     * is what the sentence was actually for, and drops the ranking clause that
+     * carried it.
+     */
     priorityWhy:
-      priority === "prebiotics"
-        ? "Fibre is the thinnest pathway underneath this lens, and fibre alongside carbohydrate is the change most often linked to how a meal is experienced."
-        : priority === "probiotics"
-        ? "Live-culture exposure is the thinnest pathway underneath this lens; it works on the same system from a different direction than meal composition."
-        : "Rhythm is the thinnest pathway underneath this lens, and meal spacing is exactly what craving timing tends to track.",
+      "Fibre alongside carbohydrate is the change most often linked to how a meal is experienced, and meal spacing is what craving timing tends to track.",
     pathwayCopy: {
       prebiotics: "Fibre alongside a carbohydrate changes how the meal is experienced, which is the practical centre of this lens.",
       probiotics: "Live cultures are a different lever on the same system, and are worth keeping steady rather than adding in bursts.",
@@ -485,7 +498,7 @@ function glucoseBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBod
   }
 }
 
-function mindBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+function mindBody(r: SlotReader, v: Voice): LensBody {
   const rhythm = r.one(1)
   const focusDip = r.one(2)
   const have = r.many(3)
@@ -561,12 +574,15 @@ function mindBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
     patternSummary: `${rhythmLine} ${focusLine}`,
     signals,
     loopAdditions,
+    /*
+     * 0R-6R · all twelve branches of this field said "<Biotic> is the thinnest
+     * pathway underneath this lens" — the core report's argmin, restated in the
+     * lens chapter. The replacement keeps each lens's own reviewed tail, which
+     * is what the sentence was actually for, and drops the ranking clause that
+     * carried it.
+     */
     priorityWhy:
-      priority === "probiotics"
-        ? "Live-culture exposure is the thinnest pathway underneath this lens. Diet and mental wellbeing are studied through several possible pathways, and the evidence is still developing — this is a place to notice patterns, not to expect an effect."
-        : priority === "prebiotics"
-        ? "Fibre variety is the thinnest pathway underneath this lens, and it is the substrate the rest of the system depends on."
-        : "Rhythm and recovery are the thinnest pathway underneath this lens, which is the same thing the busy-day pattern keeps pointing at.",
+      "Diet and mental wellbeing are studied through several possible pathways, and the evidence is still developing — this is a place to notice patterns, not to expect an effect.",
     pathwayCopy: {
       prebiotics: "Plant variety is the base the rest runs on, and it is the least dependent on any single ingredient.",
       probiotics: "Live foods are one part of overall diet quality. Trials of dietary improvement have shown a small average reduction in depressive symptoms, with no significant effect for anxiety — and a group average says nothing about any one person.",
@@ -575,7 +591,7 @@ function mindBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
   }
 }
 
-function performanceBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+function performanceBody(r: SlotReader, v: Voice): LensBody {
   const fuelling = r.one(1)
   const recovery = r.one(2)
   const meals = r.many(3)
@@ -656,12 +672,15 @@ function performanceBody(r: SlotReader, priority: BioticScoreKey, v: Voice): Len
     patternSummary: `${fuellingLine} ${recoveryLine}`,
     signals,
     loopAdditions,
+    /*
+     * 0R-6R · all twelve branches of this field said "<Biotic> is the thinnest
+     * pathway underneath this lens" — the core report's argmin, restated in the
+     * lens chapter. The replacement keeps each lens's own reviewed tail, which
+     * is what the sentence was actually for, and drops the ranking clause that
+     * carried it.
+     */
     priorityWhy:
-      priority === "postbiotics"
-        ? "Rhythm and recovery are the thinnest pathway underneath this lens, and they are what the day-after pattern keeps pointing at."
-        : priority === "prebiotics"
-        ? "Fibre variety is the thinnest pathway underneath this lens, and it is what the rest of the plate is built around."
-        : "Live-culture exposure is the thinnest pathway underneath this lens, and it is the one least affected by training load.",
+      "Rhythm and recovery are what the day-after pattern keeps pointing at, and plant range across the week is what the rest of the plate is built around.",
     pathwayCopy: {
       prebiotics: "Plant range across the week is the part of the plate most often thin when protein is the focus.",
       probiotics: "Live cultures are a small, steady addition rather than something to load around activity.",
@@ -670,7 +689,7 @@ function performanceBody(r: SlotReader, priority: BioticScoreKey, v: Voice): Len
   }
 }
 
-const BUILDERS: Record<AddonType, (r: SlotReader, p: BioticScoreKey, v: Voice) => LensBody> = {
+const BUILDERS: Record<AddonType, (r: SlotReader, v: Voice) => LensBody> = {
   stability: stabilityBody,
   glucose: glucoseBody,
   mind: mindBody,
@@ -824,14 +843,18 @@ export function claudeContributedToLens(base: FoodSystemLens, merged: FoodSystem
 }
 
 export function buildAddonLens(input: BuildLensInput): FoodSystemLens {
-  const { addon, answers, foodSystem, isFamily = false } = input
-  const priority = foodSystem.systemSnapshot.priorityPathway
+  const { addon, answers, isFamily = false } = input
+  /*
+   * 0R-6R · `const priority = foodSystem.systemSnapshot.priorityPathway` stood
+   * here and was threaded into all four builders. The lens no longer reads a
+   * ranked pathway, because the core report no longer nominates one.
+   */
 
   const voice: Voice = isFamily
     ? { who: "Your household's", subjectIs: "the household is", subjectHas: "the household has", possessive: "the household's" }
     : { who: "Your", subjectIs: "you are", subjectHas: "you have", possessive: "your" }
 
-  const body = BUILDERS[addon](slotReader(addon, answers), priority, voice)
+  const body = BUILDERS[addon](slotReader(addon, answers), voice)
   const meta = lensMeta(addon)
 
   const pathways: BioticScoreKey[] = ["prebiotics", "probiotics", "postbiotics"]
@@ -844,11 +867,17 @@ export function buildAddonLens(input: BuildLensInput): FoodSystemLens {
     patternSummary: body.patternSummary,
     pathwayConnections: pathways.map((p) => ({ pathway: p, connection: body.pathwayCopy[p] })),
     signals: body.signals.slice(0, 3),
+    /*
+     * 0R-6R · `pathway` is gone and the `why` no longer opens by naming one.
+     *
+     * It read "`${PATHWAY_LABEL[priority]}` is where this lens meets your Food
+     * System score" — the core's argmin, printed in the lens chapter and in the
+     * PDF as "Where it matters most: Prebiotics". The old comment was right
+     * that a lens may not nominate its own priority; what it missed is that
+     * neither may the core.
+     */
     priorityConnection: {
-      // Derived from the core report, not from the lens answers — the lens
-      // cannot nominate its own priority.
-      pathway: priority,
-      why: `${PATHWAY_LABEL[priority]} is where this lens meets your Food System score. ${body.priorityWhy}`,
+      why: `This lens meets your Food System score through all three pathways. ${body.priorityWhy}`,
     },
     loopAdditions: body.loopAdditions.slice(0, 3),
     evidenceNotes: LENS_EVIDENCE[addon],

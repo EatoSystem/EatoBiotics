@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
-import { copyFileSync, mkdirSync } from "node:fs"
+import { mkdirSync } from "node:fs"
 
 import {
   COMMITTED_ROOT,
@@ -7,6 +7,7 @@ import {
   mergeIntoManifest,
   readShards,
   sha256Of,
+  copyToCommitted,
   writeShard,
 } from "./audit-manifest"
 import {
@@ -118,8 +119,12 @@ async function capture(
   const file = `${SURFACE}-${state}-${section}-${label}.png`
   await page.screenshot({ path: `${CORPUS}/${file}`, fullPage: true, animations: "disabled" })
 
-  const committed = REPRESENTATIVE.has(file)
-  if (committed) copyFileSync(`${CORPUS}/${file}`, `${COMMITTED}/${file}`)
+  /*
+   * 0R-6R · gated. Without EATOBIOTICS_AUDIT_WRITE_FROZEN=1 nothing is copied
+   * into the committed set and the row records "archive-only".
+   */
+  const committed =
+    REPRESENTATIVE.has(file) && copyToCommitted(`${CORPUS}/${file}`, COMMITTED, file) === "committed"
 
   writeShard({
     file,

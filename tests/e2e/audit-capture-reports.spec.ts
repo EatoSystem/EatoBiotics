@@ -1,11 +1,12 @@
 import { test, expect, type Page } from "@playwright/test"
-import { copyFileSync, mkdirSync } from "node:fs"
+import { mkdirSync } from "node:fs"
 
 import {
   COMMITTED_ROOT,
   CORPUS_ROOT,
   mergeIntoManifest,
   readShards,
+  copyToCommitted,
   sha256Of,
   writeShard,
   type ManifestRow,
@@ -176,11 +177,15 @@ async function capture(
   await settle(page)
   await page.screenshot({ path, fullPage: true, animations: "disabled" })
 
-  const storage = REPRESENTATIVE.has(file) ? "committed" : "archive-only"
-  if (storage === "committed") {
-    mkdirSync(COMMITTED, { recursive: true })
-    copyFileSync(path, `${COMMITTED}/${file}`)
-  }
+  /*
+   * 0R-6R · the representative copy goes through the frozen-write gate.
+   * Without EATOBIOTICS_AUDIT_WRITE_FROZEN=1 nothing is copied and the row
+   * records "archive-only", so the manifest never claims an image is in the
+   * repository when this run did not put it there.
+   */
+  const storage = REPRESENTATIVE.has(file)
+    ? copyToCommitted(path, COMMITTED, file)
+    : "archive-only"
   writeShard({ ...row, file, sha256: sha256Of(path), storage })
 }
 
@@ -294,13 +299,60 @@ test.describe("what the audit must prove before citing these images", () => {
       "lib/report/subscores.ts",
       "lib/report/framing.ts",
     ]
+    /*
+     * COMMENTS STRIPPED, and this is the FIFTH time in two tranches that the
+     * same correction has been needed:
+     *
+     *   0R-6   the `-07` reachability pin read `paid-flow-policy.ts`'s own doc
+     *          comment
+     *   0R-6   the `PillarDeepDive` structural rule read the note recording its
+     *          own repair
+     *   0R-6   the form track's `BioticKey` rule fired on two comments
+     *   0R-6R  the `orderedByNeed` rule read the block recording the deletion
+     *   0R-6R  THIS ONE — `lib/assessment-report.ts` gained a comment at 0R-6R
+     *          explaining that its renderer is latent "behind
+     *          `isUnverifiedPaidFlowAllowed`", and the rule read that sentence
+     *          as a read of the flag.
+     *
+     *     A COMMENT RECORDING A DEFECT IS NOT THE DEFECT.
+     *     A COMMENT NAMING A MECHANISM IS NOT A READ OF THAT MECHANISM.
+     *
+     * A structural rule reads code. Only a prose rule reads prose.
+     */
+    const codeOf = (file: string) =>
+      readFileSync(file, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, " ")
+        .replace(/^\s*\/\/.*$/gm, " ")
+
     for (const file of mustNotRead) {
-      const src = readFileSync(file, "utf8")
+      const src = codeOf(file)
       expect(
         src.includes(UNVERIFIED_PAID_FLOW_FLAG) || src.includes("isUnverifiedPaidFlowAllowed"),
         `${file} reads the paid-flow flag, so the captured Report's CONTENT depends on how it was reached — the capture is not evidence`,
       ).toBe(false)
     }
+
+    /*
+     * NON-VACUITY: stripping comments must not blind the rule. The subject is
+     * the real shape — an import of the policy and a call — written as code, so
+     * a stripper that ate too much would fail here rather than silently passing
+     * every file.
+     */
+    const SHIPPED_SHAPE = [
+      'import { isUnverifiedPaidFlowAllowed } from "@/lib/paid-flow-policy"',
+      "  if (isUnverifiedPaidFlowAllowed()) return fixtureReport()",
+    ].join("\n")
+    const strippedShape = SHIPPED_SHAPE.replace(/\/\*[\s\S]*?\*\//g, " ").replace(
+      /^\s*\/\/.*$/gm,
+      " ",
+    )
+    expect(strippedShape.includes("isUnverifiedPaidFlowAllowed")).toBe(true)
+    // And the comment form that caused this correction is not matched.
+    expect(
+      "/* behind `isUnverifiedPaidFlowAllowed` */"
+        .replace(/\/\*[\s\S]*?\*\//g, " ")
+        .includes("isUnverifiedPaidFlowAllowed"),
+    ).toBe(false)
 
     // And the page consults it once, to choose a branch.
     const page = readFileSync("app/assessment/report/page.tsx", "utf8")
@@ -444,26 +496,87 @@ test.describe("what the render established, stated at its true reach", () => {
    * Pinned at source so the audit's claim about the money path cannot rot
    * silently, and so a repair has something that fails when it lands.
    */
-  test("the production paid Report composes a personal Biotic ranking", async () => {
+  /*
+   * ══ 0R-6R · WHY THERE IS NO BROWSER PROOF OF `FoodSystemSection` HERE ═════
+   *
+   * I wrote one, ran it, and it failed on its own non-vacuity assertion — which
+   * is the correction worth keeping rather than the test.
+   *
+   * `walkToPaidReport` reaches `/assessment/report` through the unverified dev
+   * flow, and that route renders `FullReportClient`. `FoodSystemSection` — the
+   * component that carried `PathwayScores`, the state badges and the ringed body
+   * figure — is rendered by `PaidReportClient`, which needs a SETTLED Stripe
+   * session this harness will not fabricate. The docblock above says so, and my
+   * test asserted "3-Biotics Engine" was present in a page that never contains
+   * it.
+   *
+   * So the web proof lives where it can actually be made:
+   *
+   *   tests/unit/food-system-section.test.ts   renders `FoodSystemSection` to
+   *                                            static markup and asserts no
+   *                                            band word and no score reaches
+   *                                            the reader
+   *   tests/unit/paid-pdf-biotic-claims.test.ts  walks the rendered element
+   *                                            tree of BOTH PDFs and renders
+   *                                            one to a real buffer
+   *   tests/unit/agent-loop-claims.test.ts     calls the builder over six
+   *                                            permutations of one multiset
+   *
+   * Source inspection can establish possibility; rendered evidence establishes
+   * reachability. The three above are rendered evidence — just not through a
+   * browser, because the browser cannot reach this component without a payment.
+   */
+
+  /*
+   * ══ INVERTED AT 0R-6R — THE FOUR-HOP CHAIN IS BROKEN AT HOP ONE ═══════════
+   *
+   * This asserted the defect REPRODUCED, and the docblock above still records
+   * the chain it traced: the builder composed `dominantPattern` naming a
+   * strongest and a priority pathway, `FoodSystemSection` rendered it, and
+   * `PaidReportClient` named a pathway of its own.
+   *
+   * The chain no longer has a first hop. `orderedByNeed` is deleted from
+   * `lib/report/subscores.ts`, so nothing in the Report family can rank the
+   * three scores, and the renderers carry no `PATHWAY_LABEL[…Pathway]` to
+   * print. `dominantPattern` SURVIVES as a field and is still rendered — it is
+   * now one reviewed sentence about the pattern, identical for every reader —
+   * which is why the assertion below keeps it and checks its content instead.
+   */
+  test("the production paid Report composes no personal Biotic ranking", async () => {
     const { readFileSync } = await import("node:fs")
+    const stripComments = (src: string) =>
+      src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ")
 
-    const builder = readFileSync("lib/report/build-food-system-report.ts", "utf8")
+    const builder = stripComments(readFileSync("lib/report/build-food-system-report.ts", "utf8"))
+
+    // NON-VACUITY: it is still the builder, and it still composes the snapshot.
+    expect(builder).toContain("export function buildFoodSystemReport")
+    expect(builder).toContain("dominantPattern")
+
+    expect(/strongest pathway/i.test(builder), "the builder names a strongest pathway again").toBe(false)
     expect(
-      /strongest pathway/i.test(builder) && /PATHWAY_LABEL\[(strongest|priority)Pathway\]/.test(builder),
-      "build-food-system-report no longer names a strongest/priority pathway — re-read the step-7 audit",
-    ).toBe(true)
+      /PATHWAY_LABEL\[(strongest|priority)Pathway\]/.test(builder),
+      "the builder interpolates a ranked pathway label again",
+    ).toBe(false)
+    expect(/\borderedByNeed\b/.test(builder), "the builder ranks the three scores again").toBe(false)
 
-    const section = readFileSync("components/report/food-system-section.tsx", "utf8")
-    expect(
-      section.includes("systemSnapshot.dominantPattern"),
-      "FoodSystemSection no longer renders dominantPattern — the chain changed",
-    ).toBe(true)
+    const section = stripComments(readFileSync("components/report/food-system-section.tsx", "utf8"))
+    // The sentence is still rendered — it is the non-ranked one now.
+    expect(section).toContain("systemSnapshot.dominantPattern")
+    expect(/PATHWAY_LABEL\[(strongest|priority)/.test(section)).toBe(false)
 
-    const client = readFileSync("components/assessment/paid-report-client.tsx", "utf8")
+    const client = stripComments(readFileSync("components/assessment/paid-report-client.tsx", "utf8"))
     expect(
       client.includes("PATHWAY_LABEL["),
-      "PaidReportClient no longer names a pathway — re-read the step-7 audit",
-    ).toBe(true)
+      "PaidReportClient names a pathway again — it did so in three places " +
+        "at 175f53d: the membership CTA's priorityLabel, the hero tagline and " +
+        "the food section's subtitle",
+    ).toBe(false)
+
+    // And the one function that could put the ranking back is gone outright.
+    const sub = stripComments(readFileSync("lib/report/subscores.ts", "utf8"))
+    expect(sub).toContain("export function normalizeToBiotics")
+    expect(/\borderedByNeed\b/.test(sub), "orderedByNeed is exported again").toBe(false)
   })
 
   /**

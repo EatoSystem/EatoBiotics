@@ -11,7 +11,6 @@ import {
   FoodSystemClosing,
 } from "@/components/report/food-system-section"
 import { coerceBiotic } from "@/lib/report/visual-token"
-import { PATHWAY_LABEL } from "@/lib/report/subscores"
 import { heroTaglineFor } from "@/lib/report/framing"
 import { FOOD_TOOL_COUNT } from "@/lib/report/build-food-system-report"
 import { ScoreRing } from "./score-ring"
@@ -383,7 +382,11 @@ export function PaidReportClient({
                   // prose choice — interpolated so the heading cannot promise a
                   // number the builder does not produce.
                   title={`${FOOD_TOOL_COUNT} Foods Chosen For You`}
-                  subtitle="A practical starting set chosen to support your current priority pathway."
+                  /* 0R-6R · was "…chosen to support your current priority
+                     pathway." The five foods are no longer chosen by a ranking,
+                     and the heading said they were. Found by reading the
+                     rendered Report rather than the source. */
+                  subtitle="A practical starting set — what each one does, and how to use it."
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
                   {rFull.specificFoodList.map((food, i) => (
@@ -674,13 +677,9 @@ export function PaidReportClient({
         {/* ── Membership CTA ───────────────────────────────────────── */}
         <section>
           <ScrollReveal>
+            {/* 0R-6R · `priorityLabel` is gone — see report-membership-cta.tsx. */}
             <ReportMembershipCTA
               overall={freeScores?.overall}
-              priorityLabel={
-                foodSystem
-                  ? PATHWAY_LABEL[foodSystem.systemSnapshot.priorityPathway]
-                  : undefined
-              }
               membershipBridge={(reportJson as DeepStarterReport).membershipBridge}
               membershipTier={membershipTier}
             />

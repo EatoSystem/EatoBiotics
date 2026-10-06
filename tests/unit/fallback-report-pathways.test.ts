@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest"
 
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
-import { band } from "@/lib/report/build-food-system-report"
-import { normalizeToBiotics, orderedByNeed, PATHWAY_LABEL } from "@/lib/report/subscores"
 
 /**
  * Regression suite for the €49 audit's core finding: the fallback paid report
@@ -83,135 +81,156 @@ function reportFor(name: keyof typeof PROFILES, tier: "starter" | "full" | "prem
     thirtyDayRoadmap: Array<{ week: number; theme: string; actions: string[] }>
     opening: string
     topTrigger: string
-    foodSystem: { systemSnapshot: { priorityPathway: string; strongestPathway: string } }
   }
 }
 
-describe("fallback report: priority pathway agrees with the actual scores", () => {
-  it.each(Object.keys(PROFILES) as Array<keyof typeof PROFILES>)("%s profile", (name) => {
-    const p = PROFILES[name]
-    const biotics = normalizeToBiotics(p.subScores)!
-    const ranked = orderedByNeed(biotics)
-    const expectedPriority = ranked[0][0]
-    const expectedStrongest = ranked[ranked.length - 1][0]
+/* ══ 0R-6R · THESE FOUR DESCRIBES ASSERTED THE CONSTRUCT ═══════════════════
+ *
+ * They were written for the €49 audit's finding that this fallback was
+ * "score-blind": every customer got the same opening and the same five foods,
+ * and the repair made the report vary with the member's WEAKEST PATHWAY.
+ *
+ * That repair was the defect. The variation it introduced was an argmin over
+ * three unmeasured scores choosing the opening, the top trigger, the five
+ * foods, the seven-day plan and the thirty-day roadmap — and the four describes
+ * here were the proof that it was working:
+ *
+ *   "priority pathway agrees with the actual scores"
+ *   "a strong overall score never hides a strained pathway"
+ *   "band-aware language"
+ *   "three profiles do not receive the same report with different numbers"
+ *
+ * The invariant is now the opposite one, and it is stronger: holding the
+ * MULTISET of scores constant and permuting which Biotic carries which, the
+ * report must be byte-identical. The audit's real concern — that a report
+ * should not be the same for a 98 and a 20 — survives in the band-aware
+ * describe below, which keys on the OVERALL score, one figure on one scale.
+ */
 
-    const report = reportFor(name)
+describe("0R-6R · which Biotic is weakest cannot change the fallback report", () => {
+  const MULTISET = [71, 23, 48] as const
+  const PERMUTATIONS = [
+    { prebiotics: 71, probiotics: 23, postbiotics: 48 },
+    { prebiotics: 23, probiotics: 48, postbiotics: 71 },
+    { prebiotics: 48, probiotics: 71, postbiotics: 23 },
+    { prebiotics: 23, probiotics: 71, postbiotics: 48 },
+    { prebiotics: 71, probiotics: 48, postbiotics: 23 },
+    { prebiotics: 48, probiotics: 23, postbiotics: 71 },
+  ] as const
 
-    // The Food System chapter's own priority classification must agree with
-    // what the legacy fields below are built from — there is only one ranking.
-    expect(report.foodSystem.systemSnapshot.priorityPathway).toBe(expectedPriority)
-    expect(report.foodSystem.systemSnapshot.strongestPathway).toBe(expectedStrongest)
-
-    // The first food recommended must come from the priority pathway.
-    expect(report.specificFoodList[0]?.biotic).toBe(expectedPriority)
-
-    // The opening and the top lever must name the real priority pathway label.
-    expect(report.opening).toContain(PATHWAY_LABEL[expectedPriority])
-    expect(report.topTrigger.toLowerCase()).toContain(PATHWAY_LABEL[expectedPriority].toLowerCase())
-  })
-})
-
-describe("fallback report: a strong overall score never hides a strained pathway", () => {
-  const report = reportFor("strongWithStrained")
-  const all = allStrings(report).join(" \n ")
-
-  it("lands in the strong band overall while Probiotics is strained", () => {
-    // If either of these stops holding the fixture has stopped being adversarial
-    // and the rest of this block would pass vacuously.
-    expect(band(PROFILES.strongWithStrained.overall)).toBe("strong")
-    expect(band(PROFILES.strongWithStrained.subScores.probiotics)).toBe("strained")
-  })
-
-  it("names Probiotics as the priority pathway", () => {
-    expect(report.foodSystem.systemSnapshot.priorityPathway).toBe("probiotics")
-    expect(report.topTrigger).toContain("Probiotics")
-    expect(report.specificFoodList[0].biotic).toBe("probiotics")
-  })
-
-  it("the opening acknowledges the strong overall foundation", () => {
-    expect(report.opening.toLowerCase()).toContain("strong overall foundation")
-  })
-
-  it("the opening also explicitly acknowledges the strained pathway", () => {
-    expect(report.opening).toContain("Probiotics")
-    expect(report.opening.toLowerCase()).toContain("under-supported")
-    // The actual number, so the sentence cannot be read as reassurance.
-    expect(report.opening).toContain("20/100")
-  })
-
-  it("no contradictory reassurance appears anywhere in the report", () => {
-    for (const phrase of CONTRADICTORY) {
-      expect(all.toLowerCase(), phrase).not.toContain(phrase)
-    }
-  })
-})
-
-describe("fallback report: band-aware language", () => {
-  it("a strong profile is never told it has pressure points, and is not told to fix a weakness", () => {
-    const report = reportFor("strong")
-    expect(band(PROFILES.strong.overall)).toBe("strong")
-    expect(report.opening.toLowerCase()).not.toMatch(/pressure point/)
-    expect(report.opening.toLowerCase()).toMatch(/well supported/)
-    // The top lever reframes as protection, not correction, for a strong profile.
-    expect(report.topTrigger.toLowerCase()).toMatch(/protect|steady/)
-  })
-
-  it("a strained profile is never praised as a strong foundation", () => {
-    const report = reportFor("strained")
-    expect(band(PROFILES.strained.overall)).toBe("strained")
-    expect(report.opening.toLowerCase()).not.toMatch(/strong foundation/)
-    expect(report.opening.toLowerCase()).toMatch(/early in its development/)
-  })
-
-  it("a building profile lands between the two extremes", () => {
-    const report = reportFor("building")
-    expect(band(PROFILES.building.overall)).toBe("building")
-    expect(report.opening.toLowerCase()).not.toMatch(/pressure point|strong foundation/)
-  })
-})
-
-describe("fallback report: three profiles do not receive the same report with different numbers", () => {
-  const reports = {
-    strong: reportFor("strong"),
-    building: reportFor("building"),
-    strained: reportFor("strained"),
+  function permuted(sub: (typeof PERMUTATIONS)[number]) {
+    return buildFallbackPaidReport({
+      tier: "premium",
+      overall: 55,
+      subScores: { ...sub },
+      profile: PROFILE,
+      questions: [],
+      answers: {},
+    })
   }
 
-  it("the five recommended foods differ across profiles with different priority pathways", () => {
-    const foodLists = Object.values(reports).map((r) => r.specificFoodList.map((f) => f.food).join("|"))
-    expect(new Set(foodLists).size).toBe(3)
-  })
-
-  it("every recommended food carries a real alternative", () => {
-    for (const [name, report] of Object.entries(reports)) {
-      for (const food of report.specificFoodList) {
-        expect(food.swap, `${name}: ${food.food}`).toBeTruthy()
-        expect(food.swap!.length, `${name}: ${food.food}`).toBeGreaterThan(5)
-      }
-    }
-  })
-
-  it("the seven-day plan's Monday and Saturday actions name the actual top food tool", () => {
-    for (const [name, report] of Object.entries(reports)) {
-      const topFood = report.foodSystem.systemSnapshot.priorityPathway
-      expect(report.sevenDayPlan[0].day).toBe("Monday")
-      expect(report.sevenDayPlan[0].action.toLowerCase(), name).toContain(
-        report.specificFoodList[0].food.toLowerCase(),
+  it("six orderings of the same three numbers produce one report", () => {
+    // NON-VACUITY: the fixture really is one multiset, permuted.
+    for (const p of PERMUTATIONS) {
+      expect([p.prebiotics, p.probiotics, p.postbiotics].sort((a, b) => b - a)).toEqual(
+        [...MULTISET].sort((a, b) => b - a),
       )
-      expect(topFood).toBeTruthy()
+    }
+
+    /*
+     * `generatedAt` is a wall-clock ISO string minted per call, so the six
+     * reports differ by a millisecond and nothing else. Measured, not assumed:
+     * a line-by-line diff of two permutations showed exactly one differing
+     * line, and it was the timestamp. Normalised here so the assertion is about
+     * the ranking rather than about how fast the loop ran.
+     */
+    const rendered = PERMUTATIONS.map((p) =>
+      JSON.stringify(permuted(p)).replace(/"generatedAt":"[^"]*"/g, '"generatedAt":"FIXED"'),
+    )
+    expect(
+      new Set(rendered).size,
+      "the fallback report still differs across permutations of the SAME three " +
+        "scores. Only which Biotic carries which number changed, so every " +
+        "difference is a personal Biotic ranking choosing what a paying " +
+        "customer receives when generation fails.",
+    ).toBe(1)
+  })
+
+  it("no customer-facing PROSE names a Biotic or ranks the pathways", () => {
+    const report = permuted(PERMUTATIONS[0])
+    /*
+     * The food catalogue's `biotic` field is excluded, and the ruling says why:
+     * "non-personal taxonomy keys used only to organise reviewed material" may
+     * remain. `{ food: "Kefir", biotic: "probiotics" }` classifies a FOOD. It
+     * says nothing about the reader, and a rule that refused it would be
+     * refusing the education the product is built to teach.
+     *
+     * Everything else in the report is prose a customer reads.
+     */
+    /*
+     * Scoped to the DeepReport's OWN copy. Two things inside it legitimately
+     * name a Biotic, and the ruling names both as permitted:
+     *
+     *   report.foodSystem.educationModules  "Prebiotics: what feeds your
+     *                                        microbes" — reviewed GENERAL
+     *                                        education, about the biology
+     *   specificFoodList[].biotic           a taxonomy key classifying a FOOD
+     *
+     * Neither says anything about the reader. What this suite is about is the
+     * prose the fallback writes ABOUT this customer, which is every other
+     * string in the object.
+     */
+    const { foodSystem: _edu, specificFoodList, ...own } = report as typeof report & {
+      specificFoodList: Array<{ food: string; biotic: string }>
+    }
+    const foodKeys = new Set(specificFoodList.map((f) => f.biotic))
+    const strings = [...allStrings(own), ...allStrings(specificFoodList)].filter(
+      (v) => !foodKeys.has(v),
+    )
+
+    // NON-VACUITY: this is a full report, not an empty object.
+    expect(strings.length, "the fallback report produced almost no copy").toBeGreaterThan(40)
+
+    for (const value of strings) {
+      expect(value, `names a Biotic: "${value}"`).not.toMatch(/\b(?:[Pp]re|[Pp]ro|[Pp]ost)biotics?\b/)
+      expect(value, `ranks the pathways: "${value}"`).not.toMatch(
+        /\b(?:strongest|weakest|thinnest) pathway\b|\bpathway (?:with the most room|holding the rest)\b/i,
+      )
     }
   })
+})
 
-  it("the 30-day roadmap's week 1-2 themes differ across profiles with different priority pathways", () => {
-    const themes = Object.values(reports).map((r) => `${r.thirtyDayRoadmap[0].theme}|${r.thirtyDayRoadmap[1].theme}`)
-    expect(new Set(themes).size).toBe(3)
+describe("fallback report: band-aware language, keyed on the overall score", () => {
+  it.each(["strong", "building", "strained"] as const)(
+    "%s — no copy contradicts the overall band",
+    (name) => {
+      const strings = allStrings(reportFor(name)).join(" ").toLowerCase()
+      if (name === "strong") return
+      for (const phrase of CONTRADICTORY) {
+        expect(strings.includes(phrase), `a ${name} profile was told "${phrase}"`).toBe(false)
+      }
+    },
+  )
+
+  it("a strong overall score still gets maintenance framing, not a fix-it pitch", () => {
+    const r = reportFor("strong")
+    expect(r.topTrigger.toLowerCase()).toContain("protect")
   })
 
-  it("no two profiles produce byte-identical openings, top triggers, or food lists", () => {
-    const openings = Object.values(reports).map((r) => r.opening)
-    const triggers = Object.values(reports).map((r) => r.topTrigger)
-    expect(new Set(openings).size).toBe(3)
-    expect(new Set(triggers).size).toBe(3)
+  it("the adversarial 72 profile is no longer a special case", () => {
+    /*
+     * `strongWithStrained` existed because the overall band said "strong" while
+     * probiotics sat at 20/100, and the report printed that 20 elsewhere. It
+     * prints no per-Biotic score anywhere now, so the two statements that could
+     * contradict each other are down to one — and that one is the overall score,
+     * which is what the band describes.
+     */
+    const { foodSystem: _edu, specificFoodList, ...own } = reportFor("strongWithStrained")
+    const foodKeys = new Set(specificFoodList.map((f) => f.biotic))
+    const prose = [...allStrings(own), ...allStrings(specificFoodList)]
+      .filter((v) => !foodKeys.has(v))
+      .join(" ")
+    expect(prose).not.toMatch(/\b(?:[Pp]re|[Pp]ro|[Pp]ost)biotics?\b/)
   })
 })
 
@@ -226,8 +245,13 @@ describe("fallback report: three profiles do not receive the same report with di
  * third of all orderings, and the suite's own `building` fixture was one of them.
  */
 describe("fallback report: always exactly five unique, complete foods", () => {
-  // Every strict ordering of the three pathways, plus ties at each end and a
-  // three-way tie — the cases where `orderedByNeed`'s stable sort decides.
+  /*
+   * 0R-6R · these nine orderings used to be the point: `orderedByNeed`'s stable
+   * sort decided the list, and the count broke whenever prebiotics was the
+   * MIDDLE score. The list is now catalogue-ordered, so the orderings should
+   * make no difference at all — which is a STRONGER version of the same
+   * contract, and the identical-output assertion below is what states it.
+   */
   const ORDERINGS: Array<[string, { prebiotics: number; probiotics: number; postbiotics: number }]> = [
     ["pre<pro<post", { prebiotics: 20, probiotics: 50, postbiotics: 80 }],
     ["pre<post<pro", { prebiotics: 20, probiotics: 80, postbiotics: 50 }],
@@ -240,7 +264,19 @@ describe("fallback report: always exactly five unique, complete foods", () => {
     ["two tied high", { prebiotics: 20, probiotics: 80, postbiotics: 80 }],
   ]
 
-  it.each(ORDERINGS)("%s yields five complete foods", (_label, subScores) => {
+  /** The catalogue's first five unique tools — identical for every reader. */
+  const CANONICAL_FIVE = (
+    buildFallbackPaidReport({
+      tier: "premium",
+      overall: 50,
+      subScores: { prebiotics: 50, probiotics: 50, postbiotics: 50 },
+      profile: PROFILE,
+      questions: [],
+      answers: {},
+    }) as { specificFoodList: Array<{ food: string }> }
+  ).specificFoodList.map((f) => f.food)
+
+  it.each(ORDERINGS)("%s yields the same five complete foods", (_label, subScores) => {
     const report = buildFallbackPaidReport({
       tier: "premium",
       overall: 50,
@@ -248,15 +284,18 @@ describe("fallback report: always exactly five unique, complete foods", () => {
       profile: PROFILE,
       questions: [],
       answers: {},
-    }) as { specificFoodList: Array<Record<string, string | undefined>>; foodSystem: { systemSnapshot: { priorityPathway: string } } }
+    }) as { specificFoodList: Array<Record<string, string | undefined>> }
 
     const foods = report.specificFoodList
     expect(foods).toHaveLength(5)
     expect(new Set(foods.map((f) => f.food)).size).toBe(5)
 
-    // Priority-pathway foods lead the list.
-    const priority = report.foodSystem.systemSnapshot.priorityPathway
-    expect(foods[0].biotic).toBe(priority)
+    /*
+     * 0R-6R · was `expect(foods[0].biotic).toBe(priority)` — the five foods a
+     * paying customer sees, led by the argmin. The list is the same five, in
+     * the same order, for every ordering of the scores.
+     */
+    expect(foods.map((f) => f.food)).toEqual(CANONICAL_FIVE)
 
     // Every required field carries real content, on every item.
     for (const f of foods) {

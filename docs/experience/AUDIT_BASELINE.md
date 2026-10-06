@@ -879,3 +879,119 @@ Two cases additionally reported **ANCHOR MISSING** rather than slipping — 1456
 anchor pinned to a shrinking number has to follow the number, or the case
 silently stops testing anything** — the 0R-5 lesson about lexical anchors,
 restated for numeric ones.
+
+---
+
+## 0R-6R — the gate at the paid-path close
+
+`175f53d` was the 0R-6 head and was accepted as an **intermediate remediation
+state**. This is the gate for the work that finished it.
+
+### The gate, in order
+
+| step | result |
+|---|---|
+| `tsc --noEmit` | **clean** |
+| `eslint .` | **96 problems (0 errors, 96 warnings)** — the baseline exactly, **zero delta** |
+| `vitest run` | **232 files · 6648 passed · 2 skipped** |
+| `scripts/check-ai-guard.mjs` | pass — 25 Claude-calling routes, all capped |
+| `scripts/check-schema-drift.mjs` | pass — 1084 files, 41 referenced tables |
+| `scripts/check-supabase-scoping.mjs` | pass |
+| `next build` | pass |
+| `playwright test` | **266 passed** |
+| frozen audit evidence after that Playwright run | **0 dirty files under `docs/experience/audit/`** |
+
+### The eslint delta, attributed
+
+Four warnings appeared and all four were leftovers of this tranche's own repair.
+Measured per file against `175f53d` in a detached worktree rather than inferred
+from the total:
+
+| file | 175f53d | first run | cause | action |
+|---|---|---|---|---|
+| `lib/pdf/report-pdf.tsx` | 2 | 3 | `IncomingSubScores` became unused when `ReportPDFProps.freeScores` lost `subScores` | import removed |
+| `tests/unit/fallback-report-pathways.test.ts` | 0 | 3 | `band`, `normalizeToBiotics` and `PATHWAY_LABEL` were read only by the ranked assertions this suite inverted | imports removed |
+| | **96** | **100 → 96** | | |
+
+The two warnings `report-pdf.tsx` carries at both heads (`Svg`, `Rect`) are
+pre-existing and were deliberately left, so the attribution stays clean.
+
+> **Warning counts are not waivers.** Four appeared, four were mine, four are
+> gone.
+
+### The vitest delta, attributed per file
+
+Measured by running the `175f53d` tree in a detached worktree beside the current
+one, because `it.each` table lengths set the counts and a static tally cannot
+establish this — the 0R-5 reconciliation's lesson.
+
+| file | 175f53d → 0R-6R | Δ | why |
+|---|---|---|---|
+| `tests/unit/audit-evidence-immutability.test.ts` | 0 → 21 | **+21** | new — the frozen-write gate |
+| `tests/unit/paid-pdf-biotic-claims.test.ts` | 0 → 6 | **+6** | new — the PDF proved by render |
+| `tests/unit/pdf-boundary-subscores.test.ts` | 0 → 3 | **+3** | new — the `generate-pdf.ts` discard, proved at runtime |
+| `tests/unit/addon-lens.test.ts` | 623 → 630 | **+7** | two ranked `it.each` describes replaced by three |
+| `tests/unit/biotic-visual-encoding.test.ts` | 32 → 36 | **+4** | three modules added to two `it.each` loops (+6) and one `PRE_REPAIR` subject (+1), less the two deleted blocked-inventory tests (−2), less the branch that went with them |
+| `tests/unit/retired-vocabulary.test.ts` | 40 → 43 | **+3** | the type, the builder and `orderedByNeed` assertions |
+| `tests/unit/agent-loop-claims.test.ts` | 67 → 68 | **+1** | the permutation-set pin |
+| `tests/unit/addon-matrix.test.ts` | 87 → 86 | **−1** | one ranked assertion inverted into an existing test |
+| `tests/unit/generation-provenance.test.ts` | 157 → 156 | **−1** | the `whatYourAnswersSuggest` merge probe re-pointed |
+| `tests/unit/hero-tagline-agreement.test.ts` | 21 → 15 | **−6** | rewritten around the refusal rather than the `mixed` override |
+| `tests/unit/fallback-report-pathways.test.ts` | 29 → 19 | **−10** | four ranked describes replaced by permutation invariance over the whole spine |
+| | **net +27** | | 229 → **232 files** |
+
+### Sabotage — all fourteen suites
+
+| suite | result |
+|---|---|
+| `0r` | **87/87** caught after re-aiming (85/87 on the first run) |
+| base (`run.py`) | 26/26 |
+| `v1` | 10/10 |
+| `s3` | 12/12 |
+| `s4` | 8/8 |
+| `s5` | 10/10 |
+| `s6` | 14/14 |
+| `s7` | 30/30 |
+| `s7b` | **171/171** after re-aiming (170/171 on the first run) |
+| `g4` | 44/44 |
+| `g5` | 65/65 |
+| `g6` | 18/18 |
+| `g61` | 22/22 |
+| **`s3a`** | **2/35 — the standing exception, reported separately** |
+
+`s3a`'s breakdown is exactly the documented one: **31 `FILE MISSING` + 2
+`ANCHOR MISSING`** (cases 364 and 365), 33 unresolvable because their targets
+live on unmerged PR #274. No mutation landed in any of the 33, so none of them
+can report caught, and none of them proves anything either.
+
+Twenty new cases (**1518–1537**) cover each 0R-6R repair and the frozen-evidence
+gate. All twenty caught on their first run.
+
+### Three cases were re-aimed, and all three for the same reason
+
+Per the standing rule: when a case slips, strengthen the TEST, never the case —
+**unless the case was aimed at the wrong thing.** All three were.
+
+| case | verdict | action |
+|---|---|---|
+| **1463** `system-map.ts` gains a Biotic key beside its colour | the **case**. It mutated `biotic: BioticKey`, and 0R-6R retired the rule that saw that type after measuring it fires on exactly four things in the whole module list, not one a defect: two comments recording removals, and two taxonomy keys | re-aimed at the real shape — a per-Biotic **score** on a record that also carries a colour, which is `meal-impact.ts` as it shipped |
+| **1494** the Twin aura takes a `BioticKey` again | the **case**, same rule. `twin-visual.ts`'s own repair note says why: *"`AuraTone` is a name for a colour and nothing else. `twin.biotics.weakest` is a verdict."* The signature was never the claim | re-aimed at the producer: a convenience wrapper that re-derives the tone from `twin.biotics.prebiotics.score`, which is how this construct returned in four separate components after each earlier removal |
+| **999** the Report reintroduces live foods as a category | **ANCHOR MISSING, not a slip.** Its anchor was a `BAND_SUGGESTS` branch, deleted with `P0-SCIENCE-07`. No mutation landed, so nothing was proved — the honest outcome | re-anchored on week 1 of the thirty-day loop, a reviewed sentence every reader of the paid Report now receives. The property — fermented-implies-probiotic as a category — is untouched by the `-07` repair |
+
+Four more cases needed their **anchors moved** rather than their aim changed
+(1462, 1506, 1518, 1519, 1520, 1521), because 0R-6R changed the text they
+pinned. 1462 has now followed its target three times, which is the lesson
+itself: **an anchor pinned to a shrinking number has to follow the number**, or
+the case silently stops testing anything.
+
+### The two cases whose own writing found a defect
+
+Neither found a product bug. Both found that a guard of mine was decorative:
+
+- **1518** was going to null the per-Biotic record rule. Measuring what that rule
+  matched showed it fired on three reviewed content catalogues in the builder
+  alone — and that this was holding `BLOCKED_AT_0R6` green after its defect was
+  repaired. The rule was narrowed, the inventory deleted.
+- **1534** was going to delete `copyToCommitted`'s refusal. Nothing **called**
+  that function, so the deletion broke no assertion. The suite now exercises it
+  against a temporary directory, in both directions.

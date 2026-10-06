@@ -109,32 +109,50 @@ describe("paid report: the opening is not duplicated", () => {
     expect(body).toContain(text(reportFor(name).opening))
   })
 
-  it.each(NAMES)("%s — the hero shows a tagline, not a slice of the opening", (name) => {
-    const p = PROFILES[name]
+  it.each(NAMES)("%s — the hero shows no opening slice, and no refused tagline", (name) => {
     const body = text(renderPaid(name))
 
-    // Whatever heroTaglineFor decides for these scores is what must render:
-    // the authored tagline normally, the framing-aware override when the
-    // priority pathway is strained. Asserted through the helper rather than a
-    // literal so this test cannot drift from the component.
-    const expected = heroTaglineFor({
-      overall: p.overall,
-      subScores: p.subScores,
-      profile: PROFILE,
-    })!
-    expect(body).toContain(expected)
+    /*
+     * 0R-6R · this asserted `toContain(heroTaglineFor(…))`. It now returns
+     * NULL for this fixture, and the fixture is the point: `PROFILE.tagline` is
+     * `getProfile`'s real `>= 65` string, "A solid base in your answers, with
+     * one pathway thinner than the rest" — a ranking with the pathway elided.
+     * The boundary refuses it, so the hero falls back to the tier label.
+     *
+     * That is what the two halves below assert: the refusal happens, and the
+     * fallback renders rather than leaving the hero empty.
+     */
+    expect(heroTaglineFor({ profile: PROFILE })).toBeNull()
+    expect(body).not.toContain(PROFILE.tagline)
+    expect(body).toMatch(/Your (?:Personal|Starter|Full|Premium) Report/)
+
+    // A tagline that makes no such claim still passes through.
+    expect(heroTaglineFor({ profile: { tagline: "A pattern worth repeating." } })).toBe(
+      "A pattern worth repeating.",
+    )
 
     // The brittle construction that caused the duplication.
     expect(renderPaid(name)).not.toContain(reportFor(name).opening.split(".")[0] + ".</h1>")
   })
 
-  it("a strong overall score with a strained pathway gets the framing-aware hero", () => {
-    // The regression from the PR #216 review fix: pointing the hero at
-    // getProfile's tagline exposed its score-only >= 80 branch. See
-    // tests/unit/hero-tagline-agreement.test.ts for the full argument.
+  it("0R-6R · the hero states no pathway and no three-pathway band", () => {
+    /*
+     * INVERTED. It required the hero to read "A strong overall base, with
+     * Probiotics the thinnest part of your answers" — the argmin, printed on
+     * the most prominent line of the €49 Report. The second half of the old
+     * assertion is KEPT and is now the whole point: `heroTaglineFor` refuses
+     * `getProfile`'s "all three pathways being well supported" too, because a
+     * band word over the member's three Biotics is the same construct in a
+     * different grammar.
+     */
     const body = text(renderPaid("strongWithStrained"))
-    expect(body).toContain("A strong overall base, with Probiotics the thinnest part of your answers.")
+
+    // NON-VACUITY: the Report rendered.
+    expect(body.length).toBeGreaterThan(2000)
+
+    expect(body).not.toContain("the thinnest part of your answers")
     expect(body).not.toContain("all three pathways being well supported")
+    expect(body).not.toMatch(/\b(?:Prebiotics|Probiotics|Postbiotics) (?:is|are) (?:your|the) (?:strongest|weakest|thinnest)/)
   })
 })
 
@@ -145,10 +163,12 @@ describe("paid report: the food section describes itself honestly", () => {
     expect(text(renderPaid(name))).not.toContain(REMOVED)
   })
 
-  it("the honest subtitle is present", () => {
-    expect(text(renderPaid("mixed"))).toContain(
-      "A practical starting set chosen to support your current priority pathway.",
-    )
+  it("the honest subtitle is present, and claims no priority pathway", () => {
+    const body = text(renderPaid("mixed"))
+    // 0R-6R · was "…chosen to support your current priority pathway." The five
+    // foods are catalogue-ordered now, and the heading claimed otherwise.
+    expect(body).toContain("A practical starting set — what each one does, and how to use it.")
+    expect(body).not.toContain("priority pathway")
   })
 
   it("the overstated subtitle is absent from the PDF renderer too", async () => {

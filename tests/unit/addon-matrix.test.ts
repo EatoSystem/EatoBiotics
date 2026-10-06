@@ -305,14 +305,11 @@ describe("question sets", () => {
 /* ── 6–8. Scores and lens content ────────────────────────────────────────── */
 
 describe("core scores and lens content", () => {
-  it("identical core answers keep identical Feed/Seed/Heal across every scenario", () => {
-    const fingerprints = SCENARIOS.map((s) => JSON.stringify(fullReport(s).bioticScores))
+  it("identical core answers keep an identical core snapshot across every scenario", () => {
+    // 0R-6R · was keyed on `bioticScores` and `systemSnapshot.priorityPathway`,
+    // neither of which the contract carries. The invariant is the same one.
+    const fingerprints = SCENARIOS.map((s) => JSON.stringify(fullReport(s).systemSnapshot))
     expect(new Set(fingerprints).size).toBe(1)
-  })
-
-  it("the priority pathway is identical across every scenario too", () => {
-    const p = SCENARIOS.map((s) => fullReport(s).systemSnapshot.priorityPathway)
-    expect(new Set(p).size).toBe(1)
   })
 
   it("the four add-ons produce distinct lens chapters", () => {

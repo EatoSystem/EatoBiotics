@@ -796,3 +796,88 @@ rendered evidence and left for an explicit ruling rather than repaired.
 The eslint count returned to its **96** baseline. The one appeared warning was
 a leftover of 0R-6's own `-07` repair (`subScores` left unread in
 `generateFullReport`) and was cleaned; nothing unrelated was touched.
+
+---
+
+## 0R-6R · DELIVERY RECORD — the paid path closed
+
+`175f53d` was accepted as an **intermediate remediation state**, not the 0R-6
+close. 0R-6R carries out the two rulings that followed. **The stage order and
+the nine-stage sequence are unchanged: 0R-6R is 0R-6 finished, not a new stage.**
+
+### Outcome per finding, revised
+
+| finding | outcome |
+|---|---|
+| `P0-SCIENCE-07` | **CLOSED at the canonical type.** `P0-SCIENCE-07-LIVE` is **folded into this finding as additional manifestations, not recorded as a separate finding** — per ruling, "the web section and PDF are not a new scientific defect just because they live in different files." Eleven live sites, listed in the debt register |
+| `P0-SCIENCE-06` | **CLOSED by retirement.** `orderedByNeed` is deleted; six consumers de-ranked; nothing replaced the selector. No authorised selector means no personalised selection |
+| `P1-VOCAB-01` | **CLOSED** at 0R-6, unchanged |
+| `P0-SCIENCE-08` | **LATENT · QUEUED**, unchanged. Corrected reachability stands (POST_V1); no wording was altered to satisfy the old premise |
+
+### The close criterion for `-07`, as the ruling set it
+
+> No live paid Report renderer — web or PDF — may present a personally measured
+> Prebiotic, Probiotic or Postbiotic score, band, rank, colour-state or
+> anatomical state.
+
+Met at the **model** rather than the renderers, because a type that says the
+construct exists invites every consumer to render it. The five-point close proof
+and the eleven sites are in the debt register's 0R-6R close record.
+
+### What `-06`'s closure cost, and what it did not
+
+Retired: `strongestPathway`, `priorityPathway`, every argmin/argmax choosing
+Report content, "Start with X", the Biotic-derived accent, the downstream
+30-day-loop selection, and the whole ranked spine of the fallback paid report.
+
+Preserved: the overall **Biotics Score™** and its band, the member's own
+answers, all Three-Biotics education, `visual-token.ts`'s symmetric pathway
+palette, and `PILLAR_BEHAVIOUR` exactly where it provides reviewed descriptive
+wording about observable food behaviour. It was **not** promoted into a decision
+engine.
+
+No new ranking method was invented. The interim is reviewed non-ranked material
+plus a general **"Start Here"** next-step section.
+
+### Guards, in existing instruments plus three new files
+
+| instrument | what 0R-6R added |
+|---|---|
+| `retired-vocabulary.test.ts` | three new assertions: the canonical type cannot **represent** the construct; the builder reads no per-Biotic score and cannot rank one; `orderedByNeed` no longer exists for any surface to call |
+| `agent-loop-claims.test.ts` | the three held `it.fails("BLOCKED · …")` converted to plain `it` — green because the capability is gone — plus a pin on the permutation set itself |
+| `biotic-visual-encoding.test.ts` | the three live paid renderers added (pin 10 → 13); the record rule narrowed twice; the extent sink narrowed to **derived** extents; the `BioticKey`-parameter rule retired after measurement; `BLOCKED_AT_0R6` **deleted** |
+| `food-system-section.test.ts`, `paid-report-presentation.test.ts`, `fallback-report-pathways.test.ts`, `addon-lens.test.ts`, `hero-tagline-agreement.test.ts`, `report-quality.test.ts`, `generation-provenance.test.ts` | the assertions that **required** the construct, inverted, each with non-vacuity retained |
+| **`tests/unit/paid-pdf-biotic-claims.test.ts`** (new) | the downloadable PDF proved by render — element-tree walk, permutation invariance over six orderings, a real `renderToBuffer`, and the cover-tagline refusal. The PDF had never been proved by render, which is why the worst site survived five tranches |
+| **`tests/unit/pdf-boundary-subscores.test.ts`** (new) | `generate-pdf.ts`'s discard proved at runtime, because both shapes typecheck and `renderToBuffer` is not byte-deterministic |
+| **`tests/unit/audit-evidence-immutability.test.ts`** (new) | the frozen-write gate: fails closed for nine non-`"1"` values, opens for the exact string, targets under the gitignored corpus, `copyToCommitted` exercised against a temp directory, and all four capture specs read to prove no bare `copyFileSync` into the committed tree survives |
+| `tools/sabotage/cases_0r.py` | twenty cases 1518–1537, plus four re-aimed (1462, 1506, 1518, 1519, 1520, 1521) and two re-aimed after slipping (1463, 1494) |
+
+### Three corrections to this spec's own premises, from 0R-6R
+
+1. **`-07`'s reachability classification was wrong about the construct, not
+   about the file.** The register read "LATENT · NOT customer-reachable", which
+   was true of `full-report-client.tsx` and false of the construct: the same
+   construct was live on `/assessment/report` (`V1_CORE_ROUTES:94`) in three
+   renderers, and in the downloadable PDF in two more.
+2. **`-06`'s site count.** The spec named the ranking in one sentence; the
+   selector reached **nine** fields in the builder, plus the lens, plus the
+   whole fallback spine, plus the prompt — and `bodySignalMap[*].state`, which
+   no document named and which let a consumer reconstruct the triple.
+3. **Holding was the wrong disposition, not merely an incomplete one.** The spec
+   permits recording debt that cannot be repaired in-tranche. It does not permit
+   a live invalid selector on the money path to be classified as debt, because
+   the blocker was to *replacement*, not to *retirement*.
+
+### What 0R-6R deliberately did not do
+
+FSS methodology, domain scoring, weights and bands untouched; the scientific
+instrument untouched; Three-Biotics education untouched; **no selection source
+invented**; `getProfile` not re-banded (it feeds three surfaces outside this
+tranche — reported, with the refusal boundary holding both of its shapes off the
+paid Report); the two protected prompt routes not modified; the audit corpus not
+redesigned; `P0-TRUST-04` and **0R-7 not begun**.
+
+The eslint count is at its **96** baseline with zero delta. Four warnings
+appeared and all four were leftovers of 0R-6R's own repair — one unused type
+import in `report-pdf.tsx` and three unused imports in the inverted
+`fallback-report-pathways.test.ts` — and were removed rather than waived.

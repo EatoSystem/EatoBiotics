@@ -137,6 +137,71 @@ has stopped saying it.
 *Evidence: the 0R-5 site-level close record in
 [`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
 
+### A type is a claim.
+
+Adopted at the 0R-6R close.
+
+> **If a product type says a personal construct exists, every downstream
+> consumer is invited to treat it as truth.**
+
+A boundary that is enforced only in the renderers currently reading a field is
+a decision not to show, today, what the model still asserts exists. The next
+consumer — a new surface, a PDF, an export, a prompt, a merge path — reads the
+type, finds the field, and renders it in good faith.
+
+So where a personal construct is prohibited, the repair goes to the **canonical
+object**, and the test is not "does this renderer print it" but "can this type
+represent it".
+
+The field test, applied to every candidate field rather than to the obvious
+ones:
+
+> **Would this field allow a downstream consumer to reconstruct or assert a
+> personal Biotic state? If yes, retire it.**
+
+A compatibility field is not preserved merely because today's renderer no longer
+uses it. `FoodSystemReport.bioticScores` had five readers; `bodySignalMap[*].state`
+had one, and was the field that needed the test rather than being obvious — it
+was `BAND_STATE[band(biotics[driver])]`, so four body signals each exposed the
+band of a driver Biotic and the set reconstructed the triple.
+
+*Evidence: `P0-SCIENCE-07`'s eleven live sites, and the five-point close proof,
+in [`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
+
+### A safer label does not legitimise an unsupported selector.
+
+Adopted at the 0R-6R close, with its corollary:
+
+> **Content taxonomy may organise reviewed material. It does not automatically
+> confer authority to choose what is personally most important.**
+
+A selector and the words it outputs are two different things. Renaming an
+argmin's output from "Probiotics" to "fermented foods" changes what the claim
+SOUNDS like and nothing about whether the product was entitled to make it. The
+authority to rank has to be established for the ranking, not inherited from the
+safety of the vocabulary it prints.
+
+Reviewed descriptive wording about observable food behaviour stays exactly that.
+It is not promoted into a decision engine because its labels are safer.
+
+#### And the consequence when no authorised selector exists
+
+> **No authorised selector means no personalised selection — not continued use
+> of an invalid one.**
+
+The absence of an authorised replacement is a legitimate blocker to
+**replacement**. It is not permission to retain the invalid selector while one
+is sought. The honest interim states are reviewed non-ranked material, a general
+next-step section, or truthful absence.
+
+Personalised priority may return once there is an **explicitly reviewed decision
+rule based on an observable construct the product is entitled to rank** — for
+example an authorised FSS-domain priority, if and when its methodology and
+cross-domain comparison are approved. Not before, and not by relabelling.
+
+*Evidence: `P0-SCIENCE-06`'s resolution, and the `PILLAR_BEHAVIOUR` near-miss,
+in [`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
+
 ## 3 · Voice and authorship
 
 **The product must never place a product-authored personal conclusion into the
@@ -198,7 +263,13 @@ to overclaim is also the one where overclaiming does the most damage.
 A free surface that overclaims is a product defect. A paid surface that
 overclaims is a product defect the person was charged for.
 
-*Evidence: `P0-SCIENCE-06` in
+0R-6R restated this as the governing reason the `-07` repair went to the
+canonical Report object rather than to the renderers that happened to read it,
+and the reason the PDF mattered most: it is the artefact the customer downloads
+and keeps, and it visually reconstructed the personal-biological-state claim
+0R-5 had removed everywhere else.
+
+*Evidence: `P0-SCIENCE-06` and `P0-SCIENCE-07` in
 [`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
 
 ## 5 · Complexity
@@ -240,6 +311,47 @@ A claim about what a surface does is not settled by reading the component. It is
 settled by rendering it and looking. This standard applies to the product's
 claims about itself — docblocks, comments and design documents describing a past
 fix are not evidence of a present state.
+
+### Frozen before-evidence must be immutable to normal regression runs.
+
+Adopted at the 0R-6R close.
+
+An audit's before-evidence is only evidence while it still shows the state it
+was captured in. If an ordinary verification run regenerates it, the record
+silently becomes a record of the present — and every finding that cites it
+becomes unfalsifiable.
+
+Measured: the Experience 0 corpus was frozen at `5274e03`, and **every**
+`playwright test` run after it rewrote the committed screenshots, the manifest
+and the index. Six remediation tranches each left those files dirty and each
+restored them by hand. The only thing between a regression run and the audit's
+own evidence was the operator remembering to `git restore`, and nobody typing
+`git add -A`.
+
+Refreshing frozen evidence must therefore be a **deliberate, explicit act** — an
+exact-string opt-in, not a truthy flag — and a run without it must still produce
+a complete, readable corpus somewhere it cannot be committed from. Where a
+record states where an artefact lives, that statement must reflect what the run
+actually did, not what it would have done under the flag.
+
+### A comment naming a mechanism is not a read of that mechanism.
+
+The companion to a rule this programme has now written down five times: *a
+comment recording a defect is not the defect.*
+
+A **structural** rule reads code. Only a **prose** rule reads prose. A
+structural rule that reads raw source will match the note explaining the repair,
+the docblock recording the history, and the comment naming the gate a module
+sits behind — and will report a regression that is not there, or hold an
+inventory entry whose defect is gone.
+
+Related, and the reason an inventory can outlive its own defect:
+
+> **An inventory is only self-retiring if its rule can go green.**
+
+A guard that cannot be satisfied by any correct version of the file it names
+cannot tell a repaired file from an unrepaired one, which is the one thing such
+an instrument exists to do.
 
 ## 9 · Architecture and interface
 

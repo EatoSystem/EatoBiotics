@@ -1,6 +1,6 @@
 /* ── Full Report Generation — Prebiotics / Probiotics / Postbiotics ───── */
 
-import type { AssessmentResult, PillarInsight } from "./assessment-scoring"
+import type { AssessmentResult } from "./assessment-scoring"
 import type { PillarKey } from "./assessment-data"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -256,12 +256,25 @@ const ALL_FOODS: PersonalisedFood[] = [
 
 /* ── 30-day plan template (pillar-aware) ────────────────────────────── */
 
-function buildWeeklyHabits(
-  week: number,
-  sortedInsights: PillarInsight[]
-): { habit: string; detail: string }[] {
-  const weakest = reportPillarKey(sortedInsights[0]?.pillar ?? "feed")
-  const second = reportPillarKey(sortedInsights[1]?.pillar ?? "seed")
+/*
+ * ══ 0R-6R · THE WEEKLY HABITS ARE NO LONGER CHOSEN BY A RANKING ════════════
+ *
+ * This took `sortedInsights` — `insights` sorted ascending by per-pillar score
+ * — and read `[0]` and `[1]` as the member's weakest and second-weakest
+ * pathway, then picked two of its three habit pools by those keys.
+ *
+ * 0R-6 removed the DEEP-DIVE sort from this module and left this one, because
+ * the ruling in hand at the time was about the live paid Report and this module
+ * is latent (`FullReportClient`, behind `isUnverifiedPaidFlowAllowed`). That
+ * left a working copy of the retired selector one environment variable from a
+ * customer, which is the thing "repair the construct, not the sentence" exists
+ * to prevent.
+ *
+ * The pools are unchanged reviewed copy. The selection is now fixed: feed,
+ * seed and heal in `PILLAR_ORDER`, so every reader gets the same three habits
+ * for a given week.
+ */
+function buildWeeklyHabits(week: number): { habit: string; detail: string }[] {
 
   const HABIT_POOLS: Record<string, string[][]> = {
     feed: [
@@ -281,9 +294,9 @@ function buildWeeklyHabits(
     ],
   }
 
-  const h1 = (HABIT_POOLS as Record<string, string[][]>)[weakest]?.[(week - 1) % 3] ?? HABIT_POOLS.heal[(week - 1) % 3]
-  const h2 = (HABIT_POOLS as Record<string, string[][]>)[second]?.[(week - 1) % 3] ?? HABIT_POOLS.feed[(week - 1) % 3]
-  const h3 = HABIT_POOLS["heal"][(week - 1) % 3]
+  const h1 = HABIT_POOLS.feed[(week - 1) % 3]
+  const h2 = HABIT_POOLS.seed[(week - 1) % 3]
+  const h3 = HABIT_POOLS.heal[(week - 1) % 3]
 
   return [
     { habit: h1[0], detail: h1[1] },
@@ -322,17 +335,16 @@ export function generateFullReport(result: AssessmentResult): FullReport {
   // 0R-6 · the "weakest first" sort is gone with the score it sorted by. The
   // order is PILLAR_ORDER, which is static and the same for every customer.
 
-  // Build personalised food list — prioritise foods that hit weakest pillars
-  const sortedInsights = [...insights].sort((a, b) => a.score - b.score)
-  const weakPillars: Array<"feed" | "seed" | "heal"> = sortedInsights
-    .slice(0, 3)
-    .map((i) => reportPillarKey(i.pillar))
-
-  const scored = ALL_FOODS.map((f) => {
-    const pillarHits = f.pillars.filter((p) => weakPillars.includes(reportPillarKey(p))).length
-    const priorityScore = f.priority === "high" ? 2 : 1
-    return { ...f, _score: pillarHits * 2 + priorityScore }
-  })
+  /*
+   * 0R-6R · the food list is no longer ordered by the weakest pillars.
+   *
+   * It was `sortedInsights.slice(0, 3)` — an argmin over the three per-pillar
+   * scores — scoring each food by how many of the member's "weak" pillars it
+   * hit. So which twelve foods a reader saw, and in what order, was chosen by a
+   * ranking the product may not make. The catalogue's own reviewed `priority`
+   * field is what orders it now, which is a property of the FOOD.
+   */
+  const scored = ALL_FOODS.map((f) => ({ ...f, _score: f.priority === "high" ? 2 : 1 }))
   scored.sort((a, b) => b._score - a._score)
   const top12Foods = scored.slice(0, 12).map(({ _score: _, ...f }) => f)
 
@@ -342,13 +354,13 @@ export function generateFullReport(result: AssessmentResult): FullReport {
       week: 1,
       title: "Foundation",
       focus: "Establish your two non-negotiable daily habits and track them consistently.",
-      habits: buildWeeklyHabits(1, sortedInsights),
+      habits: buildWeeklyHabits(1),
     },
     {
       week: 2,
       title: "Build",
       focus: "Add your fermented foods routine and begin expanding your plant variety.",
-      habits: buildWeeklyHabits(2, sortedInsights),
+      habits: buildWeeklyHabits(2),
     },
     {
       week: 3,
@@ -357,13 +369,13 @@ export function generateFullReport(result: AssessmentResult): FullReport {
       // responds after meals." — a possessive per-Biotic score plus a bodily
       // response to an action. Neither is measured.
       focus: "Widen the range of plants across the week, and keep the rhythm you have established.",
-      habits: buildWeeklyHabits(3, sortedInsights),
+      habits: buildWeeklyHabits(3),
     },
     {
       week: 4,
       title: "Sustain",
       focus: "Lock in the habits that have worked and identify your next growth area.",
-      habits: buildWeeklyHabits(4, sortedInsights),
+      habits: buildWeeklyHabits(4),
     },
   ]
 

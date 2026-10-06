@@ -1344,6 +1344,15 @@ only read.
 | | **`P0-SCIENCE-06`** | **live · paid · customer-reachable** — demonstrably being sold |
 | | **`P0-SCIENCE-07`** | **latent · dev fallback · near-production hazard** — no customer can reach it today |
 
+> **CORRECTED AT 0R-6R — this row was right about the FILE and wrong about the
+> CONSTRUCT.** `full-report-client.tsx`'s copy was indeed unreachable; the
+> identical construct was live on `/assessment/report` (`V1_CORE_ROUTES:94`) in
+> three web renderers and in the downloadable PDF in two more, and it reached the
+> customer's own body figure in both. Eleven live sites in all. Per ruling they
+> are **manifestations of this same finding**, not a new one — see the 0R-6R
+> close record at the end of this document. The row is left as written because it
+> is what was measured at the time; the correction is the record.
+
 Both require 0R treatment. Collapsing them into one severity would be easier to
 write and would destroy the distinction the whole audit has been built on:
 
@@ -1555,7 +1564,7 @@ inside `NOTE-CAPTURE-01` and deliberately not entered separately.
 | `P0-ARCH-01` | P0 (coverage) | `/account` | source + render | RECORD — the audited state was the minority state |
 | `P1-FUNNEL-02` | P1 | `/account` Twin | live HTTP | REMEDIATE with `P1-FUNNEL-01` |
 | `P0-SCIENCE-06` | **P0 live** | `/assessment/report` **€49** | source chain | RETIRE — **live · paid · customer-reachable**, with D1 |
-| `P0-SCIENCE-07` | **P0 latent** | `/assessment/report` dev flow | render | RETIRE — **latent production hazard, NOT customer-reachable** |
+| `P0-SCIENCE-07` | **P0 latent** → **P0 LIVE** (corrected 0R-6R) | `/assessment/report` dev flow → **and the live €49 Report, web + PDF** | render | RETIRE — ~~latent production hazard, NOT customer-reachable~~ **eleven live sites; CLOSED at the canonical type at 0R-6R** |
 | `P0-SCIENCE-08` | P0 | report food copy | render | EVOLVE — pending scientific review |
 | `P1-VOCAB-01` | P1 | report food tags | render | REMEDIATE — "Heal" is not customer-facing |
 | `P0-GUARD-02` | P0 | test corpus | source | **WIDEN WITH D1** — or `P0-SCIENCE-06` survives the repair |
@@ -2209,3 +2218,226 @@ Restored rather than committed at this close, consistent with every previous
 tranche. Recorded because nothing in the harness prevents it, and the next
 person to run the suite and `git add -A` would silently replace the audit's
 evidence base. This belongs with `NOTE-CAPTURE-01`.
+
+---
+
+## 0R-6R · SITE-LEVEL CLOSE RECORD — the paid path, closed
+
+`175f53d` was accepted as an **intermediate remediation state, not the 0R-6
+close**. Two live paid-path conditions blocked formal closure, and both rulings
+made the required repair wider and stricter than the version proposed.
+
+> **The money path gets stricter, not looser.**
+
+### The two rulings now in force
+
+> **`P0-SCIENCE-07-LIVE` is folded into canonical `P0-SCIENCE-07`.** It is not a
+> separate finding. *"It is the same prohibited construct — personal
+> Prebiotic/Probiotic/Postbiotic numerical state — appearing through another
+> renderer. The web section and PDF are not a new scientific defect just because
+> they live in different files."*
+
+> **`P0-SCIENCE-06` cannot be "HELD" if its ranking still drives the live paid
+> Report.** *"The absence of an authorised replacement selector is a legitimate
+> blocker to replacement. It is not permission to retain the invalid selector."*
+>
+>     No authorised selector means NO PERSONALISED SELECTION — not continued
+>     use of an invalid one.
+
+### The close criterion, as it now stands
+
+> **No live paid Report renderer — web or PDF — may present a personally
+> measured Prebiotic, Probiotic or Postbiotic score, band, rank, colour-state or
+> anatomical state.**
+
+And the depth at which it is met:
+
+> **If a product type says a personal construct exists, every downstream
+> consumer is invited to treat it as truth.**
+
+So `-07` is closed at the **canonical Report object**, not at its renderers.
+The field test applied to every candidate field: *would this field allow a
+downstream consumer to reconstruct or assert a personal Biotic state? If yes,
+retire it.*
+
+### `P0-SCIENCE-07` · all eleven live sites
+
+The register named three. The trace found eleven, and **two of them were found
+only by reading the rendered output rather than the source**, with a third found
+by the new PDF render proof.
+
+| # | site | what a paying customer got |
+|---|---|---|
+| 1 | `food-system-section.tsx:392` `PathwayScores` | three numerals **"71/100"**, each in `bioticAccent(key)` |
+| 2 | `food-system-section.tsx:488,505` `NodeCard` | `StateBadge` band word + `{node.score}/100` + possessive `explanation` |
+| 3 | `food-system-section.tsx` `RingNode` | the three states captioned on a ring around a figure of the member's body, each in its Biotic's colour |
+| 4 | `food-system-pdf.tsx:454,494` `BodyFigure` | the same three scores and band words drawn **on** the body figure, inside three rings |
+| 5 | **`report-pdf.tsx:543–566` "Your 3 Biotics"** | **the worst form.** Weakest-first rows: Biotic name + per-Biotic colour + **a bar whose width is the score** (`width: ${score}%`) + the number. The `BioticBar` construct 0R-5 deleted from `twin-stage.tsx`, reconstructed in the live downloadable PDF with the ranking carried by row order. `lib/pdf/report-pdf.tsx` was in **no** `VISUAL_MODULES` entry |
+| 6 | `framing.ts:146` `heroTaglineFor` | in the paid hero: *"A strong overall base, with `${PATHWAY_LABEL[priorityPathway]}` the thinnest part of your answers."* |
+| 7 | `paid-report-client.tsx:681` | `PATHWAY_LABEL[systemSnapshot.priorityPathway]` |
+| 8 | `lens-section.tsx:99` + `food-system-pdf.tsx:735` | "Where it matters most: **Prebiotics**" |
+| 9 | `report-membership-cta.tsx:90,96` | "Your plan starts with **Prebiotics**…" and "**Prebiotics** habits hold through ordinary weeks" |
+| 10 | `paid-report-client.tsx:385` | section subtitle *"A practical starting set chosen to support your current **priority pathway**."* — **found by reading the rendered output** |
+| 11 | `report-pdf.tsx:513` cover | `profile.tagline` printed directly, bypassing the web boundary — **found by the new PDF render proof** |
+
+Sites 10 and 11 are the ones worth dwelling on. Site 10 is a hard-coded
+subtitle: no Biotic word, no number, invisible to every claim rule, and it
+describes a selection that was happening. Site 11 is the same construct one file
+over from a boundary that had just been closed — the web renderer went through
+`heroTaglineFor` and the PDF read the authored string itself.
+
+> **Source inspection can establish possibility. Rendered evidence establishes
+> reachability.** The permanent audit standard, earning its place twice more.
+
+### The five-point close proof
+
+| # | claim | where it is proved |
+|---|---|---|
+| 1 | the canonical Report type can no longer **represent** personal per-Biotic score or state | `retired-vocabulary.test.ts` — `bioticScores`, `FoodSystemNode.score`/`.state`, `EducationModule.whatYourAnswersSuggest` and `foodSystemMap` are gone from the interface **and** the zod schema |
+| 2 | Report **construction** cannot recreate it | the same file — the builder carries no `orderedByNeed`, no `normalizeToBiotics`, no `priorityPathway`, no `strongestPathway`, no `BAND_SUGGESTS`; and `orderedByNeed` is **deleted from `lib/report/subscores.ts`**, which makes this structural rather than asserted |
+| 3 | web and PDF cannot **render** it | `food-system-section.test.ts`, `paid-report-presentation.test.ts`, and the new `paid-pdf-biotic-claims.test.ts`, which walks the rendered react-pdf element tree and then calls `renderToBuffer` for real |
+| 4 | fallback / add-on / AI-merge paths cannot **reintroduce** it | `fallback-report-pathways.test.ts` (permutation invariance over the whole spine), `addon-lens.test.ts` (630 tests; the lens names no pathway and its copy is identical whichever Biotic is weakest), `generation-provenance.test.ts`, and `pdf-boundary-subscores.test.ts` for the `generate-pdf.ts` discard |
+| 5 | varied legacy Biotic inputs cannot alter customer-visible personal Biotic score or state, because the **capability** is gone | the permutation proofs in `agent-loop-claims.test.ts` and `paid-pdf-biotic-claims.test.ts`: six orderings of ONE score multiset produce one identical Report and one identical PDF tree |
+
+### `P0-SCIENCE-06` · resolved by retirement, not by relabelling
+
+`orderedByNeed` is **deleted**. Its six consumers are de-ranked and nothing
+replaced the selector:
+
+| consumer | what it lost |
+|---|---|
+| `build-food-system-report.ts` | nine fields: `systemSnapshot.oneLine`, `.dominantPattern`, `.mainLever`, `.strongestPathway`, `.priorityPathway`, `visualTheme.primaryAccent`, the `foodTools` order, `priorityLever.*`, `thirtyDayLoop(priority)` |
+| `framing.ts` | `Framing` keys on the overall band alone; `mixed` retired; `framingForScores` takes no sub-scores |
+| `fallback-paid-report.ts` | seven spine fields and roughly **thirty** customer-facing sentences — and this file is what a paying customer receives when generation fails, so every one of them was live and deterministic |
+| `addon-lens.ts` | `priorityConnection.pathway`, and all twelve `priorityWhy` branches |
+| `generate-report-prompt.ts` | the ranked premise and the tone instruction built on it |
+| `assessment-report.ts` | the latent copy of the same selector — closed for consistency, because a working copy of a retired selector one environment variable from a customer is the thing *repair the construct, not the sentence* exists to prevent |
+
+**The near-miss, recorded because it was the obvious move and it was refused.**
+`PILLAR_BEHAVIOUR` (`lib/pillars.ts`) is reviewed copy whose own docblock says it
+exists "for naming a person's priority without naming a personal Biotic state".
+Reusing it would have kept the argmin and renamed its output from "Probiotics" to
+"fermented foods".
+
+> **A safer label does not legitimise an unsupported selector.**
+>
+> **Content taxonomy may organise reviewed material. It does not automatically
+> confer authority to choose what is personally most important.**
+
+`PILLAR_BEHAVIOUR` is preserved exactly where it legitimately provides reviewed
+descriptive wording about observable food behaviour, and was not promoted into a
+decision engine.
+
+**When personalised priority may return:** once there is an explicitly reviewed
+decision rule based on an observable construct the product is entitled to rank —
+for example an authorised FSS-domain priority, if and when its methodology and
+cross-domain comparison are approved.
+
+### What may still legitimately be personal
+
+The overall **Biotics Score™** and its band — the product that is sold — and the
+member's own answers (`goal`, `symptoms`, `stress`, `sleep`, `energy`). Those are
+things they told us.
+
+### `foodSystemMap` and chapter 2
+
+With `state`, `score` and the band `explanation` gone, chapter 2 — *"Your Food
+System, Part by Part — where each pathway stands right now"* — said nothing
+`educationModules` does not teach generally and better. It is retired; the
+chapter run is 01–06, and 07 for a family report. `bodySignalMap` stays with its
+static reviewed `explanation` and no Biotic-derived `state`, which is the field
+test applied: its `state` was `BAND_STATE[band(biotics[driver])]`, so four body
+signals each exposed the band of a driver Biotic and the set reconstructed the
+triple.
+
+`foodSystemMap` was first **emptied to `[]`**, and the schema's own `.min(1)`
+refused it — a defect introduced by the repair, caught by the contract being
+repaired. It was then removed from the contract entirely.
+
+### The boundary that protects a protected route
+
+`ReportPDFProps.freeScores` lost `subScores`, and its one caller is
+`app/api/submit-deep-assessment/route.ts` — in CLAUDE.md's **What NOT to
+Modify** — which passes an object literal, so excess-property checking would have
+forced an edit to a protected file. `lib/pdf/generate-pdf.ts` sits between them
+and is not protected: it accepts the legacy shape and forwards only
+`{ overall, profile }`. **The protected route is untouched.**
+
+Both shapes typecheck, so the discard needed a runtime guard
+(`pdf-boundary-subscores.test.ts`). The obvious proof does not work and this was
+**measured, not assumed**: `renderToBuffer` is not byte-deterministic even for
+identical input — two renders of the same props produced two different sha256s —
+so the guard captures the element handed to the renderer instead.
+
+### `heroTaglineFor` kept a job
+
+Deleting its `mixed` override exposed what the override had been covering: for a
+high scorer `getProfile` authors *"all three pathways being well supported"* — a
+band word over the member's three Biotics. Deleting the override without noticing
+would have swapped one prohibited claim for another. The function now **refuses**
+that shape and the *"one pathway thinner than the rest"* shape, and returns null;
+the hero and the PDF cover then show nothing rather than a substitute sentence.
+
+### Reported, not repaired
+
+| finding | why it is not repaired here |
+|---|---|
+| `getProfile`'s taglines and descriptions (`lib/assessment-scoring.ts:120`) | the `>= 65` branch authors *"A solid base in your answers, with one pathway thinner than the rest"*, and the `>= 80` branch *"all three pathways being well supported"*. `getProfile` also feeds the free results page, the lifecycle emails and the share card, so re-banding it moves copy on three surfaces outside this tranche. The refusal boundary is what keeps both shapes off the paid Report, and `paid-report-presentation.test.ts` + `paid-pdf-biotic-claims.test.ts` hold it on the web and the PDF |
+| the three raw per-Biotic scores interpolated into two Claude prompts | `app/api/submit-deep-assessment/route.ts` and `app/api/generate-deep-questions/route.ts` are both in CLAUDE.md's **What NOT to Modify**. The PDF components those routes *call* were in scope; the routes were not. Recorded as a prompt-surface finding for a later tranche |
+
+### Instrument defects and calibrations 0R-6R found in its own guards
+
+| # | defect | how it was found |
+|---|---|---|
+| 1 | `BioticScoreKey` made the whole Report family **invisible** to the form track. The rule read `\w+: BioticKey`, the report layer uses `BioticScoreKey`, and `BioticKey` is not a substring of it — so "a Biotic key reaching a colour" could not see a single site in the Report family | adding three modules and watching two pass |
+| 2 | two form-track rules became **false-positive generators** after the repair. `pathway: BioticScoreKey` is taxonomy and `width: 80` is a static PDF column. *A rule that cannot be satisfied by any correct version of a file cannot tell a repaired file from an unrepaired one.* The record form was narrowed and the extent sink now requires interpolation or arithmetic | the first green run |
+| 3 | the `BioticKey`-parameter rule was **retired** after measuring that it fires on exactly four things, none a defect: two comments and two taxonomy keys. Its `PRE_REPAIR` subject claimed a *signature* was the defect; `bioticAccent(key: BioticScoreKey)` has the same shape and is the education palette | measurement, before the rule was trusted |
+| 4 | retiring that rule left the extent-only subject with **no Biotic read at all** | the non-vacuity assertion, immediately |
+| 5 | the record rule was narrowed **twice**, and the second narrowing is the real finding: `Record<BioticScoreKey, …>` with any value type matched three reviewed content catalogues in the builder alone. It is now a `number` triple or a `Partial<…>` map — measured to fire on the two shapes that shipped and on nothing in the repaired tree | writing sabotage 1518 |
+| 6 | **`BLOCKED_AT_0R6` could not have detected its own repair.** The blocked branch required the builder to STILL map a Biotic to a visual parameter, and after `primaryAccent` became the static brand accent that stayed true — satisfied by `PATHWAY_PLAIN: Record<BioticScoreKey, string>` plus the word "gradient" in `gradient: GRADIENT`. Narrowing the record rule is what made the branch finally fail and say *"the defect is GONE: DELETE the entry"*. The inventory is deleted. ***An inventory is only self-retiring if its rule can go green.*** | writing sabotage 1518 |
+| 7 | the permutation proof — the close proof for the entire `-06` repair — **could be made a tautology in one edit**, because `new Set(...).size === 1` over a one-entry array is trivially true. Both files that carry the six orderings now pin six entries, six distinct orderings and one shared multiset | writing sabotage 1520 |
+| 8 | nothing **called** `copyToCommitted`, so deleting the single statement that declines the frozen write broke no assertion | writing sabotage 1534 |
+| 9 | the `orderedByNeed` rule read **its own comment** — the block in `subscores.ts` recording the deletion names it six times. *A comment recording a defect is not the defect*, for the fourth time in two tranches | first run |
+| 10 | the paid-flow reachability rule read a comment too: `lib/assessment-report.ts` gained a note at 0R-6R explaining that its renderer is latent "behind `isUnverifiedPaidFlowAllowed`", and the structural rule read that sentence as a read of the flag. **Fifth occurrence.** ***A comment naming a mechanism is not a read of that mechanism.*** | the Playwright run |
+| 11 | a band-word rule fired on legitimate prose — *"Building the rest of the plan around…"*. `StateBadge` rendered its band word as its own `<Text>`, so the badge is a standalone node and the prose is a long node containing it; comparing whole nodes tells them apart with no judgement about which sentences may contain which words | first run of the PDF proof |
+| 12 | a ranking rule fired on *"The strongest practical move"* — an ordinary superlative about an **action**. Narrowed to require pathway context | first run of the PDF proof |
+| 13 | my own permutation test measured **clock jitter**: only `generatedAt` differed. The diff was measured line by line rather than assumed, then the timestamp normalised | first run |
+| 14 | my Playwright web proof failed its own **non-vacuity** check: `walkToPaidReport` reaches `FullReportClient`, not `FoodSystemSection`, which needs a settled Stripe session. The test was removed, the reachability limit recorded, and the three instruments that *can* make the proof named | the Playwright run |
+
+### The frozen audit evidence is now immutable to an ordinary run
+
+`NOTE-CAPTURE-01` is closed as a mechanism rather than a note.
+
+Three write paths reached the frozen tree, all now gated on the exact string
+`EATOBIOTICS_AUDIT_WRITE_FROZEN=1`:
+
+1. each capture spec's `copyFileSync(corpus → screenshots/)` → `copyToCommitted()`;
+2. `mergeIntoManifest()` → `manifestTarget()`;
+3. the index writer → `screenshotIndexTarget()`.
+
+Without the flag the manifest and index are written under the already-gitignored
+`corpus/` tree and the representative copy is skipped, with the manifest row's
+`storage` reading `archive-only` so it never claims an image the run did not
+write. The corpus is **not** redesigned: same paths, same rows, same sha256s,
+same completeness check.
+
+**Proved by a real run, not by reading the gate:** after a full
+`npx playwright test`, `git status docs/experience/audit/` reports **0 dirty
+files**, and `corpus/manifest.json` + `corpus/SCREENSHOT_INDEX.md` exist and are
+covered by `.gitignore:44`.
+
+> **Frozen before-evidence must be immutable to normal regression runs.**
+
+### The permanent rules this tranche adds
+
+> **A type is a claim.** If a product type says a personal construct exists,
+> every downstream consumer is invited to treat it as truth.
+>
+> **A safer label does not legitimise an unsupported selector.**
+>
+> **Content taxonomy may organise reviewed material. It does not automatically
+> confer authority to choose what is personally most important.**
+>
+> **An inventory is only self-retiring if its rule can go green.**
+>
+> **A comment naming a mechanism is not a read of that mechanism.**

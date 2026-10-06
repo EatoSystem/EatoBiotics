@@ -6,6 +6,101 @@ git history. This file starts it. Entries are newest first.
 
 ---
 
+## 2026-10-06 — Four engineering rules adopted at the Experience 0R-6R close
+
+The 0R-6 close at `175f53d` was accepted as an intermediate state. These four
+were earned while finishing it, and each came from an instrument of mine being
+wrong rather than from a product defect.
+
+### 1 · A type is a claim
+
+The governing ruling of the tranche, and the one that set the repair's depth:
+
+> **If a product type says a personal construct exists, every downstream
+> consumer is invited to treat it as truth.**
+
+`P0-SCIENCE-07` was reported as closed in one renderer while `FoodSystemReport`
+still declared `bioticScores`, `FoodSystemNode.score`, `FoodSystemNode.state`
+and `EducationModule.whatYourAnswersSuggest`. Five surfaces read that model, and
+three of them were rendering the construct on the live paid path.
+
+> Removing a prohibited construct from the renderers that currently read it is a
+> decision not to show, today, what the model still asserts exists. The test is
+> not "does this renderer print it" but **"can this type represent it"**.
+>
+> And the field test, applied to every field rather than the obvious ones:
+> **would this field let a downstream consumer reconstruct or assert the
+> prohibited state?** A compatibility field is not kept because today's renderer
+> no longer uses it.
+
+### 2 · A safer label does not legitimise an unsupported selector
+
+The obvious repair for `P0-SCIENCE-06` was to keep the argmin and point it at
+`PILLAR_BEHAVIOUR`, whose reviewed wording names behaviour rather than Biotics.
+It was refused.
+
+> A selector and the words it prints are different things. Relabelling an
+> argmin's output changes what the claim sounds like and nothing about whether
+> the product was entitled to make it.
+>
+> **Content taxonomy may organise reviewed material. It does not automatically
+> confer authority to choose what is personally most important.**
+
+With the corollary that decided the disposition:
+
+> **No authorised selector means no personalised selection** — not continued use
+> of an invalid one. The absence of a replacement blocks *replacement*; it does
+> not license *retention*.
+
+### 3 · An inventory is only self-retiring if its rule can go green
+
+Every allowlist in this repository carries the same contract: an entry may exist
+only while its defect does, and the list may only shrink. `BLOCKED_AT_0R6`
+asserted that contract by requiring its one file to **still** map a Biotic to a
+visual parameter — so that when the defect went, the guard would say "delete the
+entry".
+
+It did not. After `primaryAccent` became the static brand accent the branch
+stayed satisfied, by `PATHWAY_PLAIN: Record<BioticScoreKey, string>` — a reviewed
+wording catalogue — plus the word "gradient" in `gradient: GRADIENT`.
+
+> An inventory that cannot detect its own repair is a permanent excuse with a
+> shrinking-list comment on top. The rule behind the entry must be narrow enough
+> to go green on a correct file, or the entry outlives the defect silently.
+
+The same measurement retired a rule and narrowed two others, on the general
+principle that **a rule which cannot be satisfied by any correct version of a
+file cannot tell a repaired file from an unrepaired one** — which is the one
+thing such an instrument exists to do.
+
+### 4 · A comment naming a mechanism is not a read of that mechanism
+
+The companion to *a comment recording a defect is not the defect*, which this
+repository has now written down **five** times — twice more in this tranche
+alone. The new form: a structural rule asked "does this module read the paid-flow
+flag", and matched a comment of mine explaining that the module's renderer is
+latent *behind* that flag.
+
+> A structural rule reads code. Only a prose rule reads prose. Strip comments
+> before asking a structural question, and prove the stripper has not blinded
+> the rule by holding the real shape as a subject.
+
+### Also recorded: two measurements that changed the approach
+
+**`renderToBuffer` is not byte-deterministic**, even for identical props — two
+renders of the same input produced two different sha256s. The obvious proof that
+`generate-pdf.ts` drops the three sub-scores (generate two PDFs, compare bytes)
+would have failed for a reason unrelated to Biotics. The guard captures the
+element handed to the renderer instead.
+
+**A permutation proof can become a tautology in one edit.** `new Set(...).size === 1`
+over a one-entry array is trivially true, so truncating the fixture array would
+have turned the close proof for an entire finding into a no-op. Both files that
+carry the six orderings now pin six entries, six distinct orderings and one
+shared multiset.
+
+---
+
 ## 2026-10-06 — Three engineering rules adopted at the Experience 0R-6 close
 
 Review discipline, like the 0R-5 three below. Each was earned by a guard of
