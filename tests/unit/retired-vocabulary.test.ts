@@ -925,3 +925,233 @@ describe("no surface claims an improvement from scores that cannot be compared",
     ).toMatch(/not a measurement of your health/i)
   })
 })
+
+/* ════════════════════════════════════════════════════════════════════════════
+   0R-6 · `P1-VOCAB-01` — A RETIRED NAME PRODUCED BY CSS, NOT BY SOURCE
+
+   ══ THE SPEC ASKED FOR A WIDENING THAT WOULD NOT HAVE WORKED ════════════════
+
+   `EXPERIENCE_0R_REMEDIATION_SPEC.md` says `P1-VOCAB-01`'s guard is
+   "`retired-vocabulary.test.ts` extended over the report corpus". Measured, the
+   corpus already covers it and the rule already exists:
+
+     RETIRED  ["Heal or a retired pathway plural", /\bHeal\b|…/]
+     journeySurfaces()  walks components/assessment with pageOnly: false,
+                        so full-report-client.tsx IS scanned
+
+   …and the suite is GREEN, correctly. `full-report-client.tsx:275-281` renders
+
+     {food.pillars.map((p) => <span className="… capitalize">{p}</span>)}
+
+   so the SOURCE contains only the lowercase stored key `"heal"`, which the rule
+   deliberately permits — lowercase "heal" is an ordinary English verb in
+   legitimate educational prose, and the rule is case-sensitive for that reason.
+   The capital-H **Heal** a customer reads is produced by `text-transform:
+   capitalize` at render time.
+
+   ══ SO THIS IS A NEW FORM, AND IT IS WORTH NAMING ═══════════════════════════
+
+   A retired name that exists in NO source string. It is the presentation-layer
+   analogue of the interpolation blindness this repository has documented
+   eleven times: there, the word lived in a lookup table; here, it is
+   manufactured by a stylesheet.
+
+   The existing instrument cannot express it, which is reported rather than
+   worked around. What CAN be expressed, and is the real invariant, is
+   structural: a STORED KEY must not be rendered directly. CLAUDE.md already
+   rules it — "'Heal' is a stored key, never a customer-facing pathway name" —
+   and `lib/product-vocabulary.ts` is where the customer-facing name lives.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+const STORED_PATHWAY_KEYS = ["feed", "seed", "heal"] as const
+
+/** Files that render a food's pathway tags to a customer. */
+const PATHWAY_TAG_SURFACES = ["components/assessment/full-report-client.tsx"] as const
+
+/*
+ * Pinned as a LITERAL, for the sabotage-1461 reason. `it.each` only looks at
+ * what its list names, so deleting the one entry deletes the instrument and
+ * leaves zero failing tests behind — which is how 0R-1 lost `VISUAL_MODULES`
+ * coverage to a one-line edit. Writing the case that attacks this list is what
+ * found the omission in my own guard, one tranche after the lesson was
+ * written down.
+ */
+const PINNED_PATHWAY_TAG_SURFACES = 1
+
+describe("0R-6 · no stored pathway key is rendered as a customer-facing name", () => {
+  it.each(PATHWAY_TAG_SURFACES)("%s renders a name, not the key", (file) => {
+    const src = readFileSync(file, "utf8")
+
+    /*
+     * Non-vacuity: the surface must still render pathway tags at all, or a
+     * repair that simply deleted them would read as a pass.
+     */
+    expect(
+      /food\.pillars/.test(src),
+      `${file} no longer reads food.pillars — if the tags were removed ` +
+        `deliberately, delete this pin; if not, the assertion is vacuous`,
+    ).toBe(true)
+
+    /*
+     * The defect: the mapped key interpolated straight into the element. The
+     * rule is deliberately about the SHAPE rather than the word, because the
+     * word is never in the source.
+     */
+    /*
+     * `\{\s*p\b[^}]*\}`, not `\{p\}`. Widened by sabotage 1516, which rendered
+     * `{p.toLowerCase()}` — still the stored key, printed lowercase with the
+     * `capitalize` class gone — and slipped straight through a rule that
+     * matched only the bare identifier. The invariant is "the key, or anything
+     * derived from it, rendered DIRECTLY"; `{ACTION_FOR_PATHWAY_KEY[p] ?? p}`
+     * does not match because it does not begin with `p`.
+     *
+     * `>\s*\{…\}\s*<`, not `>\{…\}<`. Written adjacent on the first run and it
+     * passed against the live defect, because the element spans five lines:
+     * the `>` closing the opening tag, a newline, indentation, `{p}`, a
+     * newline. A rule about rendered output has to tolerate the formatting the
+     * renderer is actually written in.
+     */
+    expect(
+      /food\.pillars\.map\(\(p\) =>[\s\S]{0,400}>\s*\{\s*p\b[^}]*\}\s*</.test(src),
+      `${file} renders the raw stored pathway key. Under ` +
+        `class "capitalize" that prints "Heal", which CLAUDE.md names as a ` +
+        `stored key and never a customer-facing pathway name — the third ` +
+        `action is Rejuvenate. Map the key through the product vocabulary.`,
+    ).toBe(false)
+  })
+
+  it("the surface list cannot be emptied to silence the rule", () => {
+    expect(
+      PATHWAY_TAG_SURFACES.length,
+      `PINNED_PATHWAY_TAG_SURFACES is ${PINNED_PATHWAY_TAG_SURFACES} while the ` +
+        `list holds ${PATHWAY_TAG_SURFACES.length}. A surface that renders ` +
+        `pathway tags joins the list; one that stops rendering them leaves it ` +
+        `together with the literal, in the same edit.`,
+    ).toBe(PINNED_PATHWAY_TAG_SURFACES)
+    for (const file of PATHWAY_TAG_SURFACES) {
+      expect(existsSync(file), `${file} is pinned but does not exist`).toBe(true)
+    }
+  })
+
+  it("NON-VACUITY: the case-sensitive Heal rule is why source cannot see this", () => {
+    /*
+     * Proves the diagnosis rather than asserting it. The shape that shipped
+     * carries no capital-H Heal for `RETIRED` to find, while the rendered
+     * string it produces would be caught immediately.
+     */
+    const shipped = '{food.pillars.map((p) => (<span className="capitalize">{p}</span>))}'
+    const healRule = RETIRED.find(([name]) => name.startsWith("Heal"))![1]
+    expect(healRule.test(shipped), "the source shape does carry capital-H Heal").toBe(false)
+    expect(healRule.test("Heal"), "the rule cannot see the rendered word either").toBe(true)
+    for (const key of STORED_PATHWAY_KEYS) {
+      expect(healRule.test(key), `the rule fires on the lowercase key "${key}"`).toBe(false)
+    }
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   0R-6 · `P0-SCIENCE-07` — the dev-flow pillar breakdown, and its reachability
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("0R-6 · P0-SCIENCE-07 · no per-Biotic score out of 100 in the Report", () => {
+  const FULL_REPORT = "components/assessment/full-report-client.tsx"
+
+  it("the pillar breakdown renders no score and no denominator", () => {
+    const src = copyOf(readFileSync(FULL_REPORT, "utf8"))
+    for (const [why, rule] of [
+      ["a per-Biotic score with a denominator", /\{dive\.score\}\s*\/\s*100/],
+      ["a possessive per-Biotic room-to-grow claim", /room to grow/i],
+      ["a per-Biotic score read at all", /dive\.score/],
+    ] as const) {
+      expect(
+        rule.test(src),
+        `${FULL_REPORT} — ${why}. The permanent product rule names this in three ` +
+          `of its forms at once: a number, a denominator and a possessive. The ` +
+          `deep-dive guidance survives without a score, as BioticsProgressPanel ` +
+          `already does.`,
+      ).toBe(false)
+    }
+  })
+
+  /*
+   * ── THE SELECTION HALF, ADDED BECAUSE SABOTAGE 1512 SLIPPED ──────────────
+   *
+   * The repair removed `score: number` from `PillarDeepDive`, which closes the
+   * ranking BY CONSTRUCTION: the sort had nothing left to sort by. But the only
+   * thing holding the field out was the TYPE, and the sabotage driver runs
+   * vitest, not `tsc`. Restoring the field broke no assertion, so the selection
+   * half of `-07` was guarded by a tool outside the loop that is supposed to
+   * guard it.
+   *
+   * Type-level absence is not enforcement when the enforcing tool is not run.
+   * This reads the source instead, and refuses the field AND the sort over it —
+   * the construct and its only consumer, in one place.
+   */
+  it("PillarDeepDive carries no per-Biotic score, and nothing sorts by one", () => {
+    /*
+     * RAW source, not `copyOf`. `copyOf` joins every line with a space so
+     * prose rules read a sentence that spans lines — which is exactly wrong
+     * for a STRUCTURAL rule, because the `\n}` that ends a declaration no
+     * longer exists. Comments are stripped by hand instead, so the long
+     * `P0-SCIENCE-07` note inside this very interface (which names `score`
+     * repeatedly, in the course of recording its removal) cannot be mistaken
+     * for the field: a comment recording a defect is not the defect, for the
+     * third time in this tranche.
+     */
+    const src = readFileSync("lib/assessment-report.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    const deepDiveType = src.match(/export interface PillarDeepDive \{[\s\S]*?\n\}/)
+    expect(deepDiveType, "PillarDeepDive is gone — if deliberately, delete this pin").toBeTruthy()
+    expect(
+      /\bscore\s*[?:]/.test(deepDiveType![0]),
+      "PillarDeepDive carries a per-Biotic score again. 0R-6 removed the field " +
+        "rather than the sentence, because a field with no reader is one edit " +
+        "away from a ranking — which is how the weakest-first sort existed.",
+    ).toBe(false)
+
+    expect(
+      /deepDives\s*\.\s*sort\s*\(/.test(src),
+      "the deep dives are sorted again. Any ordering of the three pillars by a " +
+        "per-Biotic score is a personal Biotic ranking, printed or not.",
+    ).toBe(false)
+  })
+
+  it("the dev flow cannot serve the Report in production, under any environment", () => {
+    /*
+     * The spec's close condition for `-07` is two-part: the construct gone AND
+     * the route unable to serve it under any environment. This is the second
+     * part, and it is GREEN on arrival — `isUnverifiedPaidFlowAllowed` already
+     * fails closed after the S7R repair. A pin that is green when written
+     * proves nothing unless it is shown to refuse the shape that preceded it,
+     * which is what the non-vacuity assertions below do.
+     */
+    /*
+     * COMMENTS STRIPPED, and that mattered on the first run. The file's own
+     * doc comment records the shape it replaced — "Was `if
+     * (!process.env.STRIPE_SECRET_KEY)`, which rendered the paid report…" —
+     * so a raw-source rule for that shape matched the HISTORY and reported a
+     * regression that was not there. A comment recording a defect is not the
+     * defect, which this repository has now had to write down twice.
+     */
+    const policy = readFileSync("lib/paid-flow-policy.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    // The one variable, and it must be an exact-string opt-in.
+    expect(policy).toMatch(/!==\s*"true"\)\s*return false/)
+    // Production is refused unconditionally, and the flag cannot override it.
+    expect(policy).toMatch(/vercelEnv === "production"\)\s*return false/)
+    // Anything unproven is denied, rather than defaulting open.
+    expect(policy).toMatch(/return false\s*\n\}/)
+
+    // NON-VACUITY: the shape that preceded it would have opened the bypass
+    // wherever STRIPE_SECRET_KEY happened to be unset.
+    expect(
+      /!process\.env\.STRIPE_SECRET_KEY/.test(policy),
+      "the pre-S7R bypass condition is back: an unset Stripe key must not " +
+        "render a paid report",
+    ).toBe(false)
+  })
+})

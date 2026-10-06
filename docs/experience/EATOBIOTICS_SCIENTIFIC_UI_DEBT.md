@@ -2024,3 +2024,188 @@ literal's **values**, so a zero-filled default (`?? { calories: 0, … }`) is
 absence and a non-zero figure or non-empty string is content.
 
 ---
+
+---
+
+## 0R-6 · SITE-LEVEL CLOSE RECORD
+
+> **An unsupported inference does not become acceptable because its output is
+> hidden.** Internal state may organise the product; it may not secretly make a
+> personal conclusion the product is forbidden to present.
+>
+> **One unsupported personal inference may have textual, behavioural and visual
+> outputs; those outputs remain manifestations of the same construct.**
+
+0R-6 owns the paid path. Two of its four findings are closed, one is traced and
+queued for review, and one is **held with its guards red**, because repairing it
+requires a selection source nothing in this repository is authorised to use.
+
+### Status of the four findings
+
+| finding | status | evidence |
+|---|---|---|
+| `P0-SCIENCE-07` the dev-flow Report's three per-Biotic scores out of 100 | **CLOSED — construct and selection both gone** | rendered: `tests/e2e/audit-capture-reports.spec.ts` walks a real assessment to the Report and asserts no `<Biotic> NN/100` and no possessive, with the Report's own sections asserted present so the absence is not blankness |
+| `P1-VOCAB-01` "Heal" renders as a customer-facing pathway tag | **CLOSED** | the same rendered walk reads **Feed · Seed · Rejuvenate** on the food cards and no `Heal` anywhere in the page text |
+| `P0-SCIENCE-08` mechanistic microbiological claims in food copy | **TRACED · QUEUED FOR REVIEW** | the spec's premise is corrected below; no wording changed, per the spec's own condition that a named reviewer dispositions each claim |
+| `P0-SCIENCE-06` the paid Report ranks the member's Biotic pathways | **HELD · GUARDS RED AND INVENTORIED** | three `it.fails("BLOCKED · …")` assertions that call `buildFoodSystemReport()`, plus one entry in `BLOCKED_AT_0R6` |
+
+### `P0-SCIENCE-07` — what was removed, and why removal closed the selection too
+
+`PillarDeepDive.score` is gone from the contract in `lib/assessment-report.ts`.
+That removed three things in one edit:
+
+1. the rendered **number and denominator** (`{dive.score}/100`, in that Biotic's
+   colour) and the possessive summary branch *"Your probiotics score has clear
+   room to grow"*;
+2. the **sort** — `deepDives.sort((a, b) => a.score - b.score)`, "weakest first",
+   which made the first card the member's asserted weakest Biotic;
+3. the **downstream selection** — `full-report-client.tsx` read `deepDives[0].pillar`
+   as the weakest pathway and fed it to the food swaps.
+
+So `-07` needed no authorised replacement selection source, unlike `-06`: with
+no score on the contract the ranking cannot exist, the order is the static
+`PILLAR_ORDER`, and `deepDives[0]` is a constant rather than a verdict.
+
+One line had to move with the sort. The section subtitle read *"Starting with
+your areas of greatest opportunity"* — a description of the ORDER. Leaving it
+would have been the worse of the two outcomes: a ranking claim with nothing
+behind it at all.
+
+### `P1-VOCAB-01` — a retired name that exists in no source string
+
+The spec asked for `retired-vocabulary.test.ts` to be "extended over the report
+corpus". Measured, **the corpus already covered the file and the rule already
+existed, and the suite was correctly green**:
+
+```tsx
+{food.pillars.map((p) => <span className="… capitalize">{p}</span>)}
+```
+
+The source holds only the lowercase stored key `"heal"`, which the
+case-sensitive `RETIRED` rule deliberately permits — lowercase "heal" is an
+ordinary English verb in legitimate educational prose. **The capital-H "Heal" a
+customer reads is manufactured by `text-transform: capitalize` at render
+time.**
+
+This is a new form, and it is the presentation-layer analogue of the
+interpolation blindness this programme has now recorded eleven times: there the
+word lived in a lookup table, here it is produced by a stylesheet. The existing
+instrument cannot express it, which is reported rather than worked around; what
+IS expressible, and is the real invariant, is **structural** — a stored key must
+not be rendered directly. The tag now maps through `ACTIONS` in
+`lib/product-vocabulary.ts`, and `capitalize` is gone with the need for it.
+
+### `P0-SCIENCE-08` — the spec's reachability premise is not borne out
+
+The spec records the food-tool data as **"shared with the production path"**.
+Traced, it is not: the live Report carries its own `TOOLS` in
+`lib/report/build-food-system-report.ts`, already written in the hedged
+register, and the five quoted strings — *"maximises short-chain fatty acid
+production"*, *"Hundreds of millions of live bacteria per gram; direct seeding
+of the microbiome"*, *"selectively feeds the most beneficial gut bacteria"*,
+*"Flavanols feed Lactobacillus and Bifidobacterium"*, *"stabilise your gut
+rhythm"* — live in `ALL_FOODS` in `lib/assessment-report.ts`, which reaches only
+`FullReportClient`.
+
+**`-08` is therefore LATENT, not live.** The correction is recorded here rather
+than edited into the finding, because the finding is what was measured at the
+time. The strings are unchanged and the dispositioning sheet is prepared;
+`-08` closes no further than "traced and queued" until a reviewer is named.
+
+### `P0-SCIENCE-06` — held, and why
+
+Retiring the ranking means the paid Report must select its content from
+something else, and nothing in the repository is authorised to do so:
+
+| candidate | why it cannot key a live paid Report |
+|---|---|
+| `lib/fss/action/priority.ts` — domain-keyed, the right shape | its scores come from `lib/fss/engine/weights.ts`, which refuses to score outside an explicit `DEV_ONLY` fixture context: *"there is no scientific reviewer and no weight has a rationale. That is the blocker, not this function."* Consumed only inside `lib/fss/*` |
+| `lib/report/deterministic/priority.ts` | pre-activation: Migrations 48 and 49 drafted-and-not-applied, an ordered prerequisite list, and the `constraints-known` acknowledgement blocker outstanding (Phase 4A-S2R1) |
+
+It cannot ship as hide-only either, because that is exactly what the ruling
+above forbids. So the guards are held red and inventoried, and the product
+decision is reported rather than taken.
+
+**A newly-found site, folded in:** `toolOrder = [priorityPathway,
+strongestPathway, …]` at `build-food-system-report.ts` — the argmin over three
+unmeasured Biotic scores **selects the five foods a paying customer sees**. The
+visual manifestation `primaryAccent: bioticAccent(priorityPathway)` is the same
+construct in colour, and is the single entry in `BLOCKED_AT_0R6`.
+
+### `P0-SCIENCE-07-LIVE` · NEW · the same construct, on the PAID path
+
+**This is the most serious thing 0R-6 found, it is outside the tranche's four
+findings, and it is NOT repaired.**
+
+The register classifies `-07` as "LATENT PRODUCTION HAZARD · NOT currently
+customer-reachable". That is true of `full-report-client.tsx`. It is **not true
+of the construct**: the identical construct is live on `/assessment/report`,
+which is `V1_CORE_ROUTES:94` — the settled €49 product.
+
+Found by measuring why sabotage 1521 slipped. Neutralising the Biotic ranking
+left the Report still varying across permutations of the same three scores,
+because the report object carries, **per Biotic**, a `score` and a `state`:
+
+| site | what a paying customer sees |
+|---|---|
+| `components/report/food-system-section.tsx:392` → `PathwayScores` | all three per-Biotic scores as large numerals — **"71/100"** — each in `bioticAccent(key)`'s colour with `PATHWAY_LABEL[key]` beneath |
+| `components/report/food-system-section.tsx:488, :505` → `NodeCard` | a per-Biotic **band word** (`StateBadge`), `{node.score}/100`, and a possessive `explanation` |
+| `lib/pdf/food-system-pdf.tsx:454`, `:494` → `BodyFigure` | the same three scores and band words, drawn **on a figure of the member's body inside three rings**, in the PDF the customer downloads |
+
+The chain is `PaidReportClient:627` → `FoodSystemSection` → `/assessment/report`.
+The third row is the anatomy construct `P0-SCIENCE-05` removed from the Twin at
+0R-5, reconstructed in the PDF.
+
+**Unlike `-06`, this needs no authorised replacement selection source** — it is
+a removal of the kind 0R-5 performed five times (`MealCard`'s triple,
+`BioticBar`, `BIOTIC_META`, `BioticsProgressPanel`'s prop, `ScoreRing`'s
+`percentile`). It is left for an explicit ruling on which tranche owns it,
+rather than expanded into silently, because rewriting the main section of the
+paid Report is plainly beyond the four findings 0R-6 was authorised to close.
+
+### Instrument defects 0R-6 found in its own guards
+
+| # | defect | how it was found |
+|---|---|---|
+| 1 | the reachability non-vacuity rule read a **comment**, not code: `lib/paid-flow-policy.ts`'s doc comment records the old `!process.env.STRIPE_SECRET_KEY` shape, so the rule matched the HISTORY and reported a regression that was not there. Comments are stripped now. *A comment recording a defect is not the defect* — written down **three** times in this tranche alone | first run of the pin |
+| 2 | the `P1-VOCAB-01` structural rule required `>{p}<` **adjacency** the five-line JSX does not have, and passed against the live defect | first run |
+| 3 | the same rule matched only the bare identifier, so `{p.toLowerCase()}` — still the stored key, printed lowercase with `capitalize` gone — walked through | sabotage 1516 |
+| 4 | `PATHWAY_TAG_SURFACES` had **no membership pin**, so `it.each` over the emptied list deleted the instrument and broke nothing. **Sabotage 1461's lesson, repeated one tranche after it was written down** | writing sabotage 1517 |
+| 5 | the selection half of `-07` was held **only by the TypeScript type**, and the sabotage driver runs vitest, not `tsc`. Restoring `score: number` broke no assertion. *Type-level absence is not enforcement when the enforcing tool is outside the loop* | sabotage 1512 |
+| 6 | my own rendered non-vacuity assertion read `"Pillar Breakdown"` case-sensitively, but the label renders through `uppercase`. **The same CSS-transform blindness `P1-VOCAB-01` is about, in my own assertion about it** | the Playwright run |
+| 7 | I deleted one stale `EXPOSED_AT_0R1` entry and kept the other, with a comment asserting the file still carried the claim. It did not, and the staleness rule refused the surviving row immediately | first run |
+
+### A corpus entry protected by the presence of a defect
+
+Sabotage 1452 — *one file quietly leaves the Report corpus* — **slipped**, and
+the reason is the finding.
+
+It was never caught by a membership assertion: the existing test removes the
+file from both sides of its own comparison. What caught it was the D7 derived
+ledger, which saw that `lib/assessment-report.ts` was reachable, carried a
+claim, and now had no guard. **0R-6 repaired the claims out of that file, D7 went
+correctly silent, and the entry became droppable with nothing failing.**
+
+> A corpus entry was protected by the presence of a DEFECT in the file it names.
+> So every file this programme successfully cleans becomes a file that can
+> silently leave the scan — and the cleanest files are exactly the ones whose
+> guard entry looks most droppable. A corpus must be pinned for what it IS, not
+> for what is currently wrong inside it.
+
+`biotic-claims.test.ts` now pins `ACCOUNT_SURFACES`, `ASSESSMENT_SURFACES` and
+`REPORT_SURFACES` as exact sets, as the five older tranches have been since
+Gate 3.7.
+
+### The frozen audit corpus is overwritten in place by the full Playwright run
+
+Measured, not assumed: `docs/experience/audit/screenshots/` was last written at
+`5274e03` (Experience 0 step 8), and **every `playwright test` run since has
+regenerated it** — so 0R-1 through 0R-5 each left those files dirty and restored
+them. The images are Experience 0's frozen before-evidence and the index's
+`findings` column still names defects that are now repaired, so regenerating
+them over the frozen record would destroy the evidence the audit cites.
+
+Restored rather than committed at this close, consistent with every previous
+tranche. Recorded because nothing in the harness prevents it, and the next
+person to run the suite and `git add -A` would silently replace the audit's
+evidence base. This belongs with `NOTE-CAPTURE-01`.

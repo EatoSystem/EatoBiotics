@@ -733,3 +733,66 @@ authority was not changed, general Biotics education was not rewritten, the
 Postbiotics evidence-review wording was not touched, and no unrelated eslint
 warning was cleaned — the count returned to its **96** baseline with nothing
 appeared and nothing disappeared.
+
+---
+
+## 10 · DELIVERY RECORD — 0R-6 (the paid path)
+
+0R-6 owns `P0-SCIENCE-06`, `-07`, `-08` and `P1-VOCAB-01`, live before latent,
+per §5. Nothing was re-sequenced. The site-level evidence is in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md)'s
+0R-6 close record and is not duplicated here.
+
+### Outcome per finding
+
+| finding | outcome |
+|---|---|
+| `P0-SCIENCE-07` | **CLOSED.** `PillarDeepDive.score` removed from the contract, which took the rendered number, the possessive branch, the weakest-first sort and the downstream swap selection with it. Reachability pin added: the route fails closed under any environment |
+| `P1-VOCAB-01` | **CLOSED.** The tag maps through `ACTIONS` in `lib/product-vocabulary.ts` and renders **Rejuvenate**; the stored key does not move |
+| `P0-SCIENCE-08` | **TRACED · QUEUED.** The spec's "shared with the production path" premise is corrected — the strings reach `FullReportClient` only, so `-08` is latent. No wording changed, per this spec's own condition |
+| `P0-SCIENCE-06` | **HELD.** Guards red and inventoried. Neither authorised selection source exists, and hide-only is forbidden by ruling |
+
+### Three corrections to this spec, from measurement
+
+1. **§5's `-06` red-state premise was already satisfied, and that was bad news.**
+   `REPORT_SURFACES` exists and `build-food-system-report.ts` is inside
+   `GUARDED_SURFACES`, yet the claims suite is **green** — because
+   `${PATHWAY_LABEL[strongestPathway]}` puts no Biotic word in any file. The
+   eleventh instance of interpolation blindness, and anyone reading the suite
+   would have concluded the money path was clean.
+2. **`-08`'s reachability**, above.
+3. **The sentence §5 quotes for `-06`** is `systemSnapshot.oneLine`;
+   `dominantPattern` carries a *second*, differently-worded ranking. Both are
+   live, and both reach the downloadable PDF.
+
+### Stale spec rows, recorded rather than re-sequenced
+
+§5 assigns 0R-9 *"`DEBT-CODE-01` and the dead `strongest` aura mapping"*. 0R-5
+already deleted `TwinVisualState.auraGradient`, so that half of 0R-9's row is
+done.
+
+### Guards, in existing instruments
+
+No new guard family; two reports filed instead of building one.
+
+| instrument | what 0R-6 added |
+|---|---|
+| `agent-loop-claims.test.ts` | three assertions that **call** `buildFoodSystemReport()` over six permutations holding the score multiset constant, so the only variable is *which* Biotic is highest. Held as `it.fails("BLOCKED · …")` — green while the defect lives, erroring the moment it is repaired |
+| `biotic-visual-encoding.test.ts` | the live Report family added to `VISUAL_MODULES` (pin 9 → 10), closing the money-path coverage gap 0R-5 created; `BLOCKED_AT_0R6` with cap-equals-list and a "still a module under test" assertion |
+| `retired-vocabulary.test.ts` | the `P1-VOCAB-01` structural rule (a stored key may not be rendered directly) with its surface list pinned to a literal; the `-07` breakdown rule; the `-07` selection rule over `PillarDeepDive`; the fail-closed reachability pin with comments stripped |
+| `biotic-claims.test.ts` | both stale `lib/assessment-report.ts` entries deleted (`ENTRIES_AT_0R1_OPEN` 19 → 17); the three 0R-1 tranches pinned as **exact sets** |
+| Playwright `audit-capture-reports.spec.ts` | the Experience 0 test that asserted `-07` reproduced is **inverted**, with the Report's own sections asserted present so the absence cannot pass by blankness, and `Rejuvenate` present / `Heal` absent proved by render |
+| `tools/sabotage/cases_0r.py` | twelve cases, 1510–1521, including three aimed at the held `-06` guards: growing the blocked inventory, dropping the inventoried file from the instrument, and converting a held `it.fails` to a passing `it` |
+
+### What 0R-6 deliberately did not do
+
+FSS methodology, domain scoring, weights and bands were not altered; the
+scientific instrument was not touched; general Three-Biotics education was not
+rewritten; no selection source was invented for the money path; `P0-TRUST-04`
+and 0R-7 were not begun; and `P0-SCIENCE-07-LIVE` — the same construct found
+live on the paid path, outside this tranche's four findings — was recorded with
+rendered evidence and left for an explicit ruling rather than repaired.
+
+The eslint count returned to its **96** baseline. The one appeared warning was
+a leftover of 0R-6's own `-07` repair (`subScores` left unread in
+`generateFullReport`) and was cleaned; nothing unrelated was touched.

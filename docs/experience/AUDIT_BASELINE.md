@@ -803,3 +803,79 @@ entries, and `it.each(PRE_REPAIR)` is new with 5 subjects. Hence the measurement
 
 **No product code changed for this reconciliation, and the gate was not re-run:
 `5e6bb90` remains the tested product state.**
+
+---
+
+## 15 · Experience 0R-6 (the paid path) — the gate
+
+### The red state, measured before any product code changed
+
+| instrument | red on arrival | note |
+|---|---|---|
+| the existing claims corpus on `lib/report/build-food-system-report.ts` | **GREEN — and it stayed green** | the predicted result, and the point. `${PATHWAY_LABEL[strongestPathway]}` puts no Biotic word in the file, so a source scan of the whole corpus sees nothing. Anyone reading the suite would have concluded the money path was clean. **Eleventh instance of interpolation blindness** |
+| a new behavioural assertion over `systemSnapshot.dominantPattern` | **RED** | it returns the ranking sentence verbatim |
+| a new behavioural assertion that no Report string names a Biotic as strongest or first | **RED** | `oneLine`, `dominantPattern` and `mainLever` all do |
+| a new behavioural assertion that permuting *which* Biotic is weakest cannot change the Report | **RED** | and red for more reasons than predicted — see `P0-SCIENCE-07-LIVE` |
+| the form track with the live Report family added to `VISUAL_MODULES` | **RED** | `primaryAccent: bioticAccent(priorityPathway)` |
+| the `P1-VOCAB-01` structural rule | **RED** | `{p}` rendered under `capitalize` |
+| the `-07` breakdown rule | **RED** | `{dive.score}/100` plus the possessive branch |
+| the `-07` reachability pin | **GREEN on arrival** | `isUnverifiedPaidFlowAllowed` already fails closed after S7R. Proved non-vacuous against the pre-S7R shape by sabotage 1513 and 1514 |
+
+### The gate, in order
+
+| step | result |
+|---|---|
+| `tsc --noEmit` | **clean** |
+| `eslint .` | **96 warnings, 0 errors** — back to baseline. One warning appeared (`subScores` unread in `generateFullReport`, a leftover of 0R-6's own `-07` repair) and was cleaned; nothing appeared, nothing disappeared |
+| `vitest run` | **229 files · 6621 passed · 2 skipped (6623)** |
+| `check-ai-guard.mjs` | pass — 25 Claude-calling routes, all capped |
+| `check-schema-drift.mjs` | pass — 1084 files, 41 tables |
+| `check-supabase-scoping.mjs` | pass |
+| `next build` | **pass** |
+| Playwright | **266 passed** |
+| `run_0r` | **71/71 caught** (59 inherited + 12 new, 1510–1521) |
+| base · `v1` · `s3` · `s4` · `s5` · `s6` · `s7` · `s7b` · `g4` · `g5` · `g6` · `g61` | **430/430 caught** — 26 · 10 · 12 · 8 · 10 · 14 · 30 · 171 · 44 · 65 · 18 · 22 |
+| `s3a` | **2/35 caught, 33 broken** — the standing exception, unchanged: **31 `FILE MISSING` + 2 `ANCHOR MISSING`** (cases 364, 365). Reported separately, as required |
+
+### Test-count attribution, 6609 → 6623
+
+Measured per file rather than inferred from the total, and the four deltas close
+the +14 exactly. **229 test files at both heads** — nothing dropped out of the
+run.
+
+| file | 0R-5 → 0R-6 | Δ |
+|---|---|---|
+| `tests/unit/retired-vocabulary.test.ts` | 34 → 40 | **+6** |
+| `tests/unit/biotic-visual-encoding.test.ts` | 28 → 32 | **+4** |
+| `tests/unit/agent-loop-claims.test.ts` | 64 → 67 | **+3** |
+| `tests/unit/biotic-claims.test.ts` | 509 → 510 | **+1** |
+| | **net** | **+14** |
+
+`retired-vocabulary`'s baseline was measured by running the `2e4da42` copy of
+the file alongside the current tree, not derived by subtraction — the 0R-5
+reconciliation's own lesson, which was that a static tally cannot establish this
+when `it.each` table lengths set the count.
+
+`biotic-claims` is **+1 net** from two opposite movements: the three 0R-1
+tranches gained an exact-set pin (+1) while `KNOWN_UNCORRECTED`'s
+`ENTRIES_AT_0R1_OPEN` went 19 → 17 with both `lib/assessment-report.ts` entries
+repaired (which changes no test count, because that cap is asserted rather than
+iterated).
+
+### Three sabotage cases slipped, and each was resolved on its merits
+
+Per the standing rule — strengthen the TEST, never the case, unless the case was
+aimed at the wrong thing.
+
+| case | verdict | action |
+|---|---|---|
+| **1512** restores `PillarDeepDive.score` | the **test** was weak: the field was held out only by the TypeScript type, and the driver runs vitest, not `tsc` | `retired-vocabulary.test.ts` now reads the source and refuses the field and the sort over it |
+| **1452** drops one file from the Report corpus | the **test** was weak, and in an instructive way: the entry was protected by the presence of a *defect* in the file it names, and 0R-6 repaired that defect | the three 0R-1 tranches are pinned as **exact sets** |
+| **1521** neutralises the ranking | the **case** was aimed at the wrong thing, twice. First it replaced only `priorityPathway`, leaving `strongestPathway` ranking; then neutralising `orderedByNeed` still left the Report varying — because it carries per-Biotic `score` and `state` fields, which is `P0-SCIENCE-07-LIVE` | re-aimed at `dominantPattern`, the one held assertion a single edit can flip |
+
+Two cases additionally reported **ANCHOR MISSING** rather than slipping — 1456
+(`ENTRIES_AT_0R1_OPEN = 19` → 17) and 1462 (the tail of
+`MODULES_AT_0R5_CLOSE`). Both anchors were moved to follow their targets. **An
+anchor pinned to a shrinking number has to follow the number, or the case
+silently stops testing anything** — the 0R-5 lesson about lexical anchors,
+restated for numeric ones.

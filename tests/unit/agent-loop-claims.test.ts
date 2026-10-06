@@ -15,6 +15,7 @@ import { detectPatterns } from "@/lib/account/patterns"
 import { buildInsideYouChapters } from "@/lib/account/inside-you"
 import { buildWeekStory } from "@/lib/account/week-story"
 import { systemMapState } from "@/lib/account/system-map"
+import { buildFoodSystemReport } from "@/lib/report/build-food-system-report"
 import { mealImpact, type MealImpactInput } from "@/lib/account/meal-impact"
 import { RITUAL_CHECKS, ritualCount, EMPTY_RITUAL, type RitualDay } from "@/lib/account/ritual"
 import { loopBehaviour, mealBehaviour, behaviourFor } from "@/lib/agent-loop/behaviour"
@@ -934,6 +935,144 @@ describe("0R-5 · a self-reported tap reaches no body coordinate and no Biotic",
       Object.keys(await import("@/lib/account/ritual")),
       "ritualSignals is back — its whole return shape was the body-coordinate contract",
     ).not.toContain("ritualSignals")
+  })
+})
+
+/* ── 5c · 0R-6 · the paid Report's Biotic ranking ────────────────────────── */
+
+describe("0R-6 · P0-SCIENCE-06 · the paid Report does not rank the member's Biotics", () => {
+  /*
+   * ══ WHY THIS IS BEHAVIOURAL, ESTABLISHED BY MEASUREMENT ═══════════════════
+   *
+   * `lib/report/build-food-system-report.ts` is ALREADY inside
+   * `GUARDED_SURFACES` — 0R-1 closed `P0-GUARD-02` and added the whole report
+   * family — and `tests/unit/biotic-claims.test.ts` is GREEN on it. That is not
+   * evidence the paid path is clean. It is evidence the source rules cannot see
+   * what it does, because the sentence is assembled at runtime:
+   *
+   *     `Your answers suggest ${PATHWAY_LABEL[strongestPathway]} is ${who}
+   *      strongest pathway, and that ${PATHWAY_LABEL[priorityPathway]} is where
+   *      your answers point to the clearest first step.`
+   *
+   * `PATHWAY_LABEL` resolves to "Prebiotics" / "Probiotics" / "Postbiotics" in
+   * `lib/report/subscores.ts`, two modules away. The eleventh instance of the
+   * interpolation blindness this repository has now documented ten times, and
+   * the reason CLAUDE.md rules that a new generator of customer-facing prose
+   * belongs in THIS file rather than in a corpus list.
+   */
+
+  const PROFILE = { type: "Emerging Balance", tagline: "t", description: "d" }
+
+  function reportFor(subScores: Record<string, number>) {
+    return buildFoodSystemReport({
+      mode: "you",
+      subScores: subScores as never,
+      overall: 62,
+      profile: PROFILE,
+      leadName: "Fixture",
+      generatedAt: "2026-01-01T00:00:00.000Z",
+    })
+  }
+
+  /*
+   * ── PERMUTATIONS, NOT ARBITRARY NUMBERS, AND THAT IS THE WHOLE DESIGN ─────
+   *
+   * The overall BAND may legitimately differ between a strained system and a
+   * strong one — that is a property of the scores, not a ranking of the three.
+   * So the invariance asserted here holds the multiset of scores CONSTANT and
+   * permutes which Biotic carries which, isolating exactly the prohibited
+   * variable: *which* Biotic is highest or lowest.
+   *
+   * A test over unrelated score sets would prove nothing, because the Report is
+   * entitled to respond to how high the scores are.
+   */
+  const PERMUTATIONS: Record<string, number>[] = [
+    { prebiotics: 71, probiotics: 23, postbiotics: 48 },
+    { prebiotics: 23, probiotics: 48, postbiotics: 71 },
+    { prebiotics: 48, probiotics: 71, postbiotics: 23 },
+    { prebiotics: 23, probiotics: 71, postbiotics: 48 },
+    { prebiotics: 71, probiotics: 48, postbiotics: 23 },
+    { prebiotics: 48, probiotics: 23, postbiotics: 71 },
+  ]
+
+  /*
+   * ══ BLOCKED, AND HELD AS RED RATHER THAN SOFTENED ═════════════════════════
+   *
+   * The three assertions below are the real invariants and they currently FAIL.
+   * `it.fails` says so in the runner: the suite is green while the defect
+   * exists, and the moment the defect is repaired `it.fails` errors and forces
+   * each one back to a plain `it`. That is the same contract `EXPOSED_AT_0R1`
+   * and `EXPOSED_VISUAL_ENCODINGS` carry — AN ENTRY MAY ONLY EXIST WHILE ITS
+   * DEFECT DOES — expressed by the test runner instead of by a list, so it
+   * cannot be left behind.
+   *
+   * ── WHY THE REPAIR IS NOT IN 0R-6 ────────────────────────────────────────
+   *
+   * Not because it is hard. Because retiring the ranking means the paid Report
+   * must select its content from something else, and NOTHING IN THIS
+   * REPOSITORY IS AUTHORISED TO DO SO:
+   *
+   *   lib/fss/action/priority.ts    domain-keyed, which is the right shape, but
+   *                                 its scores come from lib/fss/engine/weights.ts,
+   *                                 which refuses to score outside an explicit
+   *                                 DEV_ONLY fixture context — "there is no
+   *                                 scientific reviewer and no weight has a
+   *                                 rationale. That is the blocker, not this
+   *                                 function." Consumed only inside lib/fss/*.
+   *
+   *   lib/report/deterministic/     pre-activation: Migrations 48 and 49 are
+   *   priority.ts                   drafted-and-not-applied, with an ordered
+   *                                 prerequisite list and the `constraints-known`
+   *                                 acknowledgement blocker outstanding
+   *                                 (Phase 4A-S2R1). Consumed only by its own
+   *                                 composer.
+   *
+   * Reported rather than designed around, on instruction. 0R-6 does not invent
+   * a selection source for the money path, and it does not take the other
+   * available option either — hiding the Biotic name while the same hidden
+   * ranking keeps choosing the member's plan — because that is the thing the
+   * founder's ruling forbids outright:
+   *
+   *     An unsupported inference does not become acceptable because its output
+   *     is hidden. Internal state may organise the product; it may not secretly
+   *     make a personal conclusion the product is forbidden to present.
+   */
+  it.fails("BLOCKED · the snapshot sentence names no Biotic and ranks nothing", () => {
+    const report = reportFor(PERMUTATIONS[0])
+    const sentence = report.systemSnapshot.dominantPattern
+    expect(sentence.length, "dominantPattern was empty, so this asserted nothing").toBeGreaterThan(0)
+    assertClean("systemSnapshot.dominantPattern", [sentence])
+  })
+
+  it.fails("BLOCKED · no customer-facing Report string names a Biotic as strongest or first", () => {
+    const report = reportFor(PERMUTATIONS[0])
+    for (const [label, text] of [
+      ["systemSnapshot.oneLine", report.systemSnapshot.oneLine],
+      ["systemSnapshot.dominantPattern", report.systemSnapshot.dominantPattern],
+      ["systemSnapshot.mainLever", report.systemSnapshot.mainLever],
+    ] as const) {
+      assertClean(label, [text])
+    }
+  })
+
+  it.fails("BLOCKED · permuting WHICH Biotic is weakest cannot change the Report", () => {
+    /*
+     * The ruling this asserts: an unsupported inference does not become
+     * acceptable because its output is hidden. `priorityPathway` is an argmin
+     * over three unmeasured Biotic scores, and it currently selects the food
+     * tools, the thirty-day loop, the "Start with …" title, the why-this-first
+     * copy and the accent colour. Whether it is PRINTED is a separate question
+     * from whether it may CHOOSE.
+     */
+    const rendered = PERMUTATIONS.map((s) => JSON.stringify(reportFor(s)))
+    const distinct = new Set(rendered)
+    expect(
+      distinct.size,
+      `the Report differs across ${distinct.size} of ${PERMUTATIONS.length} ` +
+        `permutations of the SAME three scores. Only which Biotic carries which ` +
+        `number changed, so every difference is a personal Biotic ranking ` +
+        `choosing the member's content.`,
+    ).toBe(1)
   })
 })
 

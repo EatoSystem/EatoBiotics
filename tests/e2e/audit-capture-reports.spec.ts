@@ -362,24 +362,68 @@ test.describe("what the render established, stated at its true reach", () => {
    * away from being served on the €49 route, which is why it is captured rather
    * than dismissed.
    */
-  test("the dev-flow Report renders three personal per-Biotic scores out of 100", async ({
+  /*
+   * ══ INVERTED AT 0R-6 — `P0-SCIENCE-07` AND `P1-VOCAB-01` ARE REPAIRED ══════
+   *
+   * This test used to assert that the defect REPRODUCED: three per-Biotic
+   * scores out of 100 and "Your probiotics score has clear room to grow". That
+   * was the right assertion for an audit whose job was to establish the finding
+   * by render rather than by reading the source. It is the wrong assertion for a
+   * repaired product, and 0R-5 had to invert `P0-SCIENCE-01`'s equivalent for
+   * the same reason.
+   *
+   * It is inverted rather than deleted, because the render is the only evidence
+   * that distinguishes "the construct is gone" from "the walk stopped working".
+   * The NON-VACUITY half below is what makes the absence mean something: the
+   * page must still be a Report, with all three pillar names and a deep-dive
+   * for each, before the missing /100 counts as a repair.
+   */
+  test("the dev-flow Report carries no personal per-Biotic score, and no retired pathway name", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await walkToPaidReport(page, varied)
     const text = (await page.locator("body").innerText()).replace(/\s+/g, " ")
 
-    // "Probiotics … 33/100", and "Your probiotics score has clear room to grow".
+    /*
+     * ── NON-VACUITY: this is still the Report, fully rendered ───────────────
+     *
+     * Case-insensitive, and that is not laziness. "Pillar Breakdown" is
+     * rendered through Tailwind `uppercase`, so `innerText` returns
+     * "PILLAR BREAKDOWN" — the same CSS-transform blindness that made
+     * `P1-VOCAB-01` invisible to a case-sensitive source rule, met again in
+     * my own assertion about it. A guard that reads rendered text must read
+     * it as rendered.
+     */
+    expect(text, "the walk did not reach the Report at all").toMatch(/pillar breakdown/i)
+    expect(text, "the deep-dive section did not render").toMatch(/your pillar deep-dives/i)
+    expect(text, "the food section did not render").toMatch(/your top 12 foods/i)
+    for (const biotic of ["Prebiotics", "Probiotics", "Postbiotics"]) {
+      expect(text, `${biotic} is missing, so the page is not the Report this test audits`).toContain(biotic)
+    }
+
+    // ── `P0-SCIENCE-07`: the three /100 scores and the possessive are gone ──
     for (const biotic of ["Prebiotics", "Probiotics", "Postbiotics"]) {
       expect(
         new RegExp(`${biotic}\\s+\\d{1,3}/100`, "i").test(text),
-        `${biotic} no longer carries a personal /100 score in the dev-flow Report — a real product change; re-read the step-7 audit rather than deleting this test`,
-      ).toBe(true)
+        `${biotic} carries a personal /100 score again — P0-SCIENCE-07 has regressed`,
+      ).toBe(false)
     }
     expect(
       /your (pre|pro|post)biotics score/i.test(text),
-      "the possessive per-Biotic phrasing is gone — re-read the step-7 audit",
-    ).toBe(true)
+      "the possessive per-Biotic phrasing is back — P0-SCIENCE-07 has regressed",
+    ).toBe(false)
+
+    // The score that IS shown is the Biotics Score™ out of 100, which is a
+    // single whole-system figure and is not what this finding was about. Its
+    // presence is asserted so "no /100 anywhere" can never pass by blankness.
+    expect(/\b\d{1,3} ?\/100\b/.test(text), "no score at all rendered").toBe(true)
+
+    // ── `P1-VOCAB-01`: the pathway tags print the action, not the key ───────
+    expect(text, "the retired pathway name is rendered again").not.toMatch(/\bHeal\b/)
+    expect(text, "the customer-facing action name is not rendered on any food").toMatch(/\bRejuvenate\b/)
+    expect(text, "Feed is missing, so the pathway tags did not render").toMatch(/\bFeed\b/)
+    expect(text, "Seed is missing, so the pathway tags did not render").toMatch(/\bSeed\b/)
   })
 
   /**

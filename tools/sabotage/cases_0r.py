@@ -60,6 +60,10 @@ MEAL_IMPACT = "lib/account/meal-impact.ts"
 LOOP_CARD = "components/account/daily-loop-card.tsx"
 ACCOUNT_PAGE = "app/account/page.tsx"
 QUICK_LOG = "components/account/twin/quick-log.tsx"
+# 0R-6 — the paid path.
+FULL_REPORT = "components/assessment/full-report-client.tsx"
+ASSESS_REPORT = "lib/assessment-report.ts"
+PAID_POLICY = "lib/paid-flow-policy.ts"
 
 C = [CLAIMS]
 V = [VISUAL]
@@ -68,6 +72,10 @@ V = [VISUAL]
 LOOP = ["tests/unit/agent-loop-claims.test.ts"]
 AUTH = ["tests/unit/ai-authorship.test.ts"]
 FAB = ["tests/unit/live-dashboard-fabrication.test.ts"]
+# 0R-6. `P1-VOCAB-01` and `P0-SCIENCE-07` both land in the vocabulary suite:
+# the first because CLAUDE.md rules the retired name there, the second because
+# the spec names that file and the reachability pin lives beside it.
+VOCAB = ["tests/unit/retired-vocabulary.test.ts"]
 
 CASES = [
     # ── 1 · A CORPUS LEAVES THE SCAN AGAIN ──────────────────────────────────
@@ -94,7 +102,22 @@ CASES = [
     # `lib/assessment-report.ts` is reachable and carries a claim, so losing its
     # guard puts it in `unguardedClaimFiles()` and out of agreement with
     # `KNOWN_UNCORRECTED`. This is 0R-2 protecting 0R-1.
-    (1452, "one file quietly leaves the Report corpus, and D7 catches it", CORPUS,
+    # ── RENAMED BY WHAT 0R-6 DID TO IT ─────────────────────────────────────
+    #
+    # The title said "and D7 catches it", and at 0R-6 that stopped being true.
+    # D7 caught it because `lib/assessment-report.ts` was reachable and carried
+    # a claim, so losing its guard put it in `unguardedClaimFiles()`. 0R-6
+    # repaired the claims out of that file, D7 went correctly silent, and the
+    # entry became droppable with nothing failing — SLIPPED.
+    #
+    # The deeper problem, which is now written into the test: a corpus entry
+    # was protected by the presence of a DEFECT in the file it names. Every
+    # file this programme successfully cleans becomes a file that can silently
+    # leave the scan, and the cleanest files are the ones whose guard entry
+    # looks most droppable. `biotic-claims.test.ts` now pins all three 0R-1
+    # tranches as exact sets, for what they ARE rather than for what is
+    # currently wrong inside them.
+    (1452, "one file quietly leaves the Report corpus", CORPUS,
      '  "lib/assessment-report.ts",',
      "",
      C),
@@ -130,7 +153,11 @@ CASES = [
     # permanent and cannot become a parking space. Both halves get a case.
 
     (1456, "the cap is raised to buy room for a new claim", CLAIMS,
-     "const ENTRIES_AT_0R1_OPEN = 19",
+     # 0R-6 · the cap moved 19 -> 17 when both `lib/assessment-report.ts`
+     # entries were repaired, so the anchor moved with it. An anchor pinned to
+     # a shrinking number has to follow the number, or the case reports
+     # ANCHOR MISSING and silently stops testing anything.
+     "const ENTRIES_AT_0R1_OPEN = 17",
      "const ENTRIES_AT_0R1_OPEN = 25",
      C),
 
@@ -194,7 +221,9 @@ CASES = [
      # leaving the instrument, so that is what this case now attacks: empty the
      # pin and it stops pinning. Case 1508 attacks the other half, by shortening
      # `VISUAL_MODULES` itself.
-     '  "lib/account/twin-visual.ts",\n  "components/account/twin/quick-log.tsx",\n] as const',
+     # 0R-6 · the tail of MODULES_AT_0R5_CLOSE gained the paid Report, so the
+     # old two-line anchor no longer matched. Same lesson as 1456 above.
+     '  "components/account/twin/quick-log.tsx",\n  // 0R-6 · the paid Report, added with the money-path coverage gap above.\n  "lib/report/build-food-system-report.ts",\n] as const',
      "] as const",
      V),
 
@@ -609,4 +638,149 @@ CASES = [
      '    return /:\\s*-?[1-9]\\d*(?:\\.\\d+)?\\b/.test(literal) || /:\\s*"[^"]+"/.test(literal)',
      "    return false",
      FAB),
+
+    # ══ 0R-6 · THE PAID PATH · cases 1510+ ═════════════════════════════════
+    #
+    # Three findings were repaired and one is HELD. The cases split the same
+    # way, and the held one is the interesting half: an inventory that records
+    # debt it cannot repair has to be attacked harder than one that records a
+    # repair, because the only thing standing between "measured debt" and
+    # "forgotten debt" is the contract on the entry.
+
+    # ── E · `P0-SCIENCE-07` · the per-Biotic score in the dev-flow Report ───
+
+    (1510, "the per-Biotic score and its denominator come back on the deep-dive card", FULL_REPORT,
+     '<p className="text-base font-semibold text-foreground">{dive.label}</p>',
+     '<p className="text-base font-semibold text-foreground">{dive.label}</p>\n'
+     '            <span className="text-xs">{dive.score}/100</span>',
+     VOCAB),
+
+    (1511, "the possessive room-to-grow claim comes back", FULL_REPORT,
+     "              The three pillars, and what to eat for each. Tap a pillar to expand.",
+     "              Your probiotics score has clear room to grow. Tap each pillar to expand.",
+     VOCAB),
+
+    # ── THE SELECTION HALF, AND IT SLIPPED FIRST TIME ──────────────────────
+    #
+    # 1512 restores `score: number` to `PillarDeepDive`. On the first run it
+    # SLIPPED, and the reason is worth keeping: the only thing holding that
+    # field out was the TYPE, and `tsc` is not what this harness runs. A field
+    # with no reader breaks no vitest assertion, so the selection half of
+    # `-07` was guarded by a check the sabotage driver never invokes.
+    #
+    # Fixed by strengthening the TEST, per the standing rule: the `-07` describe
+    # now reads `lib/assessment-report.ts` and refuses both the field and the
+    # sort over it. Type-level absence is not enforcement when the enforcing
+    # tool is outside the loop.
+    (1512, "PillarDeepDive carries a per-Biotic score again", ASSESS_REPORT,
+     "export interface PillarDeepDive {\n  pillar: PillarKey",
+     "export interface PillarDeepDive {\n  pillar: PillarKey\n  score: number",
+     VOCAB + C),
+
+    # ── F · `-07`'s SECOND close condition: the route cannot serve it ───────
+    #
+    # The spec requires the construct gone AND the route unable to serve it
+    # under any environment. These two attack the second part, which was GREEN
+    # when written — and a pin that is green on arrival is worth nothing until
+    # something proves it refuses the shape that preceded it.
+
+    (1513, "the pre-S7R Stripe-key bypass returns, re-opening the dev Report", PAID_POLICY,
+     '  if (env[UNVERIFIED_PAID_FLOW_FLAG] !== "true") return false',
+     "  if (!process.env.STRIPE_SECRET_KEY) return true",
+     VOCAB),
+
+    (1514, "production stops being refused unconditionally", PAID_POLICY,
+     '  if (vercelEnv === "production") return false',
+     '  if (vercelEnv === "production" && process.env.FORCE !== "1") return false',
+     VOCAB),
+
+    # ── G · `P1-VOCAB-01` · a retired name that exists in no source string ──
+    #
+    # The form this tranche named: `{p}` under `capitalize` prints "Heal",
+    # which the case-sensitive `RETIRED` rule cannot see because the source
+    # holds only the lowercase stored key. So the case attacks the STRUCTURE —
+    # a stored key rendered directly — which is the only thing a source
+    # instrument can express about it.
+
+    (1515, "the raw stored pathway key is rendered to the customer again", FULL_REPORT,
+     "{ACTION_FOR_PATHWAY_KEY[p] ?? p}",
+     "{p}",
+     VOCAB),
+
+    (1516, "the pathway tag silently regains text-transform: capitalize", FULL_REPORT,
+     '{ACTION_FOR_PATHWAY_KEY[p] ?? p}',
+     '{p.toLowerCase()}',
+     VOCAB),
+
+    # The instrument itself, and this one found a real omission in my own
+    # guard before it ever ran: `it.each(PATHWAY_TAG_SURFACES)` looks only at
+    # what the list names, so deleting the single entry deleted the test and
+    # broke nothing — sabotage 1461's lesson, one tranche after it was written
+    # down. The list is now pinned to a literal, and this is what holds it.
+    (1517, "the pathway-tag surface list is emptied to silence the rule", VOCAB[0],
+     'const PATHWAY_TAG_SURFACES = ["components/assessment/full-report-client.tsx"] as const',
+     "const PATHWAY_TAG_SURFACES = [] as const",
+     VOCAB),
+
+    # ── H · `P0-SCIENCE-06` · THE HELD ENTRY, ATTACKED AS DEBT ─────────────
+    #
+    # `-06` is blocked: retiring the Biotic ranking requires a selection source
+    # the repository is not authorised to use. The guards are therefore RED and
+    # held — three `it.fails` in the behavioural suite, one entry in
+    # `BLOCKED_AT_0R6`. What must be impossible is QUIETLY DROPPING either.
+
+    (1518, "the blocked visual inventory grows a second entry", VISUAL,
+     '  ["lib/report/build-food-system-report.ts", "a ranked Biotic chooses the paid Report\'s accent colour"],',
+     '  ["lib/report/build-food-system-report.ts", "a ranked Biotic chooses the paid Report\'s accent colour"],\n'
+     '  ["lib/account/twin-visual.ts", "newly excused"],',
+     V),
+
+    (1519, "the paid Report leaves the form instrument while staying inventoried", VISUAL,
+     '   * prohibited is a RANKED key choosing a colour.\n   */\n  "lib/report/build-food-system-report.ts",\n]',
+     "   * prohibited is a RANKED key choosing a colour.\n   */\n]",
+     V),
+
+    # The held red assertion, converted to a plain `it`. This is the one edit
+    # that would make the suite report a repair that has not happened: `it.fails`
+    # passes while the defect lives, so flipping it to `it` is indistinguishable
+    # from "0R-6 closed -06" unless the runner disagrees. It must go RED.
+    (1520, "a held BLOCKED assertion is converted to a passing test", LOOP[0],
+     'it.fails("BLOCKED · permuting WHICH Biotic is weakest cannot change the Report"',
+     'it("BLOCKED · permuting WHICH Biotic is weakest cannot change the Report"',
+     LOOP),
+
+    # ── AND THE INVERSE: DOES THE HELD ASSERTION FIRE ON A REAL REPAIR? ────
+    #
+    # `it.fails` is only a safe way to hold a red assertion if it ERRORS the
+    # moment the defect goes. Proving that needs a mutation that actually
+    # repairs `-06`, and the first attempt was not one: replacing
+    # `priorityPathway = ranked[0][0]` with a constant left `strongestPathway`
+    # and `dominantPattern` ranking exactly as before, so the Report still
+    # varied across permutations, the assertion still failed, and `it.fails`
+    # still passed. The suite was right and the case was aimed at half a
+    # construct — one of the two rankings, which is not a repair.
+    #
+    # Re-aiming it at `orderedByNeed` did not work either, and MEASURING WHY
+    # produced this tranche's most serious finding. With the sort neutralised
+    # the Report STILL varied across permutations, because the report object
+    # carries, for each of the three Biotics, `score: 71` and
+    # `state: "strong"` — a per-Biotic number and a band word, on the LIVE PAID
+    # path, rendered by `food-system-section.tsx:392` (`PathwayScores`, three
+    # numerals "71/100" in each Biotic's own colour) and :488/:505
+    # (`NodeCard`, a StateBadge plus "{node.score}/100"). So the whole-report
+    # invariance assertion cannot go green until THOSE go, which no mutation of
+    # the ranking can achieve. The suite was right twice; the case was wrong
+    # twice, and the second wrong answer is in the close record as
+    # `P0-SCIENCE-07-LIVE`.
+    #
+    # Aimed, finally, at the one held assertion a single edit CAN flip: the
+    # first reads only `systemSnapshot.dominantPattern`. Make that sentence name
+    # no Biotic and it goes green, which means `it.fails` must ERROR and force
+    # the conversion to a plain `it`. That is the direction being proved — that
+    # a held red assertion cannot silently stay held after its defect is gone.
+    (1521, "dominantPattern stops ranking, so the held assertion must stop being held",
+     "lib/report/build-food-system-report.ts",
+     '      ? `Your answers describe an uneven system — ${PATHWAY_LABEL[strongestPathway]} is well supported while ${PATHWAY_LABEL[priorityPathway]} is thinner. Uneven is easier to improve than uniformly low, because the strong pathway is already doing work the weaker one can build on.`',
+     '      ? "Your answers describe an uneven system. Uneven is easier to improve than uniformly low, because the stronger parts are already doing work the thinner ones can build on."',
+     LOOP),
 ]

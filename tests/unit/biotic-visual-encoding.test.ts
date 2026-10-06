@@ -169,6 +169,29 @@ const VISUAL_MODULES = [
    * next edit.
    */
   "components/account/twin/quick-log.tsx",
+  /*
+   * ── ADDED AT 0R-6 · THE COVERAGE GAP 0R-5 CREATED ON THE MONEY PATH ──────
+   *
+   * 0R-5 made the Biotic→visual flow structurally unavailable on the Twin and
+   * widened this file's sinks from colour to extent. The report family was in
+   * no entry here, so the identical construct stayed live on the PAID path:
+   *
+   *     build-food-system-report.ts:518
+   *       primaryAccent: bioticAccent(priorityPathway)
+   *
+   * `priorityPathway` is `orderedByNeed(biotics)[0][0]` — an argmin over the
+   * member's three Biotic scores — so the paid Report's accent colour IS a
+   * comparative personal Biotic verdict. 0R-5 secured the Twin and left the
+   * money path open: the kind of gap a tranche's own scoping creates, which
+   * only the next tranche's trace finds.
+   *
+   * SCOPED TO THE DERIVATION, NOT TO `bioticAccent` ITSELF.
+   * `lib/report/visual-token.ts` and `components/report/food-system-section.tsx`
+   * colour all three pathways symmetrically, which is education — the same
+   * distinction 0R-5 drew for `system-map.ts`'s static hotspot tone. What is
+   * prohibited is a RANKED key choosing a colour.
+   */
+  "lib/report/build-food-system-report.ts",
 ]
 
 /* ── THE 0R-2 INVENTORY — EMPTIED AND DELETED AT 0R-5 ────────────────────────
@@ -204,6 +227,8 @@ const MODULES_AT_0R5_CLOSE = [
   "lib/account/system-map.ts",
   "lib/account/twin-visual.ts",
   "components/account/twin/quick-log.tsx",
+  // 0R-6 · the paid Report, added with the money-path coverage gap above.
+  "lib/report/build-food-system-report.ts",
 ] as const
 
 /*
@@ -219,16 +244,61 @@ const MODULES_AT_0R5_CLOSE = [
  * LITERAL that must EQUAL the list. Emptying the list fails (9 ≠ 0); lowering
  * the literal fails (the list is still 9). Neither single edit gets through.
  */
-const PINNED_MODULES_AT_0R5_CLOSE = 9
+const PINNED_MODULES_AT_0R5_CLOSE = 10
+
+/* ── THE 0R-6 BLOCKED INVENTORY ──────────────────────────────────────────────
+ *
+ * 0R-5 deleted this file's inventory because all four of its entries were
+ * repaired, and said so: "a zero-length allowlist with its branches still
+ * wired is an invitation to add a fifth." 0R-6 re-introduces exactly one entry,
+ * and the justification is different in kind — this is not debt nobody got to,
+ * it is debt that CANNOT be repaired inside this tranche.
+ *
+ *   lib/report/build-food-system-report.ts:518
+ *     primaryAccent: bioticAccent(priorityPathway)
+ *
+ * `priorityPathway` is `orderedByNeed(biotics)[0][0]` — an argmin over the
+ * member's three Biotic scores — so the paid Report's accent colour is a
+ * comparative personal Biotic verdict encoded as colour. It is the Report
+ * analogue of `P0-SCIENCE-04`, which 0R-5 closed on the Twin, and it is folded
+ * into `P0-SCIENCE-06` as another site of one construct: one unsupported
+ * personal inference may have textual, behavioural and visual outputs, and
+ * those outputs remain manifestations of the same construct.
+ *
+ * It is held because retiring `priorityPathway` requires a selection source
+ * the repository does not have — the FSS-v1 weights refuse to score outside a
+ * DEV_ONLY fixture context, and the deterministic Report core is
+ * pre-activation with Migrations 48/49 unapplied. See the long note in
+ * `tests/unit/agent-loop-claims.test.ts`.
+ *
+ * SAME CONTRACT AS EVERY INVENTORY IN THIS REPOSITORY: an entry may exist only
+ * while its defect does, the list may only shrink, and the cap EQUALS the list.
+ */
+const BLOCKED_AT_0R6: readonly [file: string, why: string][] = [
+  ["lib/report/build-food-system-report.ts", "a ranked Biotic chooses the paid Report's accent colour"],
+]
+const BLOCKED_ENTRIES_AT_0R6 = 1
 
 describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
   it.each(VISUAL_MODULES)("%s maps no Biotic to a visual parameter", (file) => {
     const src = source(file)
     const derived = BIOTIC_DERIVED.filter(([, re]) => re.test(src)).map(([w]) => w)
     const sinks = VISUAL_SINKS.filter(([, re]) => re.test(src)).map(([w]) => w)
+    const flows = derived.length > 0 && sinks.length > 0
+
+    const blocked = BLOCKED_AT_0R6.find(([f]) => f === file)
+    if (blocked) {
+      expect(
+        flows,
+        `${file} is in BLOCKED_AT_0R6 — "${blocked[1]}" — and no longer maps a ` +
+          `Biotic to a visual parameter. The defect is GONE: DELETE the entry ` +
+          `and drop the cap to match.`,
+      ).toBe(true)
+      return
+    }
 
     expect(
-      derived.length > 0 && sinks.length > 0,
+      flows,
       `${file} maps ${derived.join(" + ")} onto ${sinks.join(" + ")}. ` +
         `A claim is still a claim when it is encoded through colour, motion, ` +
         `anatomy, position or scale rather than words.`,
@@ -252,6 +322,26 @@ describe("0R-2 · a Biotic may not flow into a visual encoding", () => {
    * that by cross-reference; with the inventory gone, the list is pinned
    * directly.
    */
+  it("the blocked inventory may only shrink, and carries no headroom", () => {
+    expect(
+      BLOCKED_AT_0R6.length,
+      "a NEW blocked visual encoding is a regression, not debt to record",
+    ).toBeLessThanOrEqual(BLOCKED_ENTRIES_AT_0R6)
+    expect(
+      BLOCKED_ENTRIES_AT_0R6,
+      `BLOCKED_ENTRIES_AT_0R6 is ${BLOCKED_ENTRIES_AT_0R6} while the inventory ` +
+        `holds ${BLOCKED_AT_0R6.length}. It moves DOWN only, with the repair.`,
+    ).toBe(BLOCKED_AT_0R6.length)
+  })
+
+  it("every blocked file is still a module under test", () => {
+    // The sabotage-1461 lesson: an inventoried file that leaves VISUAL_MODULES
+    // leaves the instrument, and the inventory would still read one.
+    for (const [file] of BLOCKED_AT_0R6) {
+      expect(VISUAL_MODULES, `${file} is inventoried but not under test`).toContain(file)
+    }
+  })
+
   it("no module leaves the instrument", () => {
     expect(
       MODULES_AT_0R5_CLOSE.length,

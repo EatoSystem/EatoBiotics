@@ -566,6 +566,90 @@ describe("the corpus this guard reads cannot silently shrink", () => {
     }
   })
 
+  /*
+   * ══ 0R-6 · THE THREE 0R-1 TRANCHES ARE PINNED AS EXACT SETS TOO ═══════════
+   *
+   * Added because sabotage 1452 SLIPPED at 0R-6, and the reason it slipped is
+   * the more important half.
+   *
+   * 1452 deletes `lib/assessment-report.ts` from `REPORT_SURFACES` — one file
+   * quietly leaving the corpus. It used to be caught, but never by a membership
+   * assertion: the test above removes the file from BOTH sides of its own
+   * comparison, so it cannot see a deletion. What caught it was the D7 derived
+   * ledger, which noticed the file was reachable, carried a claim, and now had
+   * no guard.
+   *
+   * Then 0R-6 repaired the claims out of that file. It is clean, so D7 is
+   * correctly silent, so the entry can now be dropped with nothing failing.
+   *
+   * ── THE LESSON, WHICH IS NOT ABOUT THIS FILE ──────────────────────────────
+   *
+   * A corpus entry was protected by the presence of a DEFECT in the file it
+   * names. Repairing the defect removed the protection — so every file this
+   * programme successfully cleans becomes a file that can silently leave the
+   * scan, and the cleanest files are exactly the ones whose guard looks most
+   * droppable. The corpus has to be pinned for what it IS, not for what is
+   * currently wrong inside it.
+   *
+   * These three lists were the ones 0R-1 wrote and wired; the five older
+   * tranches have been pinned as an exact set since Gate 3.7.
+   */
+  it("the three 0R-1 tranches are exactly the sets signed off", () => {
+    expect([...ACCOUNT_SURFACES].sort()).toEqual([
+      "components/account/dashboard-client-data.ts",
+      "components/account/dashboard-client.tsx",
+      "components/account/day8-challenge-card.tsx",
+      "components/account/goal-progress-card.tsx",
+      "components/account/live-dashboard.tsx",
+      "components/account/monthly-progress-card.tsx",
+      "components/account/progress-chart.tsx",
+      "components/account/report-bridge-card.tsx",
+      "components/account/score-progress-card.tsx",
+      "components/account/seven-day-guide.tsx",
+      "components/account/twin/ask-twin.tsx",
+      "components/account/twin/meal-reveal.tsx",
+      "components/account/twin/share-twin.tsx",
+      "components/account/twin/twin-sections.tsx",
+      "components/account/twin/twin-stage.tsx",
+      "components/account/upgrade-gate.tsx",
+      "components/account/welcome-screen.tsx",
+      "components/agent-loop/BioticsProgressPanel.tsx",
+      "components/agent-loop/NextBestActionCard.tsx",
+    ])
+
+    expect([...ASSESSMENT_SURFACES].sort()).toEqual([
+      "components/assessment/assessment-intro.tsx",
+      "components/assessment/assessment-results.tsx",
+      "components/assessment/deep/deep-assessment-client.tsx",
+      "components/assessment/paid-report-client.tsx",
+      "components/assessment/personal-report-cta.tsx",
+      "components/assessment/report-membership-cta.tsx",
+      "components/assessment/result/biotics-score-reveal.tsx",
+      "components/assessment/result/contribute-opt-in.tsx",
+      "components/assessment/result/food-system-pattern.tsx",
+      "components/assessment/result/food-system-profile.tsx",
+      "components/assessment/result/one-free-action.tsx",
+      "components/assessment/result/three-biotics-result.tsx",
+      "components/assessment/score-card.tsx",
+      "components/assessment/score-ring.tsx",
+      "components/assessment/share-score-card.tsx",
+    ])
+
+    // The money path. Every one of these nine is in the chain that produces or
+    // renders the €49 document, which is why `P0-GUARD-02` mattered.
+    expect([...REPORT_SURFACES].sort()).toEqual([
+      "components/assessment/full-report-client.tsx",
+      "components/report/demo-report.tsx",
+      "components/report/food-system-section.tsx",
+      "lib/assessment-report.ts",
+      "lib/fallback-paid-report.ts",
+      "lib/report/addon-lens.ts",
+      "lib/report/build-food-system-report.ts",
+      "lib/report/framing.ts",
+      "lib/report/subscores.ts",
+    ])
+  })
+
   it("the named tranches are exactly the set signed off", () => {
     expect([
       ...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES, ...EMAIL_SURFACES,
@@ -1078,16 +1162,26 @@ const EXPOSED_AT_0R1: readonly [file: string, rule: string, example: string][] =
   ],
   // assessment-report.ts generates the dev-flow Report — P0-SCIENCE-07, the
   // latent production hazard one environment variable from the €49 route.
-  [
-    "lib/assessment-report.ts",
-    "a personal score attributed to a Biotic",
-    "your Prebiotics score",
-  ],
-  [
-    "lib/assessment-report.ts",
-    "a Biotic claimed as a person's own",
-    "your Prebiotics",
-  ],
+  /*
+   * ── 0R-6 CLOSED `lib/assessment-report.ts` ENTIRELY ──────────────────────
+   *
+   * Both of its entries are DELETED — "a personal score attributed to a Biotic"
+   * ("your Prebiotics score") and "a Biotic claimed as a person's own" ("your
+   * Prebiotics"). `P0-SCIENCE-07`'s repair removed `score` from
+   * `PillarDeepDive`, reworded the two per-pillar summaries, and replaced the
+   * week-3 focus line *"Push your Prebiotics score up and fine-tune how your
+   * body responds after meals."* — which was the only place in the file where
+   * either literal appeared.
+   *
+   * ── AND THIS ASSERTION CAUGHT ME GETTING IT WRONG ────────────────────────
+   *
+   * The first attempt deleted one entry and kept the other, with a comment
+   * asserting that the file "still carries a Biotic claimed as a person's own
+   * elsewhere in its copy". It does not. The staleness rule refused the
+   * surviving row immediately, which is the inventory doing precisely the job
+   * it was built for: a repaired finding cannot keep a row, and a confident
+   * note about what remains is not evidence.
+   */
 
   /* ── CATEGORY-EQUIVALENCE CLAIMS — NOT IN THE EXPERIENCE 0 REGISTER ───────
    *
@@ -1139,7 +1233,7 @@ const EXPOSED_AT_0R1: readonly [file: string, rule: string, example: string][] =
 ] as const
 
 /** Pinned so the list cannot grow. It moves DOWN only, with the repair. */
-const ENTRIES_AT_0R1_OPEN = 19
+const ENTRIES_AT_0R1_OPEN = 17
 
 function isExposedAt0R1(file: string, rule: string): boolean {
   return EXPOSED_AT_0R1.some(([f, r]) => f === file && r === rule)

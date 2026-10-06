@@ -25,6 +25,21 @@ import { ReportPremiumAddons } from "./report-premium-addons"
 import { MissionNote } from "./mission-note"
 import { loadAssessment } from "@/lib/assessment-storage"
 import { generateFullReport, generatePremiumAddons } from "@/lib/assessment-report"
+import { ACTIONS } from "@/lib/product-vocabulary"
+
+/*
+ * 0R-6 · the stored pathway key → the customer-facing action name.
+ *
+ * Built from `ACTIONS` rather than retyped, so the third name cannot drift back
+ * to a retired one: `lib/product-vocabulary.ts` is the single place the action
+ * framework is named, and `tests/unit/retired-vocabulary.test.ts` already
+ * refuses `Heal` and `Regenerate` there.
+ */
+const ACTION_FOR_PATHWAY_KEY: Record<string, string> = {
+  feed: ACTIONS[0],
+  seed: ACTIONS[1],
+  heal: ACTIONS[2],
+}
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import type { FullReport, PillarDeepDive, PremiumAddons } from "@/lib/assessment-report"
 import type { ClaudeReportOutput, ClaudeStarterReport, ClaudeFullReport, ClaudePremiumReport } from "@/lib/claude-report"
@@ -51,8 +66,18 @@ function buildFoodSwaps(report: FullReport): FoodSwap[] {
   // deepDives are sorted weakest-first, so [0] is the pathway to lead with.
   // It is always feed | seed | heal (PILLAR_DEEP_DIVES keys), which is exactly
   // why the old legacy-keyed lookup never matched — see lib/report/food-swaps.ts.
-  const weakestPathway = (report.deepDives[0]?.pillar ?? "feed") as SwapPathway
-  return swapsForPathway(weakestPathway).slice(0, 5)
+  /*
+   * 0R-6 · this was named `firstPathway` and it was one: `generateFullReport`
+   * sorted the deep dives by per-Biotic score, so `deepDives[0]` was the
+   * member's lowest-scoring Biotic and it chose which food swaps they saw.
+   *
+   * The sort went with the score it sorted by, so the order is now the static
+   * `PILLAR_ORDER` and this is a constant. Renamed to say so, because a name
+   * that still claimed "weakest" would be the next person's evidence that the
+   * ranking is still there.
+   */
+  const firstPathway = (report.deepDives[0]?.pillar ?? "feed") as SwapPathway
+  return swapsForPathway(firstPathway).slice(0, 5)
 }
 
 function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
@@ -77,10 +102,13 @@ function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
         <div className="flex-1">
           <div className="flex items-center justify-between gap-2">
             <p className="text-base font-semibold text-foreground">{dive.label}</p>
+            {/*
+                0R-6 · `P0-SCIENCE-07`. A per-Biotic score with a denominator
+                stood here — "Prebiotics 50/100" — in the colour of that
+                Biotic. The score is gone from `PillarDeepDive` entirely, so
+                this section cannot render one.
+            */}
             <div className="flex items-center gap-3">
-              <span className="text-sm font-bold" style={{ color: dive.color }}>
-                {dive.score}/100
-              </span>
               <ChevronDown
                 size={16}
                 className={cn(
@@ -202,8 +230,22 @@ function FullReportSections({
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
               Your Pillar Deep-Dives
             </h2>
+            {/*
+              * 0R-6 · `P0-SCIENCE-07` — this line had to move with the sort.
+              *
+              * It read "Starting with your areas of greatest opportunity",
+              * which was a description of the ORDER: `deepDives` was sorted
+              * ascending by a per-Biotic score, so the first card was the
+              * member's asserted weakest Biotic. Removing `PillarDeepDive.score`
+              * removed the sort, and the order is now `PILLAR_ORDER` — static,
+              * and identical for every customer.
+              *
+              * Leaving the sentence would have been the worse outcome of the
+              * two: a ranking claim with nothing behind it at all. It now
+              * describes what the section actually is.
+              */}
             <p className="mt-2 text-sm text-muted-foreground">
-              Starting with your areas of greatest opportunity. Tap each pillar to expand.
+              The three pillars, and what to eat for each. Tap a pillar to expand.
             </p>
           </ScrollReveal>
           <div className="mt-6 space-y-3">
@@ -271,13 +313,27 @@ function FullReportSections({
                     )}
                   </div>
                   <p className="text-xs leading-relaxed text-muted-foreground flex-1">{food.impact}</p>
+                  {/*
+                      0R-6 · `P1-VOCAB-01`. This mapped the raw stored key —
+                      `feed` | `seed` | `heal` — straight into the element, and
+                      `capitalize` turned the third one into **Heal**, which
+                      CLAUDE.md names as a stored key and never a
+                      customer-facing pathway name. The third action is
+                      **Rejuvenate**.
+                    
+                      The word existed in NO source string, so
+                      `retired-vocabulary.test.ts`'s case-sensitive `Heal` rule
+                      was correctly silent: the capital letter was produced by
+                      a stylesheet. The key does not move; what is rendered is
+                      the name.
+                  */}
                   <div className="mt-2 flex flex-wrap gap-1">
                     {food.pillars.map((p) => (
                       <span
                         key={p}
-                        className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground"
+                        className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                       >
-                        {p}
+                        {ACTION_FOR_PATHWAY_KEY[p] ?? p}
                       </span>
                     ))}
                   </div>

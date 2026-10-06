@@ -6,6 +6,61 @@ git history. This file starts it. Entries are newest first.
 
 ---
 
+## 2026-10-06 — Three engineering rules adopted at the Experience 0R-6 close
+
+Review discipline, like the 0R-5 three below. Each was earned by a guard of
+mine failing in a way worth not repeating.
+
+### 1 · Type-level absence is not enforcement when the enforcing tool is outside the loop
+
+0R-6 closed `P0-SCIENCE-07`'s selection by removing `score: number` from
+`PillarDeepDive` — a good repair, because a sort cannot exist without the field
+it sorts by. But the only thing holding the field out was **TypeScript**, and
+the sabotage driver runs vitest. Restoring it broke no assertion, and sabotage
+1512 slipped.
+
+> When a repair is enforced by `tsc` alone, the harness that is supposed to
+> prove the repair cannot see it. Add a source-level assertion as well, or the
+> construct is one `// @ts-expect-error` away from returning with a green run.
+
+### 2 · A corpus entry protected by a defect loses its protection when the defect is repaired
+
+Sabotage 1452 drops one file from `REPORT_SURFACES`. It had always been caught
+— never by a membership assertion (the existing test removes the file from both
+sides of its own comparison) but by the D7 derived ledger, which saw the file
+was reachable, carried a claim, and now had no guard. **0R-6 repaired the claims
+out of that file, D7 went correctly silent, and the entry became droppable with
+nothing failing.**
+
+> Every file this programme successfully cleans becomes a file that can silently
+> leave the scan — and the cleanest files are exactly the ones whose guard entry
+> looks most droppable. Pin a corpus for what it IS, not for what is currently
+> wrong inside it.
+
+The three 0R-1 tranches are now pinned as exact sets, as the five older ones
+have been since Gate 3.7.
+
+### 3 · A rule about rendered output must read text as rendered, not as written
+
+`P1-VOCAB-01` is a retired name that exists in **no source string**: `{p}` holds
+the lowercase stored key and `text-transform: capitalize` manufactures the
+capital-H "Heal" at render time, so the case-sensitive source rule was correctly
+silent. Having diagnosed exactly that, I then wrote a rendered-output assertion
+that looked for `"Pillar Breakdown"` case-sensitively — and the label renders
+through `uppercase`.
+
+> CSS is a claim-producing layer. A guard reading `innerText` must tolerate the
+> transforms the renderer applies; a guard reading source cannot see them at
+> all, and must assert the structure instead of the word.
+
+This is the presentation-layer sibling of interpolation blindness, which this
+repository has now recorded eleven times. It also restates the 0R-5 lexical-anchor
+rule for **numeric** anchors: sabotage 1456 pinned `ENTRIES_AT_0R1_OPEN = 19`,
+the cap shrank to 17 with the repair, and the case reported ANCHOR MISSING — a
+case that silently stops testing anything.
+
+---
+
 ## 2026-10-06 — Three engineering rules adopted at the Experience 0R-5 close
 
 All three are **review discipline** rather than product design, so they sit
