@@ -1239,6 +1239,58 @@ function isExposedAt0R1(file: string, rule: string): boolean {
   return EXPOSED_AT_0R1.some(([f, r]) => f === file && r === rule)
 }
 
+/* ── THE 0R-6R.1 INVENTORY — THE SHARE / OG FAMILY, AS MEASURED ─────────────
+ *
+ * Same contract as `EXPOSED_AT_0R1`: an entry may exist only while its defect
+ * does, the list may only SHRINK, and the cap must EQUAL the list. These are
+ * the files the corpus widening and the new triple rule exposed, each with the
+ * customer-facing shape reproduced so a reader can see what is being recorded
+ * rather than taking the file path on trust.
+ *
+ * NOT repaired in this tranche, by decision: the repair direction for the
+ * public share card is agreed — the three ACTIONS (Feed · Seed · Rejuvenate)
+ * with the reviewed `fact` strings already in `lib/quick-assessment.ts`, and no
+ * per-item values — and it is the next tranche's work. The ring and the profile
+ * type on the card are legitimate and stay.
+ *
+ * The first entry is the serious one: `/discover/<share_code>` is V1_ESSENTIAL
+ * and its OG image is SERVED, public and unauthenticated.
+ */
+const EXPOSED_AT_0R6R1: readonly [file: string, shape: string, example: string][] = [
+  [
+    "app/discover/[code]/opengraph-image.tsx",
+    "b",
+    'label in e.color + {v} + a bar of width (480 * v) / 100 — the public share card',
+  ],
+  [
+    "app/discover/[code]/page.tsx",
+    "b",
+    'const value = subScores[p] ?? 0, per iterated Biotic, on a V1_ESSENTIAL page',
+  ],
+  [
+    "app/analyse/result/[hash]/opengraph-image.tsx",
+    "c",
+    '{ label: "Pre", score: prebioticScore ?? 0, color: "#8BC34A" } — the meal share card',
+  ],
+  [
+    "eatobiotics-design-system/project/ui_kits/app/Components.jsx",
+    "a",
+    "[['Pre','6','#A8E063'],['Pro','4','#2DAA6E'],['Post','3','#F5A623']] under the score ring",
+  ],
+  [
+    "eatobiotics-design-system/project/ui_kits/web/Assessment.jsx",
+    "a",
+    "the same abbreviated triple with literal values",
+  ],
+] as const
+
+/** Pinned so the list cannot grow. It moves DOWN only, with the repair. */
+const ENTRIES_AT_0R6R1_OPEN = 5
+
+function isExposedAt0R6R1(file: string): boolean {
+  return EXPOSED_AT_0R6R1.some(([f]) => f === file)
+}
+
 const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
   [
     "components/waitlist/food-system-experience.tsx",
@@ -1500,6 +1552,237 @@ const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
     ],
   ],
 ]
+
+/* ════════════════════════════════════════════════════════════════════════════
+   0R-6R.1 — A PER-BIOTIC TRIPLE WITH NO SENTENCE IN IT.
+
+   ══ WHAT THIS RULE EXISTS FOR, MEASURED ════════════════════════════════════
+
+   `app/discover/[code]/opengraph-image.tsx` renders, for each of the three
+   Biotics, the label in that Biotic's colour, the value as a number, and a bar
+   whose width is `(480 * v) / 100`. Name, number, colour, extent — `BioticBar`,
+   on the OpenGraph card for `/discover/<share_code>`, which `v1-surface.ts`
+   classifies V1_ESSENTIAL. The OG route itself is NOT_A_PAGE_ROUTE, and
+   `isServableInV1` refuses only POST_V1 and UNCLASSIFIED, so it is SERVED:
+   public, no auth, read from `leads.sub_scores`.
+
+   FOUR INDEPENDENT REASONS NOTHING SAW IT, each measured before this was
+   written:
+
+     1. the file was in no claims corpus;
+     2. ALL NINE `PERSONAL_BIOTIC_STATE` rules are silent even when pointed at
+        it — `{e.label}` and `{v}` are separate JSX expressions, so THERE IS NO
+        SENTENCE TO MATCH;
+     3. the file was in no `VISUAL_MODULES` entry — no OG route was;
+     4. the form track is silent too: its derived sources want
+        `biotics.prebiotics` / `*_score` / `Record<BioticScoreKey, number>` and
+        this file has `subScores[e.key]`; its extent rule wants `width: ${…}`
+        and this file has `width: (480 * v) / 100`, which opens with a
+        parenthesis. The colour sink fires — but a sink alone is not a flow.
+
+   ══ THE GENERAL LESSON ══════════════════════════════════════════════════════
+
+       The claims track is a PROSE instrument. The form track is a
+       LEXICAL-SHAPE instrument. A construct assembled from data, with no
+       sentence and no recognised expression spelling, is invisible to both.
+
+   0R-6R recorded the same pattern one surface earlier: "0R-5 widened the sinks
+   and 0R-6 widened the modules, and the gap between the two widenings was
+   exactly where the worst remaining instance lived." This is its third
+   occurrence, on a third surface family — share / OpenGraph.
+
+   ══ WHY THE DISCRIMINATOR IS THE VALUE, NOT THE TRIPLE ═════════════════════
+
+   Declaring the three Biotics is ordinary education and must stay green:
+   `ENGINES` in `lib/quick-assessment.ts` names all three with label, verb,
+   colour, blurb and a reviewed `fact`, and carries NO per-item value. So does
+   the design kit's web Components. What this rule refuses is the triple plus a
+   PER-ITEM VALUE, in the three shapes that were found:
+
+     (a) a value literal inside the entry      ['Pre','6'], ['Pro','4']
+     (b) a value indexed per item              subScores[e.key] in an iteration
+     (c) a value field beside the label        { label: "Pre", score: … }
+
+   Shape (c) is why the rule cannot key on the full Biotic words:
+   `app/analyse/result/[hash]/opengraph-image.tsx` IS in the corpus — with a
+   comment about OG images being "the image a customer actually posts" — and
+   the rules still could not see it, because its labels are `"Pre"`, `"Pro"`,
+   `"Post"`. ABBREVIATION BLINDNESS, the twelfth instance of this programme's
+   recurring defect class.
+
+   Widening `BIOTICS` to accept the abbreviations is NOT viable, and this was
+   measured rather than assumed: 38 legitimate word-boundary hits across
+   `components/` and `lib/` — `Post` alone, 22. The abbreviations are only
+   recognised HERE, and only as a set of three.
+
+   ══ COMMENTS ARE STRIPPED, FOR THE SIXTH TIME ══════════════════════════════
+
+   On its first run shape (b) fired on `build-food-system-report.ts` — a file
+   0R-6R repaired — because of the comment recording that repair:
+   "`state` was `BAND_STATE[band(biotics[s.driver])]`". A structural rule reads
+   code; only a prose rule reads prose. `renderedSource()` already strips, so
+   this rule uses it.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/** The three, in full or in the product's own shorthand. */
+const TRIPLE_NAME = String.raw`(?:[Pp]re|[Pp]ro|[Pp]ost)[Bb]iotics?|Pre|Pro|Post`
+
+/** (a) a value literal sitting in the entry beside the name. */
+const VALUE_IN_ENTRY = new RegExp(
+  String.raw`\[\s*['"](?:${TRIPLE_NAME})['"]\s*,\s*['"]?\d{1,3}\b`,
+)
+/**
+ * (b) a scores-like object indexed by the loop's own variable — AND a visual
+ * sink in the same file.
+ *
+ * The sink requirement was added after measurement, and it is the form track's
+ * own logic: a derived source and a sink together are a flow; either alone is
+ * not. `lib/agent-loop/biotics.ts` and `baseline.ts` index a scores object
+ * because that is what a scoring module does, and they paint nothing. A
+ * component that indexes the triple AND paints it is making the claim.
+ */
+const VALUE_INDEXED = /(?:sub[Ss]cores|scores|biotics)\b[^\n]{0,60}?\[\s*(?:\w+\s*\.\s*)?\w+\s*\]/
+const VISUAL_SINK = /colou?r|[Gg]radient|width\s*:|strokeDasharray/
+/** (c) a value field inside the SAME object literal as the name. */
+const OBJECT_LITERAL = /\{[^{}]*\}/g
+const NAME_AS_STRING = new RegExp(String.raw`['"](?:${TRIPLE_NAME})['"]`)
+const VALUE_FIELD = /\b(?:score|value|v|n|pct|percent|width)\s*:\s*(?!null\b|undefined\b)[\w(]/
+
+/** Does this source name all three Biotics — in full, or all three in short? */
+function declaresTheTriple(code: string): boolean {
+  const full = [/[Pp]re[Bb]iotic/, /[Pp]ro[Bb]iotic/, /[Pp]ost[Bb]iotic/].every((r) => r.test(code))
+  const short = [/['"]Pre['"]/, /['"]Pro['"]/, /['"]Post['"]/].every((r) => r.test(code))
+  return full || short
+}
+
+/** Which shape binds a per-item value to the triple, if any. */
+function perBioticValueShape(code: string): "a" | "b" | "c" | null {
+  if (!declaresTheTriple(code)) return null
+  if (VALUE_IN_ENTRY.test(code)) return "a"
+  for (const m of code.matchAll(OBJECT_LITERAL)) {
+    if (NAME_AS_STRING.test(m[0]) && VALUE_FIELD.test(m[0])) return "c"
+  }
+  if (VALUE_INDEXED.test(code) && VISUAL_SINK.test(code)) return "b"
+  return null
+}
+
+describe("0R-6R.1 · a per-Biotic triple may not carry a per-item value", () => {
+  /*
+   * NON-VACUITY FIRST, because a rule proved only against repaired files proves
+   * only that they are repaired. These are the three real shapes as they
+   * shipped, held as literals.
+   */
+  const SHIPPED: readonly [shape: string, code: string][] = [
+    [
+      "(a) the design kit's abbreviated triple with literal values",
+      `{[['Pre','6','#A8E063'],['Pro','4','#2DAA6E'],['Post','3','#F5A623']].map(([l,n,c])=>(`,
+    ],
+    [
+      "(b) the /discover share card's indexed value, per iterated Biotic",
+      [
+        `const ENGINES_HEX = [{ key: "prebiotics" }, { key: "probiotics" }, { key: "postbiotics" }]`,
+        `const v = (result?.subScores as Record<string, number> | undefined)?.[e.key] ?? 0`,
+        `<div style={{ width: (480 * v) / 100, background: e.color }} />`,
+      ].join("\n"),
+    ],
+    [
+      "(c) the meal share card's label-and-score object literal",
+      [
+        `{ label: "Pre", score: prebioticScore ?? 0, color: "#8BC34A" },`,
+        `{ label: "Pro", score: probioticScore ?? 0, color: "#4CAF50" },`,
+        `{ label: "Post", score: postbioticScore ?? 0, color: "#009688" },`,
+      ].join("\n"),
+    ],
+  ]
+
+  it.each(SHIPPED)("NON-VACUITY: the rule refuses %s", (_shape, code) => {
+    expect(perBioticValueShape(code), `missed: ${code.slice(0, 90)}`).not.toBeNull()
+  })
+
+  /*
+   * And the other half, which is the one that keeps this rule honest: naming
+   * the three Biotics is education. A rule that could not pass an education
+   * module would be unsatisfiable by any correct file, which is the fault
+   * 0R-6R retired a form-track rule for.
+   */
+  const EDUCATION: readonly [why: string, code: string][] = [
+    [
+      "the reviewed ENGINES catalogue — label, verb, colour, blurb, fact, no value",
+      [
+        `prebiotics: { label: "Prebiotics", verb: "Feed", color: "var(--icon-green)",`,
+        `  blurb: "The fuel your whole system runs on." },`,
+        `probiotics: { label: "Probiotics", verb: "Seed", color: "var(--icon-teal)" },`,
+        `postbiotics: { label: "Postbiotics", verb: "Rejuvenate", color: "var(--icon-orange)" },`,
+      ].join("\n"),
+    ],
+    [
+      "the three education cards, numbered by position rather than scored",
+      `{n:'01',t:'Prebiotics',s:'FEED'},{n:'02',t:'Probiotics',s:'ADD'},{n:'03',t:'Postbiotics',s:'PRODUCE'}`,
+    ],
+  ]
+
+  it.each(EDUCATION)("NON-VACUITY: the rule permits education — %s", (_why, code) => {
+    expect(perBioticValueShape(code), `false positive on education: ${code.slice(0, 90)}`).toBeNull()
+  })
+
+  /*
+   * ── THE INVENTORY'S OWN CONTRACT ─────────────────────────────────────────
+   *
+   * Same three properties every allowlist in this repository carries, and for
+   * the same reason: an inventory whose only output is "green" is a permanent
+   * exemption with a shrinking-list comment on top. 0R-6R had to delete
+   * `BLOCKED_AT_0R6` because its rule could not go green, so it could never
+   * have detected its own repair. These assertions are what stop that here.
+   */
+  it("the 0R-6R.1 inventory may only shrink, and carries no headroom", () => {
+    expect(
+      EXPOSED_AT_0R6R1.length,
+      "a NEW per-Biotic triple with values is a regression, not debt to record",
+    ).toBeLessThanOrEqual(ENTRIES_AT_0R6R1_OPEN)
+    expect(
+      ENTRIES_AT_0R6R1_OPEN,
+      `ENTRIES_AT_0R6R1_OPEN is ${ENTRIES_AT_0R6R1_OPEN} while the inventory ` +
+        `holds ${EXPOSED_AT_0R6R1.length}. It moves DOWN only, with the repair.`,
+    ).toBe(EXPOSED_AT_0R6R1.length)
+  })
+
+  it("no inventory entry outlives its defect", () => {
+    /*
+     * The half that makes this a ledger rather than an exemption list. When a
+     * tranche repairs one of these files, this assertion fails and the entry
+     * must be deleted — the entry cannot quietly survive the thing it records.
+     */
+    const repaired = EXPOSED_AT_0R6R1.filter(
+      ([file]) => perBioticValueShape(renderedSource(file)) === null,
+    ).map(([file]) => file)
+    expect(
+      repaired,
+      `these files no longer bind a per-item value to the triple. The defect is ` +
+        `GONE: DELETE the entry and drop the cap to match.\n  ${repaired.join("\n  ")}`,
+    ).toEqual([])
+  })
+
+  it("no guarded surface binds a per-item value to the triple", () => {
+    const offenders: string[] = []
+    for (const file of GUARDED_SURFACES) {
+      const shape = perBioticValueShape(renderedSource(file))
+      /*
+       * A file already carried by `EXPOSED_AT_0R1` is known, recorded debt.
+       * Requiring a second entry would inventory one defect twice and leave
+       * the "may only shrink" contract unsure which list owns it.
+       */
+      const knownDebt = EXPOSED_AT_0R1.some(([f]) => f === file)
+      if (shape && !isExposedAt0R6R1(file) && !knownDebt) {
+        offenders.push(`${file} (shape ${shape})`)
+      }
+    }
+    expect(
+      offenders,
+      `a per-Biotic triple carries a per-item value, and it is not in the ` +
+        `0R-6R.1 inventory:\n  ${offenders.join("\n  ")}`,
+    ).toEqual([])
+  })
+})
 
 describe("no Biotic carries a personal number", () => {
   /*
