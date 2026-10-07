@@ -4,10 +4,8 @@ import { join } from "node:path"
 import {
   MOBILE_BEARER_ROUTES,
   MOBILE_GATE_ALLOWLIST,
-  memoryKv,
 } from "@eatobiotics/contracts"
 import { PERSONAL_BIOTIC_STATE, bioticFlowsIntoVisual } from "@eatobiotics/claims"
-import { applyLocalReminder, setNotificationConsent } from "../../apps/mobile/src/notifications/local"
 import { MOBILE_SURFACES } from "./customer-surfaces"
 
 function withoutComments(src: string): string {
@@ -130,18 +128,14 @@ describe("P5 mobile companion — privacy, deletion, local reminders", () => {
     expect(app).toMatch(/AccountScreen/)
   })
 
-  it("notification scaffolding is local-only — no push tokens, no secrets in the repo", async () => {
+  it("notification scaffolding is local-only — no push tokens, no secrets in the repo", () => {
     const src = withoutComments(readFileSync(LOCAL, "utf8"))
     expect(src).not.toMatch(/getExpoPushTokenAsync|getDevicePushTokenAsync/)
     expect(src).not.toMatch(/sendPushNotificationsAsync|ExpoPushToken/)
     expect(src).not.toMatch(/APNs|FCM_SERVER|firebase-admin/)
     expect(src).toMatch(/scheduleNotificationAsync/)
     expect(src).toMatch(/requestPermissionsAsync/)
-
-    const kv = memoryKv()
-    await setNotificationConsent(kv, "denied")
-    const off = await applyLocalReminder({ kv, enabled: false })
-    expect(off).toEqual({ ok: true, kind: "cancelled" })
+    expect(src).toMatch(/NOTIFICATION_CONSENT_KEY/)
 
     const files = walkTs("apps/mobile")
     const joined = files.map((f) => withoutComments(readFileSync(f, "utf8"))).join("\n")

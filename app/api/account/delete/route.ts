@@ -48,8 +48,8 @@ import { PDF_BUCKET, pdfObjectPath } from "@/lib/report/pdf-access"
  * Auth accepts either surface (getUserFromRequest): the web app's session
  * cookie, or `Authorization: Bearer <supabase access token>` from the mobile
  * companion. Apple and Google require an in-app deletion path; the web account
- * page keeps using the cookie. Export stays cookie-only — see CLAUDE.md on
- * consultation_reports before that route is bearer-enabled.
+ * page keeps using the cookie. Export stays cookie-only until its
+ * CLAUDE.md activation prerequisite is closed.
  */
 export async function DELETE(req: Request) {
   try {
