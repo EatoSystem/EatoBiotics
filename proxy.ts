@@ -81,6 +81,7 @@ function isEnterRoute(pathname: string): boolean {
     pathname === "/api/twin-state" ||
     pathname === "/api/analyse-meal" ||
     pathname === "/api/mobile/v1/today" ||
+    pathname === "/api/mobile/v1/progress" ||
     pathname === "/api/feedback" ||
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/auth/")

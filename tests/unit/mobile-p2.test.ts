@@ -379,11 +379,12 @@ describe("P2 mobile companion — check-in writes, visible sync", () => {
     expect(joined).not.toMatch(/Food System Assessment/)
     expect(joined).not.toMatch(/Personal Food System Report/)
     const proxy = readFileSync("proxy.ts", "utf8")
-    const allowlist = proxy.slice(proxy.indexOf("function isEnterRoute"), proxy.indexOf("function isEnterRoute") + 2000)
+    const allowlist = proxy.slice(proxy.indexOf("function isEnterRoute"), proxy.indexOf("function isEnterRoute") + 2500)
     const exactApiEquals = [...allowlist.matchAll(/pathname === "(\/api\/[^"]+)"/g)].map((m) => m[1])
     expect(exactApiEquals.sort()).toEqual([
       "/api/analyse-meal",
       "/api/feedback",
+      "/api/mobile/v1/progress",
       "/api/mobile/v1/today",
       "/api/twin-state",
     ])
