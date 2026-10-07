@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@eatobiotics/vocabulary": ["../../packages/vocabulary/src/index.ts"],
+      "@eatobiotics/contracts": ["../../packages/contracts/src/index.ts"]
+    }
+  }
+}

@@ -1220,12 +1220,12 @@ CASES = [
      "  // 0R-1. Deduplicated:",
      BCLAIMS),
 
-    (1091, "the possessive rule is dropped from PERSONAL_BIOTIC_STATE", BCLAIMSFILE,
+    (1091, "the possessive rule is dropped from PERSONAL_BIOTIC_STATE", "packages/claims/src/personal-biotic-state.ts",
      '  ["a Biotic claimed as a person\'s own",\n   new RegExp(String.raw`\\b(?:[Yy]our|[Mm]y)\\s+${BIOTICS_ANY}\\b`)],',
      "",
      BCLAIMS),
 
-    (1092, "the state-verb rule readmits the copulas, breaking education", BCLAIMSFILE,
+    (1092, "the state-verb rule readmits the copulas, breaking education", "packages/claims/src/personal-biotic-state.ts",
      "   new RegExp(String.raw`\\b${BIOTICS}\\s+(?:remains?|appears?|looks?|seems?)\\b`)],",
      "   new RegExp(String.raw`\\b${BIOTICS}\\s+(?:remains?|appears?|looks?|seems?|is|are)\\b`)],",
      BCLAIMS),

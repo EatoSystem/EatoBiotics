@@ -6,7 +6,8 @@
  * the suite agree with itself while the site says something else, and the test
  * then passes through exactly the change it was written to catch.
  *
- *     lib/product-vocabulary.ts   the names          (leaf, zero imports)
+ *     packages/vocabulary         the names          (leaf, zero imports)
+ *     lib/product-vocabulary.ts   web re-export of that leaf
  *     lib/report/offer.ts         REPORT_PRICE_EUR   the €49 Consultation
  *     lib/membership-tiers.ts     MEMBER_PRICE_EUR   the €24.99 Member
  *
@@ -87,12 +88,20 @@ describe("the current commercial model", () => {
   })
 
   it("keeps the vocabulary module importable from a client component", () => {
-    // The whole reason it is a leaf. A single import here would let a
-    // service-role Supabase client reach the browser bundle again — the exact
-    // regression lib/membership-tiers.ts was split out to fix.
-    const src = readFileSync("lib/product-vocabulary.ts", "utf8")
-    expect(src).not.toMatch(/^\s*import\s/m)
-    expect(src).not.toMatch(/process\.env/)
+    // The leaf moved to packages/vocabulary so web and React Native share it.
+    // The web file may re-export — and only from that package. A single extra
+    // import here would let a service-role Supabase client reach the browser
+    // bundle again — the exact regression lib/membership-tiers.ts was split
+    // out to fix.
+    const leaf = readFileSync("packages/vocabulary/src/index.ts", "utf8")
+    expect(leaf).not.toMatch(/^\s*import\s/m)
+    expect(leaf).not.toMatch(/process\.env/)
+
+    const reexport = readFileSync("lib/product-vocabulary.ts", "utf8")
+    expect(reexport).toMatch(/from ["']@eatobiotics\/vocabulary["']/)
+    expect(reexport).not.toMatch(/from ["']@\/lib\//)
+    expect(reexport).not.toMatch(/process\.env/)
+    expect(reexport).not.toMatch(/SUPABASE|STRIPE|ANTHROPIC|getSupabase/)
   })
 })
 

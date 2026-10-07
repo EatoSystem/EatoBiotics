@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
+import { analyseMealRequestSchema, type AnalyseMealRequest } from "@eatobiotics/contracts"
 import { getUserFromRequest } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -20,11 +20,7 @@ import type { AnalysisResult } from "@/lib/analysis/types"
   quality_diversity, quality_anti_inflammatory, nutrition_json, insight, tags.
 */
 
-const bodySchema = z.object({
-  description: z.string().max(1000).optional(),
-  image:       z.string().optional(), // base64 data URL: "data:image/jpeg;base64,..."
-  meal_type:   z.enum(["Breakfast", "Lunch", "Dinner", "Snack"]).optional(),
-})
+const bodySchema = analyseMealRequestSchema
 
 /** The result plus the persistence fields the client receives. */
 export type MealAnalysisResult = AnalysisResult & { id: string | null; created_at?: string }
@@ -43,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   /* Parse body — supports JSON or multipart */
-  let body: z.infer<typeof bodySchema>
+  let body: AnalyseMealRequest
   try {
     const ct = req.headers.get("content-type") ?? ""
     if (ct.includes("multipart/form-data")) {

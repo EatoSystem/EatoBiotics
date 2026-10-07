@@ -17,6 +17,7 @@ export default tseslint.config(
       ".next/**",
       "node_modules/**",
       "remotion/**",
+      "apps/mobile/**",
       "public/**",
       "next-env.d.ts",
       "**/*.config.*",

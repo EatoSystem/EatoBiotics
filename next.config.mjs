@@ -2,6 +2,10 @@ import { withSentryConfig } from "@sentry/nextjs"
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: [
+    "@eatobiotics/vocabulary",
+    "@eatobiotics/contracts",
+  ],
   images: {
     // Was `unoptimized: true` (this project's original v0.dev scaffold
     // default) — every image shipped at full source size with no resizing,

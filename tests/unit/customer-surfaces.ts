@@ -298,6 +298,20 @@ export const AI_PROMPT_SURFACES = [
 ]
 
 /** Everything a customer can read, by group. */
+/**
+ * React Native companion — named list, not a tree walker, for the same
+ * reason every other group here is named: an automatic scanner would sweep
+ * in Expo boilerplate, assets typings and a future design-kit mock, and the
+ * honest response would be to weaken the rules.
+ *
+ * `assertManifestIsReal()` / `manifestProblems()` fail if a path here does
+ * not exist. Add a file the moment it can speak to a member.
+ */
+export const MOBILE_SURFACES = [
+  "apps/mobile/App.tsx",
+  "apps/mobile/src/config.ts",
+]
+
 export const CUSTOMER_SURFACES: Record<string, string[]> = {
   assessment: ASSESSMENT_SURFACES,
   meal: MEAL_SURFACES,
@@ -305,6 +319,7 @@ export const CUSTOMER_SURFACES: Record<string, string[]> = {
   email: EMAIL_SURFACES,
   marketing: MARKETING_SURFACES,
   sampleReports: SAMPLE_REPORT_SURFACES,
+  mobile: MOBILE_SURFACES,
 }
 
 /** Flat list of customer-copy surfaces. AI prompts are NOT included. */
