@@ -1,4 +1,4 @@
-import { MOBILE_BEARER_ROUTES, MOBILE_TODAY_PATH } from "@eatobiotics/contracts"
+import { MOBILE_BEARER_ROUTES, MOBILE_PROGRESS_PATH, MOBILE_TODAY_PATH } from "@eatobiotics/contracts"
 
 /**
  * Public origin and public Supabase anon credentials only.
@@ -14,3 +14,4 @@ export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ""
 export const BEARER_ROUTES = MOBILE_BEARER_ROUTES
 
 export const TODAY_PATH = MOBILE_TODAY_PATH
+export const PROGRESS_PATH = MOBILE_PROGRESS_PATH

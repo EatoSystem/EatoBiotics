@@ -277,12 +277,13 @@ describe("P3 mobile companion — meal scan via POST /api/analyse-meal", () => {
     const proxy = readFileSync("proxy.ts", "utf8")
     const allowlist = proxy.slice(
       proxy.indexOf("function isEnterRoute"),
-      proxy.indexOf("function isEnterRoute") + 2000,
+      proxy.indexOf("function isEnterRoute") + 2500,
     )
     const exactApiEquals = [...allowlist.matchAll(/pathname === "(\/api\/[^"]+)"/g)].map((m) => m[1])
     expect(exactApiEquals.sort()).toEqual([
       "/api/analyse-meal",
       "/api/feedback",
+      "/api/mobile/v1/progress",
       "/api/mobile/v1/today",
       "/api/twin-state",
     ])

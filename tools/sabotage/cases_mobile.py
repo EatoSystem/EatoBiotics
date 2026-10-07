@@ -11,9 +11,13 @@ RN = "tests/unit/biotic-visual-encoding-rn.test.ts"
 P0 = "tests/unit/mobile-p0.test.ts"
 P2 = "tests/unit/mobile-p2.test.ts"
 P3 = "tests/unit/mobile-p3.test.ts"
+P4 = "tests/unit/mobile-p4.test.ts"
 TODAY = "packages/contracts/src/mobile-today.ts"
 TODAY_SCREEN = "apps/mobile/src/screens/TodayScreen.tsx"
 MEAL_SCREEN = "apps/mobile/src/screens/MealScreen.tsx"
+PROGRESS = "packages/contracts/src/mobile-progress.ts"
+PROGRESS_SCREEN = "apps/mobile/src/screens/ProgressScreen.tsx"
+PROGRESS_COMPOSE = "lib/mobile/compose-progress.ts"
 MEAL_API = "packages/contracts/src/analyse-meal-client.ts"
 TWIN_API = "packages/contracts/src/twin-state-client.ts"
 VISUAL = "packages/claims/src/visual-encoding.ts"
@@ -95,4 +99,31 @@ CASES = [
      '    return { ok: false, reason: "unavailable", message: FALLBACK_UNAVAILABLE }',
      "    // swallowed",
      [P3]),
+
+    (1613, "Progress screen grows a personal Prebiotics bar", PROGRESS_SCREEN,
+     '<Text style={styles.kicker}>This week</Text>',
+     '<Text>Your Prebiotics {twin.biotics.prebiotics.score}/100</Text>\n'
+     '          <View style={{ width: `${twin.biotics.prebiotics.score}%`, backgroundColor: "#2DAA6E" }} />\n'
+     '          <Text style={styles.kicker}>This week</Text>',
+     [RN, P4]),
+
+    (1614, "ProgressScreen quietly leaves MOBILE_SURFACES", CORPUS,
+     '  "apps/mobile/src/screens/ProgressScreen.tsx",\n',
+     "",
+     ["tests/unit/biotic-claims.test.ts", P0, P4]),
+
+    (1615, "the progress contract grows personal per-Biotic scores", PROGRESS,
+     "  entitlementTier: resolvedTierSchema,\n})",
+     "  entitlementTier: resolvedTierSchema,\n"
+     "  prebiotic_score: z.number(),\n"
+     "  probiotic_score: z.number(),\n"
+     "  postbiotic_score: z.number(),\n})",
+     [P4]),
+
+    (1616, "progress composer takes buildAccountTwin as authority", PROGRESS_COMPOSE,
+     " * per-Biotic columns.\n */",
+     " * per-Biotic columns.\n */\n"
+     'import { buildAccountTwin } from "@/lib/agent-loop/account-twin"\n'
+     "void buildAccountTwin\n",
+     [P4]),
 ]

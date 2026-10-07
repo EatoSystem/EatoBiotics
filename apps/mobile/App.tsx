@@ -6,12 +6,14 @@ import { MEMBER } from "@eatobiotics/vocabulary"
 import { completeMagicLink, isAuthCallbackUrl } from "./src/auth/deep-link"
 import { getMobileSupabase, readSession, signOut } from "./src/auth/session"
 import { MealScreen } from "./src/screens/MealScreen"
+import { ProgressScreen } from "./src/screens/ProgressScreen"
 import { SignInScreen } from "./src/screens/SignInScreen"
 import { TodayScreen } from "./src/screens/TodayScreen"
 
 /**
- * P1 companion shell. Signed-in members see Today from GET /api/mobile/v1/today.
- * Signed-out members see the holding copy plus magic-link sign-in.
+ * Companion shell. Signed-in members see Today from GET /api/mobile/v1/today.
+ * This week is GET /api/mobile/v1/progress. Signed-out members see the
+ * holding copy plus magic-link sign-in.
  *
  * This file is in the claims corpus. A personal per-Biotic bar, band,
  * body-state or "Your Prebiotics" sentence here must fail CI.
@@ -19,7 +21,7 @@ import { TodayScreen } from "./src/screens/TodayScreen"
 export default function App() {
   const [ready, setReady] = useState(false)
   const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [screen, setScreen] = useState<"today" | "meal">("today")
+  const [screen, setScreen] = useState<"today" | "meal" | "progress">("today")
 
   const hydrate = useCallback(async () => {
     const session = await readSession()
@@ -78,12 +80,26 @@ export default function App() {
     )
   }
 
+  if (accessToken && screen === "progress") {
+    return (
+      <>
+        <ProgressScreen
+          accessToken={accessToken}
+          onBack={() => setScreen("today")}
+          onSignOut={() => void onSignOut()}
+        />
+        <StatusBar style="auto" />
+      </>
+    )
+  }
+
   if (accessToken) {
     return (
       <>
         <TodayScreen
           accessToken={accessToken}
           onLogMeal={() => setScreen("meal")}
+          onThisWeek={() => setScreen("progress")}
           onSignOut={() => void onSignOut()}
         />
         <StatusBar style="auto" />

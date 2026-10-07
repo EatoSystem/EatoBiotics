@@ -13,7 +13,7 @@ Work lives on a branch off `claude/eatobiotics-experience-audit`. Not `main`. No
 | Today / current focus | `app/account/today` → `TodayClient` | none in v1 | **server-composed.** No client-side priority, no focus-today call |
 | Meal scan and analysis | `/analyse` → `POST /api/analyse-meal` | `POST /api/analyse-meal` | server scores; app renders a **Meal** Biotics Score |
 | Daily ritual / check-in | `daily-ritual.tsx` → `/api/twin-state` | `PUT /api/twin-state` | server validates every `RitualDay` key |
-| Recent / this-week | `app/account/this-week` → `buildAccountTwin` | none | server-composed summary on the today payload |
+| Recent / this-week | `app/account/this-week` → `buildAccountTwin` | none | **server-composed** `GET /api/mobile/v1/progress`. Counts and day rows. Not `buildAccountTwin`. No client aggregation |
 | Authoritative Biotics Score™ | `profiles` / `leads` | none | one number, Assessment-earned, never a per-Biotic triple |
 
 The app answers "what should I focus on today?" with **reviewed non-ranked material, a general next step, or truthful absence**. It does not compute a selector. `GET /api/fss/focus-today` stays fail-closed and is not a mobile route.
@@ -60,7 +60,22 @@ Explicitly absent from that payload: per-Biotic personal numbers, `weakest` / `s
 
 P1 also adds `/api/feedback` to the `proxy.ts` allowlist (exact path; digest/retention stay off it). Cookie-only `/api/account/delete` and `/api/account/export` stay on `getUser()`.
 
-### 3.3 Never a native route in v1
+### 3.3 Implemented in P4
+
+`GET /api/mobile/v1/progress`
+
+Sibling composed read. Zod contract: `packages/contracts/src/mobile-progress.ts` (`mobileProgressResponseSchema`). Returns the already-composed, already claim-checked week:
+
+- person-level Biotics Score™ (or null) — the same Assessment-earned number as Today
+- seven UTC days of meal rows (**Meal** Biotics Score per plate) and ritual facts
+- server-counted `mealCount` / `checkInDays` and a `logged` \| `absence` summary line
+- resolved entitlement tier
+
+The Progress screen prints that object. It does not average meals, pick a meal of the week, derive momentum or a score delta, or call `buildAccountTwin`. Explicitly absent: per-Biotic personal numbers, `weakest` / `strongest`, `orderedByNeed`, a focus-today verdict.
+
+Today's `recentActivity` list stays on `/today`. Progress is the week beyond that list.
+
+### 3.4 Never a native route in v1
 
 Checkout, portal, consult, report generation, assessment, CMS, crons, `focus-today`, account export/delete (store deletion path is P5 and reads the existing routes — do not call export until the `consultation_reports` activation note in CLAUDE.md is closed).
 
@@ -70,7 +85,7 @@ Checkout, portal, consult, report generation, assessment, CMS, crons, `focus-tod
 
 ```
 packages/vocabulary   product names — the leaf; web re-exports from lib/product-vocabulary.ts
-packages/contracts    zod request/response schemas (twin-state, analyse-meal, today)
+packages/contracts    zod request/response schemas (twin-state, analyse-meal, today, progress)
 packages/claims       PERSONAL_BIOTIC_STATE + RN visual dialect; tests import these
 apps/mobile           Expo + React Native + TypeScript (iOS + Android)
 ```
@@ -93,19 +108,19 @@ Scoring, selection, AI orchestration, payments and entitlement **decisions** sta
 
 `MOBILE_SURFACES` in `tests/unit/customer-surfaces.ts` is a **named list**. The nine `PERSONAL_BIOTIC_STATE` rules run over it. `tests/unit/biotic-visual-encoding-rn.test.ts` is the RN form dialect (inline `width: \`${score}%\``, `transform: [{ scale }]`, `expo-linear-gradient` `colors`).
 
-§5.3 demonstration: a per-Biotic bar in RN source **fails** that suite; the shipped `App.tsx` has none, so CI is green. Sabotage cases 1600–1605 (`tools/sabotage/run_mobile.py`) keep the guard load-bearing.
+§5.3 demonstration: a per-Biotic bar in RN source **fails** that suite; the shipped `App.tsx` has none, so CI is green. Sabotage cases 1600–1616 (`tools/sabotage/run_mobile.py`) keep the guard load-bearing.
 
 ---
 
 ## 7 · Phasing vs this PR
 
-| phase | in P0 #283? | in P1 #284? | in P2 #285? | in this P3 PR? |
-|---|---|---|---|---|
-| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** | already on the branch | already on the branch | already on the branch |
-| **P1** auth, `GET /api/mobile/v1/today`, Today screen, feedback allowlist | no | **yes** | already on the branch | already on the branch |
-| **P2** Check-in writes via `PUT /api/twin-state`, visible sync | no | no | **yes** | already on the branch |
-| **P3** Meal scan via `POST /api/analyse-meal` | no | no | no | **yes** |
-| **P4** Progress / this-week | no | no | no | no |
-| **P5** notifications, privacy manifests, store deletion path | no | no | no | no |
+| phase | in P0 #283? | in P1 #284? | in P2 #285? | in P3 #286? | in this P4 PR? |
+|---|---|---|---|---|---|
+| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** | already on the branch | already on the branch | already on the branch | already on the branch |
+| **P1** auth, `GET /api/mobile/v1/today`, Today screen, feedback allowlist | no | **yes** | already on the branch | already on the branch | already on the branch |
+| **P2** Check-in writes via `PUT /api/twin-state`, visible sync | no | no | **yes** | already on the branch | already on the branch |
+| **P3** Meal scan via `POST /api/analyse-meal` | no | no | no | **yes** | already on the branch |
+| **P4** Progress / this-week | no | no | no | no | **yes** |
+| **P5** notifications, privacy manifests, store deletion path | no | no | no | no | no |
 
 No Assessment/Report screens. No WebView wrap. No design-kit iOS mock. No screens that mention a personal Pre/Pro/Post state.

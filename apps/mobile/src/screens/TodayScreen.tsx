@@ -28,10 +28,12 @@ const SYNC_COPY: Record<SyncStatus, string> = {
 export function TodayScreen({
   accessToken,
   onLogMeal,
+  onThisWeek,
   onSignOut,
 }: {
   accessToken: string
   onLogMeal: () => void
+  onThisWeek: () => void
   onSignOut: () => void
 }) {
   const [state, setState] = useState<
@@ -175,6 +177,10 @@ export function TodayScreen({
         <Text style={styles.mealButtonText}>Log a meal</Text>
       </Pressable>
 
+      <Pressable accessibilityRole="button" onPress={onThisWeek} style={styles.weekButton}>
+        <Text style={styles.weekButtonText}>This week</Text>
+      </Pressable>
+
       <View style={styles.card}>
         <Text style={styles.kicker}>Recently</Text>
         {data.recentActivity.length === 0 ? (
@@ -300,6 +306,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
+  },
+  weekButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#1B3A2F",
+  },
+  weekButtonText: {
+    color: "#1B3A2F",
+    fontWeight: "700",
+    fontSize: 16,
   },
   mealButtonText: {
     color: "#F7F4EE",

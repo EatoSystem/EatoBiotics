@@ -92,7 +92,7 @@ describe("P1 mobile companion — auth, composed today, gate allowlist", () => {
     const proxy = readFileSync(PROXY, "utf8")
     const allowlist = proxy.slice(
       proxy.indexOf("function isEnterRoute"),
-      proxy.indexOf("function isEnterRoute") + 2000,
+      proxy.indexOf("function isEnterRoute") + 2500,
     )
     for (const path of MOBILE_GATE_ALLOWLIST) {
       expect(allowlist, path).toContain(`pathname === "${path}"`)
