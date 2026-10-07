@@ -4,6 +4,7 @@ import { join } from "node:path"
 import {
   MEAL_SCAN_PERSIST_KEY,
   MOBILE_BEARER_ROUTES,
+  MOBILE_GATE_ALLOWLIST,
   analyseMealResponseSchema,
   createMealScanController,
   memoryKv,
@@ -280,12 +281,7 @@ describe("P3 mobile companion — meal scan via POST /api/analyse-meal", () => {
       proxy.indexOf("function isEnterRoute") + 2500,
     )
     const exactApiEquals = [...allowlist.matchAll(/pathname === "(\/api\/[^"]+)"/g)].map((m) => m[1])
-    expect(exactApiEquals.sort()).toEqual([
-      "/api/analyse-meal",
-      "/api/feedback",
-      "/api/mobile/v1/progress",
-      "/api/mobile/v1/today",
-      "/api/twin-state",
-    ])
+    expect(exactApiEquals.sort()).toEqual([...MOBILE_GATE_ALLOWLIST].sort())
+    expect(allowlist).not.toContain("/api/account/export")
   })
 })

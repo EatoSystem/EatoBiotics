@@ -97,7 +97,7 @@ describe("P1 mobile companion — auth, composed today, gate allowlist", () => {
     for (const path of MOBILE_GATE_ALLOWLIST) {
       expect(allowlist, path).toContain(`pathname === "${path}"`)
     }
-    expect(allowlist).not.toContain('pathname === "/api/account/delete"')
+    expect(allowlist).toContain('pathname === "/api/account/delete"')
     expect(allowlist).not.toContain('pathname === "/api/account/export"')
     expect(withoutComments(allowlist)).not.toContain("focus-today")
     expect(allowlist).not.toContain("/api/checkout")
@@ -107,15 +107,15 @@ describe("P1 mobile companion — auth, composed today, gate allowlist", () => {
     expect(exactApiEquals.sort()).toEqual([...MOBILE_GATE_ALLOWLIST].sort())
   })
 
-  it("cookie-only delete/export stay on getUser, not bearer", () => {
+  it("delete is dual-surface; export stays cookie-only", () => {
     const del = readFileSync("app/api/account/delete/route.ts", "utf8")
     const exp = readFileSync("app/api/account/export/route.ts", "utf8")
-    expect(del).toMatch(/getUser\(\)/)
+    expect(del).toMatch(/getUserFromRequest/)
+    expect(withoutComments(del)).not.toMatch(/getUser\(\)/)
     expect(exp).toMatch(/getUser\(\)/)
-    expect(del).not.toMatch(/getUserFromRequest/)
     expect(exp).not.toMatch(/getUserFromRequest/)
     const mobile = walkTs("apps/mobile").map((f) => readFileSync(f, "utf8")).join("\n")
-    expect(mobile).not.toMatch(/\/api\/account\/delete/)
+    expect(mobile).toMatch(/MOBILE_BEARER_ROUTES\.accountDelete|\/api\/account\/delete/)
     expect(mobile).not.toMatch(/\/api\/account\/export/)
   })
 

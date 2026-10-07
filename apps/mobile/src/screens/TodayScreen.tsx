@@ -29,11 +29,13 @@ export function TodayScreen({
   accessToken,
   onLogMeal,
   onThisWeek,
+  onAccount,
   onSignOut,
 }: {
   accessToken: string
   onLogMeal: () => void
   onThisWeek: () => void
+  onAccount: () => void
   onSignOut: () => void
 }) {
   const [state, setState] = useState<
@@ -179,6 +181,10 @@ export function TodayScreen({
 
       <Pressable accessibilityRole="button" onPress={onThisWeek} style={styles.weekButton}>
         <Text style={styles.weekButtonText}>This week</Text>
+      </Pressable>
+
+      <Pressable accessibilityRole="button" onPress={onAccount} style={styles.weekButton}>
+        <Text style={styles.weekButtonText}>Account</Text>
       </Pressable>
 
       <View style={styles.card}>

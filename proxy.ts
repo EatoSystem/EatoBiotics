@@ -77,12 +77,14 @@ function isEnterRoute(pathname: string): boolean {
     // session (feedback is auth-optional and already rate-limited), so the
     // gate would only add a redirect, not protection. Do not grow this
     // toward the rest of /api — checkout, portal, consult, the fail-closed
-    // FSS selector, account delete/export stay cookie-or-cron gated.
+    // FSS selector, and account export stay cookie-or-cron gated. Account
+    // delete is dual-surface because stores require an in-app deletion path.
     pathname === "/api/twin-state" ||
     pathname === "/api/analyse-meal" ||
     pathname === "/api/mobile/v1/today" ||
     pathname === "/api/mobile/v1/progress" ||
     pathname === "/api/feedback" ||
+    pathname === "/api/account/delete" ||
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/auth/")
   )

@@ -658,6 +658,7 @@ describe("the corpus this guard reads cannot silently shrink", () => {
     expect([...MOBILE_SURFACES].sort()).toEqual([
       "apps/mobile/App.tsx",
       "apps/mobile/src/config.ts",
+      "apps/mobile/src/screens/AccountScreen.tsx",
       "apps/mobile/src/screens/MealScreen.tsx",
       "apps/mobile/src/screens/ProgressScreen.tsx",
       "apps/mobile/src/screens/SignInScreen.tsx",

@@ -5,6 +5,7 @@ import {
   CHECK_IN_PERSIST_KEY,
   EMPTY_RITUAL,
   MOBILE_BEARER_ROUTES,
+  MOBILE_GATE_ALLOWLIST,
   RITUAL_DAY_KEYS,
   buildTwinStatePut,
   createCheckInController,
@@ -381,12 +382,7 @@ describe("P2 mobile companion — check-in writes, visible sync", () => {
     const proxy = readFileSync("proxy.ts", "utf8")
     const allowlist = proxy.slice(proxy.indexOf("function isEnterRoute"), proxy.indexOf("function isEnterRoute") + 2500)
     const exactApiEquals = [...allowlist.matchAll(/pathname === "(\/api\/[^"]+)"/g)].map((m) => m[1])
-    expect(exactApiEquals.sort()).toEqual([
-      "/api/analyse-meal",
-      "/api/feedback",
-      "/api/mobile/v1/progress",
-      "/api/mobile/v1/today",
-      "/api/twin-state",
-    ])
+    expect(exactApiEquals.sort()).toEqual([...MOBILE_GATE_ALLOWLIST].sort())
+    expect(allowlist).not.toContain("/api/account/export")
   })
 })

@@ -80,6 +80,7 @@ let supabase = makeSupabase()
 vi.mock("@/lib/supabase", () => ({ getSupabase: () => supabase.client }))
 vi.mock("@/lib/supabase-server", () => ({
   getUser: () => Promise.resolve({ id: "user-1", email: "person@example.com" }),
+  getUserFromRequest: () => Promise.resolve({ id: "user-1", email: "person@example.com" }),
 }))
 
 beforeEach(() => {
@@ -89,7 +90,7 @@ beforeEach(() => {
 
 async function callDelete() {
   const { DELETE } = await import("@/app/api/account/delete/route")
-  return DELETE()
+  return DELETE(new Request("http://localhost/api/account/delete", { method: "DELETE" }))
 }
 
 async function callExport() {

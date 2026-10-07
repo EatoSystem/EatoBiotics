@@ -12,12 +12,15 @@ P0 = "tests/unit/mobile-p0.test.ts"
 P2 = "tests/unit/mobile-p2.test.ts"
 P3 = "tests/unit/mobile-p3.test.ts"
 P4 = "tests/unit/mobile-p4.test.ts"
+P5 = "tests/unit/mobile-p5.test.ts"
 TODAY = "packages/contracts/src/mobile-today.ts"
 TODAY_SCREEN = "apps/mobile/src/screens/TodayScreen.tsx"
 MEAL_SCREEN = "apps/mobile/src/screens/MealScreen.tsx"
 PROGRESS = "packages/contracts/src/mobile-progress.ts"
 PROGRESS_SCREEN = "apps/mobile/src/screens/ProgressScreen.tsx"
 PROGRESS_COMPOSE = "lib/mobile/compose-progress.ts"
+ACCOUNT_SCREEN = "apps/mobile/src/screens/AccountScreen.tsx"
+NOTIFY = "apps/mobile/src/notifications/local.ts"
 MEAL_API = "packages/contracts/src/analyse-meal-client.ts"
 TWIN_API = "packages/contracts/src/twin-state-client.ts"
 VISUAL = "packages/claims/src/visual-encoding.ts"
@@ -126,4 +129,23 @@ CASES = [
      'import { buildAccountTwin } from "@/lib/agent-loop/account-twin"\n'
      "void buildAccountTwin\n",
      [P4]),
+
+    (1617, "Account screen grows a personal Prebiotics bar", ACCOUNT_SCREEN,
+     '<Text style={styles.kicker}>Privacy</Text>',
+     '<Text>Your Prebiotics {twin.biotics.prebiotics.score}/100</Text>\n'
+     '        <View style={{ width: `${twin.biotics.prebiotics.score}%`, backgroundColor: "#2DAA6E" }} />\n'
+     '        <Text style={styles.kicker}>Privacy</Text>',
+     [RN, P5]),
+
+    (1618, "AccountScreen quietly leaves MOBILE_SURFACES", CORPUS,
+     '  "apps/mobile/src/screens/AccountScreen.tsx",\n',
+     "",
+     ["tests/unit/biotic-claims.test.ts", P0, P5]),
+
+    (1619, "notification scaffolding fetches an Expo push token", NOTIFY,
+     "    permission = await notifications.requestPermissionsAsync()",
+     "    const token = await notifications.getExpoPushTokenAsync()\n"
+     "    void token\n"
+     "    permission = await notifications.requestPermissionsAsync()",
+     [P5]),
 ]
