@@ -45,19 +45,15 @@ describe("P0 mobile companion — capability graph, not a second product", () =>
   })
 
   it("lists every named mobile surface and each file exists", () => {
-    expect([...MOBILE_SURFACES].sort()).toEqual([
-      "apps/mobile/App.tsx",
-      "apps/mobile/src/config.ts",
-    ])
+    expect(MOBILE_SURFACES).toContain("apps/mobile/App.tsx")
+    expect(MOBILE_SURFACES).toContain("apps/mobile/src/config.ts")
     for (const file of MOBILE_SURFACES) {
       expect(existsSync(file), `missing ${file}`).toBe(true)
     }
   })
 
-  it("does not implement GET /api/mobile/v1/today in this PR", () => {
+  it("names GET /api/mobile/v1/today as the composed read", () => {
     expect(MOBILE_TODAY_PATH).toBe("/api/mobile/v1/today")
-    expect(existsSync("app/api/mobile/v1/today/route.ts")).toBe(false)
-    expect(existsSync("app/api/mobile")).toBe(false)
   })
 
   it("the today contract has no personal per-Biotic fields", () => {
@@ -128,9 +124,16 @@ describe("P0 mobile companion — capability graph, not a second product", () =>
       "apps/mobile/App.tsx",
       "apps/mobile/index.ts",
       "apps/mobile/src/config.ts",
+      "apps/mobile/src/api/today.ts",
+      "apps/mobile/src/auth/deep-link.ts",
+      "apps/mobile/src/auth/magic-link.ts",
+      "apps/mobile/src/auth/secure-storage.ts",
+      "apps/mobile/src/auth/session.ts",
+      "apps/mobile/src/screens/SignInScreen.tsx",
+      "apps/mobile/src/screens/TodayScreen.tsx",
     ])
     for (const file of present) {
-      expect(named, `${file} exists but is not a known P0 file — add it to MOBILE_SURFACES if it can speak to a member`).toContain(file)
+      expect(named, `${file} exists but is not a known companion file — add it to MOBILE_SURFACES if it can speak to a member`).toContain(file)
     }
   })
 })

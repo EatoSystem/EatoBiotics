@@ -73,10 +73,15 @@ function isEnterRoute(pathname: string): boolean {
     pathname.startsWith("/api/enter") ||
     pathname.startsWith("/api/waitlist") ||
     // Mobile companion app routes — a native client can't hold the gate cookie.
-    // Safe to expose: both routes 401 without a valid Supabase bearer token /
-    // session, so the gate would only add a redirect, not protection.
+    // Safe to expose: these 401 without a valid Supabase bearer token /
+    // session (feedback is auth-optional and already rate-limited), so the
+    // gate would only add a redirect, not protection. Do not grow this
+    // toward the rest of /api — checkout, portal, consult, the fail-closed
+    // FSS selector, account delete/export stay cookie-or-cron gated.
     pathname === "/api/twin-state" ||
     pathname === "/api/analyse-meal" ||
+    pathname === "/api/mobile/v1/today" ||
+    pathname === "/api/feedback" ||
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/auth/")
   )

@@ -310,6 +310,10 @@ export const AI_PROMPT_SURFACES = [
 export const MOBILE_SURFACES = [
   "apps/mobile/App.tsx",
   "apps/mobile/src/config.ts",
+  "apps/mobile/src/screens/SignInScreen.tsx",
+  "apps/mobile/src/screens/TodayScreen.tsx",
+  "lib/mobile/compose-today.ts",
+  "lib/mobile/next-step.ts",
 ]
 
 export const CUSTOMER_SURFACES: Record<string, string[]> = {

@@ -32,10 +32,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(body, init)
     }
 
-    const { email, name } = await req.json() as { email?: string; name?: string }
+    const { email, name, client } = await req.json() as {
+      email?: string
+      name?: string
+      client?: string
+    }
 
     if (!email || !isValidEmail(email)) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 })
+    }
+
+    if (client !== undefined && client !== "web" && client !== "mobile") {
+      return NextResponse.json({ error: "Unknown client" }, { status: 400 })
     }
 
     const supabaseUrl = process.env.SUPABASE_URL
@@ -54,12 +62,19 @@ export async function POST(req: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
+    // Web stays on /auth/callback (cookies). The companion asks for
+    // client=mobile; that query is a flag, not a URL. The web page then
+    // bounces to eatobiotics://auth/callback. Callers cannot supply an
+    // arbitrary redirectTo — that would be an open redirect.
+    const redirectTo =
+      client === "mobile"
+        ? `${siteUrl}/auth/callback?client=mobile`
+        : `${siteUrl}/auth/callback`
+
     const { data, error: linkError } = await adminSupabase.auth.admin.generateLink({
       type: "magiclink",
       email,
-      options: {
-        redirectTo: `${siteUrl}/auth/callback`,
-      },
+      options: { redirectTo },
     })
 
     if (linkError || !data?.properties?.action_link) {
