@@ -1,0 +1,112 @@
+---
+description: How the EatoBiotics claims guards work, and what to do when one fails. Applies to customer-facing surfaces, the report family, the agent loop, and the test corpus.
+globs: components/**/*.tsx,app/**/*.tsx,lib/report/**/*.ts,lib/pdf/**/*.tsx,lib/agent-loop/**/*.ts,lib/fss/**/*.ts,tests/unit/*claims*.test.ts,tests/unit/customer-surfaces.ts,tests/unit/retired-vocabulary.test.ts
+alwaysApply: false
+---
+
+# The claims guards
+
+You are in a file that may carry a customer-facing claim. This is how the
+enforcement works, and what it expects of you.
+
+## The corpus is a named list, not a tree walker — on purpose
+
+`tests/unit/customer-surfaces.ts` names every guarded surface, grouped:
+`ASSESSMENT_SURFACES`, `MEAL_SURFACES`, `ACCOUNT_SURFACES`, `EMAIL_SURFACES`,
+`SAMPLE_REPORT_SURFACES`, `REPORT_SURFACES`, `MARKETING_SURFACES`,
+`AI_PROMPT_SURFACES`.
+
+Its own header explains why it is not automatic:
+
+> An automatic scanner would sweep in Family, Mind, the book, historical demos
+> and the retired report renderers, and the honest response to the resulting
+> failures would be to weaken the rules until they passed — **which is how a
+> guard becomes decoration.** Naming each file means every inclusion is a
+> decision someone made and a reviewer can question.
+
+**A rule can only be wrong about a file it reads.** That is the failure mode
+that produced most of the defect register: the guards were green while live
+surfaces carried a competing product model, because those files were in no
+corpus.
+
+If you ship a customer-visible surface on the "You" journey, **add it to the
+right group.** `assertManifestIsReal()` fails if a named path does not exist, so
+a rename cannot quietly empty a group.
+
+## The four instruments, and what each can see
+
+| instrument | sees |
+|---|---|
+| `tests/unit/biotic-claims.test.ts` | nine `PERSONAL_BIOTIC_STATE` rules over the corpus **source text** |
+| `tests/unit/biotic-visual-encoding.test.ts` | the **form track** — a Biotic reaching a colour, a derived extent, or an anatomical coordinate, over 13 named modules |
+| `tests/unit/agent-loop-claims.test.ts` | **the one that matters most** — it *calls* the generators and reads what they return |
+| `tests/unit/retired-vocabulary.test.ts` | retired names, price literals, stored keys rendered directly |
+
+### Why the behavioural one matters most
+
+A source scan of the whole corpus catches **1 of 9** interpolated claims,
+because `${BIOTIC_LABELS[k]}` puts no Biotic word in any file. This failure mode
+— **interpolation blindness** — has been recorded **eleven times** in this
+repository.
+
+> **A new generator of customer-facing prose belongs in
+> `agent-loop-claims.test.ts`, not only in a corpus list.**
+
+Two related lessons, each learned the hard way:
+
+- **A comment recording a defect is not the defect**, and **a comment naming a
+  mechanism is not a read of that mechanism.** A structural rule reads code;
+  only a prose rule reads prose. Strip comments before asking a structural
+  question — this correction has been needed five times.
+- **Type-level absence is not enforcement when the enforcing tool is outside the
+  loop.** A field held out only by TypeScript is invisible to a runner that
+  executes vitest. Assert against source or behaviour as well.
+
+## When a guard fails
+
+In priority order:
+
+1. **Assume the code is wrong.** The guards have a better track record than the
+   changes that trip them.
+2. If the rule is genuinely a false positive, say so **with a measurement** —
+   what it matches, in which files, and why each match is not a defect. The
+   standard: *a rule that cannot be satisfied by any correct version of a file
+   cannot tell a repaired file from an unrepaired one.*
+3. **Never widen a rule to make a surface pass.** Never narrow one without
+   recording what you measured and adding a non-vacuity subject proving the
+   narrowed rule still catches the shape that shipped.
+
+## Adding a surface to the corpus
+
+A corpus widening turns guards **red**, and that red list is a deliberate
+artefact the programme consumes in sequence — it is not a build break to clear.
+
+**So: report gaps; do not add files to the corpus and repair the resulting
+failures in the same change.**
+
+## The sabotage harness
+
+`tools/sabotage/` holds fourteen suites. Each case breaks one property, asserts
+the mutation landed by sha256, runs the named tests, requires them to **fail**,
+then restores byte-identically.
+
+> A guard that passes proves nothing on its own: it may be asserting something
+> trivially true, matching its own explanatory comment, or scanning an empty
+> file list.
+
+**The standing rule: when a case slips, strengthen the TEST, never the case** —
+unless the case was aimed at the wrong thing or is malformed.
+
+If you add a guard, add a case. If you repair a defect class, add a case for it.
+
+## Two habits worth copying
+
+> **Measure the red state before claiming it.** Write the assertion, watch it
+> fail against the real defect, *then* repair. A test written after the fix
+> proves the fix exists; a test watched failing first proves the test works.
+
+> **Source inspection establishes possibility. Rendered evidence establishes
+> reachability.** Reading a component does not settle what a surface shows.
+
+Full context: `docs/cursor/00_PROJECT_BRIEF.md` §8 and
+`docs/experience/EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`.

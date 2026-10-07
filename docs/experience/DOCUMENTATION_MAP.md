@@ -109,6 +109,7 @@ than *superseded*: it is a deliberate record, and it says so.
 | **Onboarding a second agent (Cursor) to this codebase** | `docs/cursor/00_PROJECT_BRIEF.md` | the five per-surface audits, summarised | — |
 | **What to review, and which workflows are safe to delegate** | `docs/cursor/01_REVIEW_AND_WORKFLOWS.md` | `AUDIT_BASELINE.md` §§2–3 | — |
 | **The iOS / Android daily companion** | `docs/cursor/02_MOBILE_APP_BRIEF.md` | — | — |
+| **Operative constraints an agent must load, not merely be pointed at** | `.cursor/rules/eatobiotics-core.mdc` · `.cursor/rules/eatobiotics-claims.mdc` · `AGENTS.md` | — | — |
 
 ### The `docs/cursor/` pack
 
@@ -130,6 +131,27 @@ workflows as safe for Cursor to own or reserved for the programme loop.
 governing principle is **share contracts and truth definitions; centralise
 authority**, and its §5 — extending the claims guards to React Native from the
 first meaningful feature — is the section the rest of it depends on.
+
+### The agent rule files
+
+The pack is documentation; `.cursor/rules/` is enforcement. The distinction is
+the point: **a pointer an agent may decline to follow is a signpost, not a
+fence.**
+
+`.cursor/rules/eatobiotics-core.mdc` carries `alwaysApply: true`, so it loads
+into every Cursor session: the permanent product rule, the hard constraints as
+prohibitions, the gate with its baseline, and pointers to the pack for depth.
+`.cursor/rules/eatobiotics-claims.mdc` is glob-scoped to claim-bearing surfaces
+and the corpus, holding the detail that only matters there.
+
+`AGENTS.md` at the repository root is **deliberately thin** — what this
+repository is, where the constraints live, and the reading order. It exists so a
+non-Cursor agent lands somewhere useful, and it does not restate the
+constraints, because four copies of a rule is four things to keep in sync and
+this map exists to record what happens when a document drifts from reality.
+
+Note for maintainers: project rules must use the **`.mdc`** extension. A `.md`
+file in `.cursor/rules` is silently ignored — no error, just silence.
 
 ---
 
