@@ -9,7 +9,10 @@ CORPUS = "tests/unit/customer-surfaces.ts"
 CLAIMS = "tests/unit/biotic-claims.test.ts"
 RN = "tests/unit/biotic-visual-encoding-rn.test.ts"
 P0 = "tests/unit/mobile-p0.test.ts"
+P2 = "tests/unit/mobile-p2.test.ts"
 TODAY = "packages/contracts/src/mobile-today.ts"
+TODAY_SCREEN = "apps/mobile/src/screens/TodayScreen.tsx"
+TWIN_API = "packages/contracts/src/twin-state-client.ts"
 VISUAL = "packages/claims/src/visual-encoding.ts"
 
 CASES = [
@@ -47,4 +50,17 @@ CASES = [
      "  probiotic_score: z.number(),\n"
      "  postbiotic_score: z.number(),\n})",
      [P0]),
+
+    (1606, "mobile twin-state PUT copies the web silent catch", TWIN_API,
+     '    logError("[mobile-twin-state] PUT failed", error)\n'
+     '    return { ok: false, reason: "unavailable" }',
+     "    // swallowed",
+     [P2]),
+
+    (1607, "Today screen grows a personal Prebiotics bar", TODAY_SCREEN,
+     '<Text style={styles.kicker}>Today\'s check-in</Text>',
+     '<Text>Your Prebiotics {score}/100</Text>\n'
+     '        <View style={{ width: `${score}%`, backgroundColor: "#2DAA6E" }} />\n'
+     '        <Text style={styles.kicker}>Today\'s check-in</Text>',
+     [RN, P2]),
 ]

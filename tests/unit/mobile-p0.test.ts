@@ -125,12 +125,15 @@ describe("P0 mobile companion — capability graph, not a second product", () =>
       "apps/mobile/index.ts",
       "apps/mobile/src/config.ts",
       "apps/mobile/src/api/today.ts",
+      "apps/mobile/src/api/twin-state.ts",
       "apps/mobile/src/auth/deep-link.ts",
       "apps/mobile/src/auth/magic-link.ts",
       "apps/mobile/src/auth/secure-storage.ts",
       "apps/mobile/src/auth/session.ts",
       "apps/mobile/src/screens/SignInScreen.tsx",
       "apps/mobile/src/screens/TodayScreen.tsx",
+      "apps/mobile/src/sync/check-in.ts",
+      "apps/mobile/src/sync/persist.ts",
     ])
     for (const file of present) {
       expect(named, `${file} exists but is not a known companion file — add it to MOBILE_SURFACES if it can speak to a member`).toContain(file)
