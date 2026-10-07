@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { BIOTICS_SCORE, MEAL_BIOTICS_SCORE, MEMBER } from "@eatobiotics/vocabulary"
 import type { MobileTodayResponse, RitualDayContract } from "@eatobiotics/contracts"
 import { fetchToday } from "../api/today"
+import {
+  EMPTY_RITUAL,
+  createCheckInController,
+  type CheckInSnapshot,
+  type SyncStatus,
+} from "../sync/check-in"
+import { deviceKv } from "../sync/persist"
 
 const RITUAL_ROWS: { key: keyof RitualDayContract; label: string }[] = [
   { key: "fermented", label: "Fermented food" },
@@ -11,6 +18,12 @@ const RITUAL_ROWS: { key: keyof RitualDayContract; label: string }[] = [
   { key: "slept", label: "Slept well" },
   { key: "feeling", label: "Feeling good" },
 ]
+
+const SYNC_COPY: Record<SyncStatus, string> = {
+  queued: "Queued — waiting to send",
+  sent: "Sent",
+  failed: "Failed — tap to retry",
+}
 
 export function TodayScreen({
   accessToken,
@@ -24,6 +37,12 @@ export function TodayScreen({
     | { status: "ready"; data: MobileTodayResponse }
     | { status: "error"; reason: "unauthorised" | "unavailable" | "invalid" }
   >({ status: "loading" })
+  const [checkIn, setCheckIn] = useState<CheckInSnapshot>({
+    ritual: EMPTY_RITUAL,
+    status: "sent",
+    error: null,
+  })
+  const controllerRef = useRef<ReturnType<typeof createCheckInController> | null>(null)
 
   const load = useCallback(async () => {
     setState({ status: "loading" })
@@ -39,6 +58,26 @@ export function TodayScreen({
   useEffect(() => {
     void load()
   }, [load])
+
+  const seedRitual = state.status === "ready" ? state.data.ritualToday : null
+
+  useEffect(() => {
+    if (state.status !== "ready") return
+    const controller = createCheckInController({
+      accessToken,
+      kv: deviceKv,
+      seedRitual,
+    })
+    controllerRef.current = controller
+    const unsub = controller.subscribe(setCheckIn)
+    void controller.hydrate().then((result) => {
+      if (result.unauthorised) onSignOut()
+    })
+    return () => {
+      unsub()
+      controllerRef.current = null
+    }
+  }, [accessToken, onSignOut, seedRitual, state.status])
 
   if (state.status === "loading") {
     return (
@@ -67,6 +106,15 @@ export function TodayScreen({
       ? `Streak ${data.streak.current}`
       : "No streak yet"
 
+  function onToggle(key: keyof RitualDayContract) {
+    void controllerRef.current?.toggle(key)
+  }
+
+  function onRetrySync() {
+    if (checkIn.status !== "failed") return
+    void controllerRef.current?.retry()
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <Text style={styles.mark}>EatoBiotics</Text>
@@ -91,15 +139,34 @@ export function TodayScreen({
 
       <View style={styles.card}>
         <Text style={styles.kicker}>Today's check-in</Text>
-        {data.ritualToday ? (
-          RITUAL_ROWS.map((row) => (
-            <Text key={row.key} style={styles.ritual}>
-              {data.ritualToday?.[row.key] ? "✓" : "○"} {row.label}
+        {RITUAL_ROWS.map((row) => (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ checked: checkIn.ritual[row.key] }}
+            key={row.key}
+            onPress={() => onToggle(row.key)}
+            style={styles.ritualRow}
+          >
+            <Text style={styles.ritual}>
+              {checkIn.ritual[row.key] ? "✓" : "○"} {row.label}
             </Text>
-          ))
-        ) : (
-          <Text style={styles.muted}>Nothing checked in yet. Check-in writes land next.</Text>
-        )}
+          </Pressable>
+        ))}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: checkIn.status !== "failed" }}
+          onPress={onRetrySync}
+          style={styles.syncLine}
+        >
+          <Text
+            style={[
+              styles.syncText,
+              checkIn.status === "failed" ? styles.syncFailed : null,
+            ]}
+          >
+            {SYNC_COPY[checkIn.status]}
+          </Text>
+        </Pressable>
       </View>
 
       <View style={styles.card}>
@@ -181,10 +248,24 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: "#1B3A2F",
   },
+  ritualRow: {
+    paddingVertical: 4,
+  },
   ritual: {
     fontSize: 15,
     color: "#1B3A2F",
     paddingVertical: 2,
+  },
+  syncLine: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+  },
+  syncText: {
+    fontSize: 13,
+    color: "#5C6B63",
+  },
+  syncFailed: {
+    color: "#8B3A2F",
   },
   muted: {
     fontSize: 15,

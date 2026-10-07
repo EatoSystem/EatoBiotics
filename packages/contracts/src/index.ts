@@ -1,9 +1,33 @@
 export {
   ritualDaySchema,
   twinStatePutSchema,
+  twinStateGetSchema,
+  RITUAL_DAY_KEYS,
+  EMPTY_RITUAL,
+  localDayKey,
+  normaliseRitualDay,
+  toggleRitualKey,
+  incomingDayWins,
+  pickTodayRitual,
+  buildTwinStatePut,
   type TwinStatePut,
+  type TwinStateGet,
   type RitualDayContract,
 } from "./twin-state"
+
+export {
+  getTwinState,
+  putTwinState,
+  memoryKv,
+  createCheckInController,
+  CHECK_IN_PERSIST_KEY,
+  type TwinStateResult,
+  type LogError,
+  type FetchFn,
+  type SyncStatus,
+  type CheckInSnapshot,
+  type KvStore,
+} from "./twin-state-client"
 
 export {
   analyseMealRequestSchema,

@@ -99,13 +99,13 @@ Scoring, selection, AI orchestration, payments and entitlement **decisions** sta
 
 ## 7 · Phasing vs this PR
 
-| phase | in P0 PR #283? | in this P1 PR? |
-|---|---|---|
-| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** | already on the branch |
-| **P1** auth, `GET /api/mobile/v1/today`, Today screen, feedback allowlist | no | **yes** |
-| **P2** Check-in writes via `PUT /api/twin-state`, visible sync | no | no |
-| **P3** Meal scan via `POST /api/analyse-meal` | no | no |
-| **P4** Progress / this-week | no | no |
-| **P5** notifications, privacy manifests, store deletion path | no | no |
+| phase | in P0 #283? | in P1 #284? | in this P2 PR? |
+|---|---|---|---|
+| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** | already on the branch | already on the branch |
+| **P1** auth, `GET /api/mobile/v1/today`, Today screen, feedback allowlist | no | **yes** | already on the branch |
+| **P2** Check-in writes via `PUT /api/twin-state`, visible sync | no | no | **yes** |
+| **P3** Meal scan via `POST /api/analyse-meal` | no | no | no |
+| **P4** Progress / this-week | no | no | no |
+| **P5** notifications, privacy manifests, store deletion path | no | no | no |
 
 No Assessment/Report screens. No WebView wrap. No design-kit iOS mock. No screens that mention a personal Pre/Pro/Post state.
