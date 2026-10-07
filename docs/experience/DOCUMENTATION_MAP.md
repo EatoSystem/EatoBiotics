@@ -106,6 +106,30 @@ than *superseded*: it is a deliberate record, and it says so.
 | Route/surface inventory | `lib/v1-surface.ts` — **the code is canonical** | `EATOBIOTICS_REPORTS_AUDIT.md` §0 | `docs/v1-step3-inventory.md` — **historical** |
 | GLP-1 launch | `docs/glp1-launch-checklist.md` | — | — |
 | Phase 4A-S3 review | `docs/reviews/phase-4a-s3/README.md` | — | — |
+| **Onboarding a second agent (Cursor) to this codebase** | `docs/cursor/00_PROJECT_BRIEF.md` | the five per-surface audits, summarised | — |
+| **What to review, and which workflows are safe to delegate** | `docs/cursor/01_REVIEW_AND_WORKFLOWS.md` | `AUDIT_BASELINE.md` §§2–3 | — |
+| **The iOS / Android daily companion** | `docs/cursor/02_MOBILE_APP_BRIEF.md` | — | — |
+
+### The `docs/cursor/` pack
+
+Three documents, written 2026-10-07 at the 0R-6R close, classified **canonical**.
+They exist because the enforcement this programme depends on is *path-scoped
+source scanning inside one repository* — so a second agent and a second client
+are the two ways every repaired claim could silently return.
+
+`00_PROJECT_BRIEF.md` is the read-this-first context: what EatoBiotics sells, the
+permanent product rule and how it has been broken, the stack and the measured
+scale, the programme state, the hard constraints, and which documents on this map
+are traps.
+
+`01_REVIEW_AND_WORKFLOWS.md` scopes a review to what is *not* already measured
+here, states the anti-goals as firmly as the goals, and classifies nine ongoing
+workflows as safe for Cursor to own or reserved for the programme loop.
+
+`02_MOBILE_APP_BRIEF.md` is the Expo + React Native daily-companion brief. Its
+governing principle is **share contracts and truth definitions; centralise
+authority**, and its §5 — extending the claims guards to React Native from the
+first meaningful feature — is the section the rest of it depends on.
 
 ---
 
