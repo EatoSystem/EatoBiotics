@@ -1,0 +1,53 @@
+{
+  "app": "EatoBiotics companion",
+  "overview": "This declaration matches what the app actually does. Camera and the photo library are for meal photos only. Email and user id are for magic-link sign-in. Meal descriptions and daily check-in taps are user content. The app does not collect location, contacts, microphone, Health Connect, purchases, advertising IDs, or analytics.",
+  "dataCollected": [
+    {
+      "type": "Photos and videos",
+      "collected": true,
+      "optional": true,
+      "purpose": "App functionality — photograph or choose a meal to analyse",
+      "shared": false,
+      "ephemeral": false
+    },
+    {
+      "type": "Email address",
+      "collected": true,
+      "optional": false,
+      "purpose": "App functionality — magic-link sign-in",
+      "shared": false,
+      "ephemeral": false
+    },
+    {
+      "type": "User IDs",
+      "collected": true,
+      "optional": false,
+      "purpose": "App functionality — signed-in session",
+      "shared": false,
+      "ephemeral": false
+    },
+    {
+      "type": "Other user-generated content",
+      "collected": true,
+      "optional": true,
+      "purpose": "App functionality — meal descriptions and daily check-in taps",
+      "shared": false,
+      "ephemeral": false
+    }
+  ],
+  "dataNotCollected": [
+    "Approximate location",
+    "Precise location",
+    "Contacts",
+    "Microphone",
+    "Health and fitness (Health Connect / HealthKit)",
+    "Purchase history",
+    "Device or other IDs for advertising",
+    "App interactions / analytics"
+  ],
+  "securityPractices": {
+    "encryptedInTransit": true,
+    "usersCanRequestDeletion": true,
+    "deletionPath": "In-app Account → Delete account, which calls DELETE /api/account/delete"
+  }
+}

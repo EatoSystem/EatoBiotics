@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native"
 import { MEMBER } from "@eatobiotics/vocabulary"
 import { completeMagicLink, isAuthCallbackUrl } from "./src/auth/deep-link"
 import { getMobileSupabase, readSession, signOut } from "./src/auth/session"
+import { AccountScreen } from "./src/screens/AccountScreen"
 import { MealScreen } from "./src/screens/MealScreen"
 import { ProgressScreen } from "./src/screens/ProgressScreen"
 import { SignInScreen } from "./src/screens/SignInScreen"
@@ -21,7 +22,7 @@ import { TodayScreen } from "./src/screens/TodayScreen"
 export default function App() {
   const [ready, setReady] = useState(false)
   const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [screen, setScreen] = useState<"today" | "meal" | "progress">("today")
+  const [screen, setScreen] = useState<"today" | "meal" | "progress" | "account">("today")
 
   const hydrate = useCallback(async () => {
     const session = await readSession()
@@ -93,6 +94,20 @@ export default function App() {
     )
   }
 
+  if (accessToken && screen === "account") {
+    return (
+      <>
+        <AccountScreen
+          accessToken={accessToken}
+          onBack={() => setScreen("today")}
+          onSignOut={() => void onSignOut()}
+          onDeleted={() => void onSignOut()}
+        />
+        <StatusBar style="auto" />
+      </>
+    )
+  }
+
   if (accessToken) {
     return (
       <>
@@ -100,6 +115,7 @@ export default function App() {
           accessToken={accessToken}
           onLogMeal={() => setScreen("meal")}
           onThisWeek={() => setScreen("progress")}
+          onAccount={() => setScreen("account")}
           onSignOut={() => void onSignOut()}
         />
         <StatusBar style="auto" />

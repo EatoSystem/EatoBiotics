@@ -5,9 +5,10 @@
  * Refresh tokens live in expo-secure-store. Nothing in this package
  * is a key, and EXPO_PUBLIC_* is treated as public.
  *
- * Cookie-only web routes (account delete/export) are not represented here
- * and must not be added: the native client cannot hold the web session cookie,
- * and those routes stay on `getUser()`.
+ * Account export stays cookie-only on `getUser()` until the
+ * `consultation_reports` activation note in CLAUDE.md is closed. Account
+ * delete is dual-surface (`getUserFromRequest`) so the companion can satisfy
+ * the store deletion requirement without a web cookie.
  */
 export const AUTH_HEADER = "Authorization" as const
 

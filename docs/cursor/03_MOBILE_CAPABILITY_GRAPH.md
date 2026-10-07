@@ -58,7 +58,7 @@ One versioned composed read. Zod contract: `packages/contracts/src/mobile-today.
 
 Explicitly absent from that payload: per-Biotic personal numbers, `weakest` / `strongest`, `orderedByNeed`, a focus-today verdict, Stripe objects.
 
-P1 also adds `/api/feedback` to the `proxy.ts` allowlist (exact path; digest/retention stay off it). Cookie-only `/api/account/delete` and `/api/account/export` stay on `getUser()`.
+P1 also adds `/api/feedback` to the `proxy.ts` allowlist (exact path; digest/retention stay off it). `/api/account/export` stays cookie-only on `getUser()`. `/api/account/delete` became dual-surface in P5.
 
 ### 3.3 Implemented in P4
 
@@ -75,9 +75,19 @@ The Progress screen prints that object. It does not average meals, pick a meal o
 
 Today's `recentActivity` list stays on `/today`. Progress is the week beyond that list.
 
-### 3.4 Never a native route in v1
+### 3.5 Implemented in P5
 
-Checkout, portal, consult, report generation, assessment, CMS, crons, `focus-today`, account export/delete (store deletion path is P5 and reads the existing routes — do not call export until the `consultation_reports` activation note in CLAUDE.md is closed).
+`DELETE /api/account/delete`
+
+Store-required in-app deletion. Dual-surface auth (`getUserFromRequest`): web cookie still works; the companion sends `Authorization: Bearer`. Path is on `proxy.ts`'s gate allowlist. Erasure behaviour is unchanged. `/api/account/export` stays cookie-only — do not call it from the app until the `consultation_reports` activation note in CLAUDE.md is closed.
+
+Privacy manifests in `apps/mobile/app.json` (`privacyManifests` + meal-photo permission strings) and `apps/mobile/privacy/play-data-safety.json` declare camera/photos for meals, plus account email/user id and user content. They do not invent location, microphone, HealthKit, purchases, or analytics.
+
+Local reminder scaffolding (`apps/mobile/src/notifications/local.ts`) is opt-in, on-device, and does not request an Expo/APNs/FCM push token.
+
+### 3.6 Never a native route in v1
+
+Checkout, portal, consult, report generation, assessment, CMS, crons, `focus-today`, account export.
 
 ---
 
@@ -108,19 +118,19 @@ Scoring, selection, AI orchestration, payments and entitlement **decisions** sta
 
 `MOBILE_SURFACES` in `tests/unit/customer-surfaces.ts` is a **named list**. The nine `PERSONAL_BIOTIC_STATE` rules run over it. `tests/unit/biotic-visual-encoding-rn.test.ts` is the RN form dialect (inline `width: \`${score}%\``, `transform: [{ scale }]`, `expo-linear-gradient` `colors`).
 
-§5.3 demonstration: a per-Biotic bar in RN source **fails** that suite; the shipped `App.tsx` has none, so CI is green. Sabotage cases 1600–1616 (`tools/sabotage/run_mobile.py`) keep the guard load-bearing.
+§5.3 demonstration: a per-Biotic bar in RN source **fails** that suite; the shipped `App.tsx` has none, so CI is green. Sabotage cases 1600–1619 (`tools/sabotage/run_mobile.py`) keep the guard load-bearing.
 
 ---
 
 ## 7 · Phasing vs this PR
 
-| phase | in P0 #283? | in P1 #284? | in P2 #285? | in P3 #286? | in this P4 PR? |
-|---|---|---|---|---|---|
-| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** | already on the branch | already on the branch | already on the branch | already on the branch |
-| **P1** auth, `GET /api/mobile/v1/today`, Today screen, feedback allowlist | no | **yes** | already on the branch | already on the branch | already on the branch |
-| **P2** Check-in writes via `PUT /api/twin-state`, visible sync | no | no | **yes** | already on the branch | already on the branch |
-| **P3** Meal scan via `POST /api/analyse-meal` | no | no | no | **yes** | already on the branch |
-| **P4** Progress / this-week | no | no | no | no | **yes** |
-| **P5** notifications, privacy manifests, store deletion path | no | no | no | no | no |
+| phase | in P0 #283? | in P1 #284? | in P2 #285? | in P3 #286? | in P4 #287? | in this P5 PR? |
+|---|---|---|---|---|---|---|
+| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** | already on the branch | already on the branch | already on the branch | already on the branch | already on the branch |
+| **P1** auth, `GET /api/mobile/v1/today`, Today screen, feedback allowlist | no | **yes** | already on the branch | already on the branch | already on the branch | already on the branch |
+| **P2** Check-in writes via `PUT /api/twin-state`, visible sync | no | no | **yes** | already on the branch | already on the branch | already on the branch |
+| **P3** Meal scan via `POST /api/analyse-meal` | no | no | no | **yes** | already on the branch | already on the branch |
+| **P4** Progress / this-week | no | no | no | no | **yes** | already on the branch |
+| **P5** notifications, privacy manifests, store deletion path | no | no | no | no | no | **yes** |
 
 No Assessment/Report screens. No WebView wrap. No design-kit iOS mock. No screens that mention a personal Pre/Pro/Post state.

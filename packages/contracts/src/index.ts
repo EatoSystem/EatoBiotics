@@ -81,15 +81,16 @@ export {
 
 /**
  * Routes the native client may call in v1. Everything else stays on the web.
- * Writes stay granular (twin-state, analyse-meal). Today and progress are
- * the composed reads. `/api/feedback` is gate-allowlisted separately; it is
- * auth-optional.
+ * Writes stay granular (twin-state, analyse-meal, account delete). Today and
+ * progress are the composed reads. `/api/feedback` is gate-allowlisted
+ * separately; it is auth-optional. Export is not a native route.
  */
 export const MOBILE_BEARER_ROUTES = {
   twinState: "/api/twin-state",
   analyseMeal: "/api/analyse-meal",
   today: "/api/mobile/v1/today",
   progress: "/api/mobile/v1/progress",
+  accountDelete: "/api/account/delete",
 } as const
 
 /** Password-gate paths a native client needs. Do not grow this toward ~101 routes. */
@@ -99,4 +100,5 @@ export const MOBILE_GATE_ALLOWLIST = [
   "/api/mobile/v1/today",
   "/api/mobile/v1/progress",
   "/api/feedback",
+  "/api/account/delete",
 ] as const

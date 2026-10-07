@@ -310,6 +310,7 @@ export const AI_PROMPT_SURFACES = [
 export const MOBILE_SURFACES = [
   "apps/mobile/App.tsx",
   "apps/mobile/src/config.ts",
+  "apps/mobile/src/screens/AccountScreen.tsx",
   "apps/mobile/src/screens/MealScreen.tsx",
   "apps/mobile/src/screens/ProgressScreen.tsx",
   "apps/mobile/src/screens/SignInScreen.tsx",

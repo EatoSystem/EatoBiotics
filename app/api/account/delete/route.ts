@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getUser } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
 import { PDF_BUCKET, pdfObjectPath } from "@/lib/report/pdf-access"
@@ -44,10 +44,16 @@ import { PDF_BUCKET, pdfObjectPath } from "@/lib/report/pdf-access"
  * schema-drift scanner can read. Declared here for it:
  *
  * schema-drift-tables: weekly_checkins, analyses, consultations, journal_entries, plate_data, deep_assessments, leads, email_sends, consents, paid_report_intents, profiles
+ *
+ * Auth accepts either surface (getUserFromRequest): the web app's session
+ * cookie, or `Authorization: Bearer <supabase access token>` from the mobile
+ * companion. Apple and Google require an in-app deletion path; the web account
+ * page keeps using the cookie. Export stays cookie-only — see CLAUDE.md on
+ * consultation_reports before that route is bearer-enabled.
  */
-export async function DELETE() {
+export async function DELETE(req: Request) {
   try {
-    const user = await getUser()
+    const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const adminSupabase = getSupabase()

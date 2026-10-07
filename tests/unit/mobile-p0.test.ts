@@ -49,6 +49,7 @@ describe("P0 mobile companion — capability graph, not a second product", () =>
     expect(MOBILE_SURFACES).toContain("apps/mobile/src/config.ts")
     expect(MOBILE_SURFACES).toContain("apps/mobile/src/screens/MealScreen.tsx")
     expect(MOBILE_SURFACES).toContain("apps/mobile/src/screens/ProgressScreen.tsx")
+    expect(MOBILE_SURFACES).toContain("apps/mobile/src/screens/AccountScreen.tsx")
     for (const file of MOBILE_SURFACES) {
       expect(existsSync(file), `missing ${file}`).toBe(true)
     }
@@ -138,6 +139,9 @@ describe("P0 mobile companion — capability graph, not a second product", () =>
       "apps/mobile/src/screens/SignInScreen.tsx",
       "apps/mobile/src/screens/TodayScreen.tsx",
       "apps/mobile/src/api/progress.ts",
+      "apps/mobile/src/api/account-delete.ts",
+      "apps/mobile/src/notifications/local.ts",
+      "apps/mobile/src/screens/AccountScreen.tsx",
       "apps/mobile/src/sync/check-in.ts",
       "apps/mobile/src/sync/meal-scan.ts",
       "apps/mobile/src/sync/persist.ts",
