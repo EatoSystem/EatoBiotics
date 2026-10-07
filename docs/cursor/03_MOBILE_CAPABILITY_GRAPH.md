@@ -44,7 +44,7 @@ Locked capabilities in the app show **locked state**. No in-app purchase. No but
 
 Both already accept `Authorization: Bearer <supabase access token>` via `getUserFromRequest` and are on `proxy.ts`'s password-gate allowlist. Do not mobile-enable the other ~101 routes.
 
-### 3.2 Documented, not implemented — P1
+### 3.2 Implemented in P1
 
 `GET /api/mobile/v1/today`
 
@@ -58,7 +58,7 @@ One versioned composed read. Zod contract: `packages/contracts/src/mobile-today.
 
 Explicitly absent from that payload: per-Biotic personal numbers, `weakest` / `strongest`, `orderedByNeed`, a focus-today verdict, Stripe objects.
 
-P1 also adds `/api/feedback` to the `proxy.ts` allowlist (it already has bearer auth; it does not have the gate allowlist). Not in this PR.
+P1 also adds `/api/feedback` to the `proxy.ts` allowlist (exact path; digest/retention stay off it). Cookie-only `/api/account/delete` and `/api/account/export` stay on `getUser()`.
 
 ### 3.3 Never a native route in v1
 
@@ -83,7 +83,7 @@ Scoring, selection, AI orchestration, payments and entitlement **decisions** sta
 
 ## 5 · Auth, payments, secrets
 
-- P1: magic link + `eatobiotics://` / Universal Links + `expo-secure-store` for the refresh token.
+- P1: magic link (`/api/auth/send-magic-link` + `client=mobile`) hops through `/auth/callback` then `eatobiotics://auth/callback`. Refresh token in `expo-secure-store`.
 - The session is the only credential in the bundle. No `SUPABASE_SERVICE_ROLE_KEY`, Stripe, Anthropic, or `CRON_SECRET`.
 - Entitlement is a resolved tier string on the today payload. Stripe remains the source of truth. No IAP in v1.
 
@@ -99,13 +99,13 @@ Scoring, selection, AI orchestration, payments and entitlement **decisions** sta
 
 ## 7 · Phasing vs this PR
 
-| phase | in this PR? |
-|---|---|
-| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** |
-| **P1** auth, `GET /api/mobile/v1/today`, feedback allowlist | no |
-| **P2** Today + Check-in screens, visible sync | no |
-| **P3** Meal scan via `POST /api/analyse-meal` | no |
-| **P4** Progress / this-week | no |
-| **P5** notifications, privacy manifests, store deletion path | no |
+| phase | in P0 PR #283? | in this P1 PR? |
+|---|---|---|
+| **P0** graph, packages, Expo scaffold, RN bar fails a test | **yes** | already on the branch |
+| **P1** auth, `GET /api/mobile/v1/today`, Today screen, feedback allowlist | no | **yes** |
+| **P2** Check-in writes via `PUT /api/twin-state`, visible sync | no | no |
+| **P3** Meal scan via `POST /api/analyse-meal` | no | no |
+| **P4** Progress / this-week | no | no |
+| **P5** notifications, privacy manifests, store deletion path | no | no |
 
 No Assessment/Report screens. No WebView wrap. No design-kit iOS mock. No screens that mention a personal Pre/Pro/Post state.

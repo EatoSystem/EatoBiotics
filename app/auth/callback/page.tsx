@@ -20,6 +20,18 @@ export default function AuthCallbackPage() {
   const router = useRouter()
 
   useEffect(() => {
+    const url = new URL(window.location.href)
+
+    // Companion magic-link hop. Tokens stay in the URL for the app to
+    // parse; we do not set a web cookie and we do not take a caller-supplied
+    // destination — the scheme is eatobiotics:// only. Bounce before the
+    // web Supabase client is required so a missing NEXT_PUBLIC_* key on
+    // this page cannot strand a native sign-in.
+    if (url.searchParams.get("client") === "mobile") {
+      window.location.replace(`eatobiotics://auth/callback${url.search}${window.location.hash}`)
+      return
+    }
+
     const supabase = getSupabaseBrowser()
 
     // Unlike the other callers, this one cannot degrade quietly: a real user is
@@ -37,7 +49,6 @@ export default function AuthCallbackPage() {
     const client = supabase
 
     async function completeSignIn() {
-      const url = new URL(window.location.href)
       const hash = new URLSearchParams(window.location.hash.slice(1))
 
       const accessToken = hash.get("access_token")

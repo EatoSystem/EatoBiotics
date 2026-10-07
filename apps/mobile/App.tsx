@@ -1,16 +1,76 @@
+import { useCallback, useEffect, useState } from "react"
 import { StatusBar } from "expo-status-bar"
+import * as Linking from "expo-linking"
 import { StyleSheet, Text, View } from "react-native"
 import { MEMBER } from "@eatobiotics/vocabulary"
+import { completeMagicLink, isAuthCallbackUrl } from "./src/auth/deep-link"
+import { getMobileSupabase, readSession, signOut } from "./src/auth/session"
+import { SignInScreen } from "./src/screens/SignInScreen"
+import { TodayScreen } from "./src/screens/TodayScreen"
 
 /**
- * P0 scaffold. No Today / Meal / Check-in / Progress screens yet — those
- * wait until the §5.3 demonstration is red-then-green (this PR) and P1
- * lands auth + GET /api/mobile/v1/today.
+ * P1 companion shell. Signed-in members see Today from GET /api/mobile/v1/today.
+ * Signed-out members see the holding copy plus magic-link sign-in.
  *
  * This file is in the claims corpus. A personal per-Biotic bar, band,
  * body-state or "Your Prebiotics" sentence here must fail CI.
  */
 export default function App() {
+  const [ready, setReady] = useState(false)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+
+  const hydrate = useCallback(async () => {
+    const session = await readSession()
+    setAccessToken(session?.access_token ?? null)
+    setReady(true)
+  }, [])
+
+  useEffect(() => {
+    void hydrate()
+    const supabase = getMobileSupabase()
+    if (!supabase) return
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null)
+    })
+    return () => data.subscription.unsubscribe()
+  }, [hydrate])
+
+  useEffect(() => {
+    async function onUrl(url: string | null) {
+      if (!url || !isAuthCallbackUrl(url)) return
+      const result = await completeMagicLink(url)
+      if (result.ok) await hydrate()
+    }
+    const sub = Linking.addEventListener("url", (event) => {
+      void onUrl(event.url)
+    })
+    void Linking.getInitialURL().then((url) => void onUrl(url))
+    return () => sub.remove()
+  }, [hydrate])
+
+  async function onSignOut() {
+    await signOut()
+    setAccessToken(null)
+  }
+
+  if (!ready) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.mark}>EatoBiotics</Text>
+        <StatusBar style="auto" />
+      </View>
+    )
+  }
+
+  if (accessToken) {
+    return (
+      <>
+        <TodayScreen accessToken={accessToken} onSignOut={() => void onSignOut()} />
+        <StatusBar style="auto" />
+      </>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.mark}>EatoBiotics</Text>
@@ -19,6 +79,7 @@ export default function App() {
         {MEMBER} access is read on the server. Nothing is sold in this app.
       </Text>
       <Text style={styles.hold}>Today, meals and check-in land in later phases.</Text>
+      <SignInScreen />
       <StatusBar style="auto" />
     </View>
   )

@@ -1,13 +1,9 @@
 /**
  * Contract for GET /api/mobile/v1/today.
  *
- * ── P0 STATUS ──────────────────────────────────────────────────────────────
- * Documented here. Not implemented. There is no app/api/mobile/v1/today
- * route in this PR, and there must not be: P1 lands the endpoint after auth.
- *
- * The server already composes this object for the web Today / this-week
- * pages. The app renders a result it did not compute. Five routes assembled
- * client-side is how a selector hides.
+ * Implemented in `app/api/mobile/v1/today`. Parsed on both sides. The app
+ * renders a result it did not compute. Five routes assembled client-side
+ * is how a selector hides.
  *
  * Explicitly absent from this payload:
  *   - personal per-Biotic numbers, bars, bands, colour-states, body-states
