@@ -8,6 +8,7 @@
     "@eatobiotics/vocabulary": "file:../../packages/vocabulary",
     "@supabase/supabase-js": "^2.99.3",
     "expo": "~57.0.27",
+    "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.11",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~57.0.1",

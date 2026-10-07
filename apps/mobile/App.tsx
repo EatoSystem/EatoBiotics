@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native"
 import { MEMBER } from "@eatobiotics/vocabulary"
 import { completeMagicLink, isAuthCallbackUrl } from "./src/auth/deep-link"
 import { getMobileSupabase, readSession, signOut } from "./src/auth/session"
+import { MealScreen } from "./src/screens/MealScreen"
 import { SignInScreen } from "./src/screens/SignInScreen"
 import { TodayScreen } from "./src/screens/TodayScreen"
 
@@ -18,6 +19,7 @@ import { TodayScreen } from "./src/screens/TodayScreen"
 export default function App() {
   const [ready, setReady] = useState(false)
   const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [screen, setScreen] = useState<"today" | "meal">("today")
 
   const hydrate = useCallback(async () => {
     const session = await readSession()
@@ -51,6 +53,7 @@ export default function App() {
   async function onSignOut() {
     await signOut()
     setAccessToken(null)
+    setScreen("today")
   }
 
   if (!ready) {
@@ -62,10 +65,27 @@ export default function App() {
     )
   }
 
+  if (accessToken && screen === "meal") {
+    return (
+      <>
+        <MealScreen
+          accessToken={accessToken}
+          onBack={() => setScreen("today")}
+          onSignOut={() => void onSignOut()}
+        />
+        <StatusBar style="auto" />
+      </>
+    )
+  }
+
   if (accessToken) {
     return (
       <>
-        <TodayScreen accessToken={accessToken} onSignOut={() => void onSignOut()} />
+        <TodayScreen
+          accessToken={accessToken}
+          onLogMeal={() => setScreen("meal")}
+          onSignOut={() => void onSignOut()}
+        />
         <StatusBar style="auto" />
       </>
     )

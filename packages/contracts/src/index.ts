@@ -39,6 +39,18 @@ export {
 } from "./analyse-meal"
 
 export {
+  presentMealScanResult,
+  postAnalyseMeal,
+  createMealScanController,
+  MEAL_SCAN_PERSIST_KEY,
+  type AnalyseMealFailureReason,
+  type AnalyseMealResult,
+  type MealScanView,
+  type MealScanStatus,
+  type MealScanSnapshot,
+} from "./analyse-meal-client"
+
+export {
   resolvedTierSchema,
   streakSchema,
   nextStepSchema,

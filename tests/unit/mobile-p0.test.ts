@@ -47,6 +47,7 @@ describe("P0 mobile companion — capability graph, not a second product", () =>
   it("lists every named mobile surface and each file exists", () => {
     expect(MOBILE_SURFACES).toContain("apps/mobile/App.tsx")
     expect(MOBILE_SURFACES).toContain("apps/mobile/src/config.ts")
+    expect(MOBILE_SURFACES).toContain("apps/mobile/src/screens/MealScreen.tsx")
     for (const file of MOBILE_SURFACES) {
       expect(existsSync(file), `missing ${file}`).toBe(true)
     }
@@ -130,9 +131,12 @@ describe("P0 mobile companion — capability graph, not a second product", () =>
       "apps/mobile/src/auth/magic-link.ts",
       "apps/mobile/src/auth/secure-storage.ts",
       "apps/mobile/src/auth/session.ts",
+      "apps/mobile/src/api/analyse-meal.ts",
+      "apps/mobile/src/screens/MealScreen.tsx",
       "apps/mobile/src/screens/SignInScreen.tsx",
       "apps/mobile/src/screens/TodayScreen.tsx",
       "apps/mobile/src/sync/check-in.ts",
+      "apps/mobile/src/sync/meal-scan.ts",
       "apps/mobile/src/sync/persist.ts",
     ])
     for (const file of present) {

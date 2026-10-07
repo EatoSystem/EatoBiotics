@@ -8,14 +8,28 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Take a photo of your meal to analyse it.",
+          "photosPermission": "Choose a photo of your meal to analyse it."
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.eatobiotics.app"
+      "bundleIdentifier": "com.eatobiotics.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take a photo of your meal to analyse it.",
+        "NSPhotoLibraryUsageDescription": "Choose a photo of your meal to analyse it."
+      }
     },
     "android": {
       "package": "com.eatobiotics.app",
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
