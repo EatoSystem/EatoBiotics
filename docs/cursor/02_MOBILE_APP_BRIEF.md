@@ -3,6 +3,10 @@
 A brief for Cursor. Read [`00_PROJECT_BRIEF.md`](./00_PROJECT_BRIEF.md) first;
 this document assumes the product rule, the programme state and the constraints.
 
+The P0 capability graph (what native v1 owns, which bearer routes it may
+call, and what this PR does not implement) is
+[`03_MOBILE_CAPABILITY_GRAPH.md`](./03_MOBILE_CAPABILITY_GRAPH.md).
+
 **Decisions already taken.** These are settled, not open for the brief to
 revisit:
 

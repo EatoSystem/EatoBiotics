@@ -41,6 +41,7 @@ Paths resolve from this directory, so any checkout works.
 | `run_s7.py` | 900–929 | Step 7 — the €49 commercial journey |
 | `run_s7b.py` | 930–997 | Step 7B — holding page, claims remediation, AI prompts |
 | `run_s3a.py` | — | Phase 4B-S3A. **Inapplicable on this branch** — its targets live on the unmerged PR #274 |
+| `run_mobile.py` | 1600–1605 | P0 mobile companion — RN per-Biotic bar must fail |
 
 ## Two limits, stated rather than discovered
 

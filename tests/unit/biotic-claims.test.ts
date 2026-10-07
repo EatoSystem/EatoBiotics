@@ -44,12 +44,14 @@
 import { describe, it, expect } from "vitest"
 import { readFileSync, writeFileSync, existsSync, rmSync } from "node:fs"
 import { execSync } from "node:child_process"
+import { PERSONAL_BIOTIC_STATE } from "@eatobiotics/claims"
 import {
   MARKETING_SURFACES,
   AI_PROMPT_SURFACES,
   ACCOUNT_SURFACES,
   ASSESSMENT_SURFACES,
   REPORT_SURFACES,
+  MOBILE_SURFACES,
 } from "./customer-surfaces"
 import { reachableSourceFiles, servablePageCount } from "./reachable-surfaces"
 
@@ -365,6 +367,9 @@ const GUARDED_SURFACES = [
         ...AGENT_LOOP_SURFACES,
       ].includes(f),
   ),
+  // P0 mobile companion. Named list; the same nine PERSONAL_BIOTIC_STATE
+  // rules run over it. A per-Biotic bar in RN must fail here.
+  ...MOBILE_SURFACES,
 ]
 
 /** English dictionary copy is checked separately — same rules, one locale. */
@@ -549,6 +554,7 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       ["ACCOUNT_SURFACES", ACCOUNT_SURFACES],
       ["ASSESSMENT_SURFACES", ASSESSMENT_SURFACES],
       ["REPORT_SURFACES", REPORT_SURFACES],
+      ["MOBILE_SURFACES", MOBILE_SURFACES],
     ]
     for (const [name, list] of tranches) {
       expect(list.length, `${name} is empty`).toBeGreaterThan(0)
@@ -647,6 +653,11 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "lib/report/build-food-system-report.ts",
       "lib/report/framing.ts",
       "lib/report/subscores.ts",
+    ])
+
+    expect([...MOBILE_SURFACES].sort()).toEqual([
+      "apps/mobile/App.tsx",
+      "apps/mobile/src/config.ts",
     ])
   })
 
@@ -986,17 +997,18 @@ describe("fibre is never classified as prebiotic", () => {
  * the product's score, it is computed by the same arithmetic as ever, and
  * "Your Biotics Score is 74/100" is a true statement about a thing we measure.
  */
-const BIOTICS = "(?:Prebiotics|Probiotics|Postbiotics)"
-
-/**
- * The same three, plus the lowercase and singular forms.
+/*
+ * The regex fragments that build PERSONAL_BIOTIC_STATE live in
+ * packages/claims so web and React Native share one list:
+ *
+ *   BIOTICS     (?:Prebiotics|Probiotics|Postbiotics)
+ *   BIOTICS_ANY the same three, plus lowercase and singular forms
  *
  * `BIOTICS` alone misses "your probiotic side" (menu-scan.tsx) and "your
  * prebiotic intake" — a Biotic attributed to a person reads the same whether
  * the word is capitalised or singular, and the adjectival form is the one a
  * writer reaches for when describing somebody.
  */
-const BIOTICS_ANY = "(?:Prebiotics|Probiotics|Postbiotics|prebiotics?|probiotics?|postbiotics?)"
 
 /* ════════════════════════════════════════════════════════════════════════════
    GATE 3.6 — the grammar these rules were missing.
@@ -1043,53 +1055,14 @@ const BIOTICS_ANY = "(?:Prebiotics|Probiotics|Postbiotics|prebiotics?|probiotics
    requires `your` IMMEDIATELY before the Biotic rather than anywhere near it.
    All fifteen educational and science-contract phrasings below pass.
    ════════════════════════════════════════════════════════════════════════════ */
-const PERSONAL_BIOTIC_STATE: [string, RegExp][] = [
-  ["a personal score attributed to a Biotic",
-   new RegExp(String.raw`\b(?:Your|My|your|my)\s+${BIOTICS}\s+score\b`)],
-  ["a Biotic given a numeric value", new RegExp(String.raw`\b${BIOTICS}\b[^.!?\n]{0,30}\b\d{1,3}\s*(?:\/\s*100|out of 100)\b`)],
-  ["a Biotic described as high or low for a person",
-   new RegExp(String.raw`\b(?:low|high|weak|strong)\s+${BIOTICS}\b`)],
-
-  // Gate 3.6. Each one is proven against a real shipped sentence below.
-  ["a Biotic claimed as a person's own",
-   new RegExp(String.raw`\b(?:[Yy]our|[Mm]y)\s+${BIOTICS_ANY}\b`)],
-  ["a Biotic given a comparative or directional verdict",
-   new RegExp(String.raw`\b${BIOTICS}\b[^.!?\n]{0,40}\b(?:strongest|weakest|most room to grow|climbed|slipped|trending|settled|appears? lower|appears? higher)\b`)],
-  ["a comparative verdict placed before a Biotic",
-   new RegExp(String.raw`\b(?:strongest|weakest)\s+${BIOTICS}\b`)],
-  ["a Biotic as the subject of a personal state verb",
-   new RegExp(String.raw`\b${BIOTICS}\s+(?:remains?|appears?|looks?|seems?)\b`)],
-  ["a Biotic fed, boosted or improved for a person",
-   new RegExp(String.raw`\b(?:fed|feeds|feeding|boost\w*|improv\w*|replenish\w*|rais\w*)\b[^.!?\n]{0,25}\b(?:your|my)\s+${BIOTICS_ANY}\b`)],
-  ["a person's own meals characterised as a Biotic",
-   new RegExp(String.raw`\b(?:[Yy]our|[Mm]y)\s+(?:\w+\s+){0,2}(?:meals?|plate|diet|food)\b[^.!?\n]{0,30}\b${BIOTICS}\b`)],
-
-  /*
-   * ── A RULE CONSIDERED AND REJECTED, WHICH IS WORTH THE LINES ─────────────
-   *
-   * Case 1088 slipped: `meal-reveal.tsx`'s journey caption read "Postbiotics
-   * produced", asserting that this person's meal made postbiotics, and it
-   * matched nothing here — no state verb, no number, no possessive, no
-   * comparative.
-   *
-   * The obvious fix was a general rule, `${BIOTICS}\s+produced`. It was
-   * written, run, and withdrawn, because it flagged
-   * `app/biotics/page.tsx:79`:
-   *
-   *   { step: "05", label: "Postbiotics produced", desc: "Butyrate, vitamins" }
-   *
-   * That is step five of an impersonal five-step diagram of how the biology
-   * works, on the page whose whole job is teaching it. The two strings are
-   * BYTE-IDENTICAL; what differs is whether the surface is describing a
-   * process or describing this reader. No regex can tell those apart, and a
-   * rule that deleted the second would be the identity risk this sweep exists
-   * to avoid — the same trap as the "living food system" brand lens in
-   * Tranche 2A, caught that time before it shipped.
-   *
-   * So the claim is pinned PER FILE below instead, which is the instrument for
-   * an invariant about one surface's wiring rather than about English.
-   */
-]
+/*
+ * PERSONAL_BIOTIC_STATE is imported from @eatobiotics/claims so a React
+ * Native client cannot invent a ninth rule. The rejected `${BIOTICS}\s+produced`
+ * widening (case 1088 / app/biotics/page.tsx "Postbiotics produced") stays
+ * rejected: education and a personal claim can be byte-identical, and a rule
+ * that deleted the educational diagram would be the identity risk this sweep
+ * exists to avoid.
+ */
 
 /* ════════════════════════════════════════════════════════════════════════════
    EXPERIENCE 0R-1 — THE DEBT THE WIDENED CORPUS EXPOSED.

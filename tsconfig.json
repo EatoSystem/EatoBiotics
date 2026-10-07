@@ -25,6 +25,15 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@eatobiotics/vocabulary": [
+        "./packages/vocabulary/src/index.ts"
+      ],
+      "@eatobiotics/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
+      "@eatobiotics/claims": [
+        "./packages/claims/src/index.ts"
       ]
     }
   },
@@ -37,6 +46,7 @@
   ],
   "exclude": [
     "node_modules",
-    "remotion"
+    "remotion",
+    "apps/mobile"
   ]
 }
