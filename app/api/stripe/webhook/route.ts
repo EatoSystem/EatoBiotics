@@ -17,18 +17,68 @@ import { reportError } from "@/lib/report-error"
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function field<T>(obj: unknown, key: string): T | undefined { return (obj as any)?.[key] as T | undefined }
 
+function invoiceSubscriptionId(invoice: Stripe.Invoice): string | undefined {
+  const sub = invoice.parent?.subscription_details?.subscription
+    ?? field<string | Stripe.Subscription>(invoice, "subscription")
+  return typeof sub === "string" ? sub : sub?.id
+}
+
+async function requireDb<T>(query: PromiseLike<{ data: T; error: { message: string } | null }>): Promise<T> {
+  const { data, error } = await query
+  if (error) throw new Error(`[webhook] Database operation failed: ${error.message}`)
+  return data
+}
+
+type BillingProfile = {
+  id: string
+  membership_tier: string | null
+  stripe_subscription_id: string | null
+  membership_started_at?: string | null
+  membership_status?: string | null
+  trial_expires_at?: string | null
+}
+
+function isSuperseded(profile: BillingProfile, sub: Stripe.Subscription, rejectCancelled = true): boolean {
+  const startedAt = Date.parse(profile.membership_started_at ?? "")
+  const incomingAt = sub.created * 1000
+  if (Number.isFinite(startedAt) && incomingAt < startedAt) return true
+  if (profile.stripe_subscription_id && profile.stripe_subscription_id !== sub.id) {
+    if (!Number.isFinite(startedAt) || !Number.isFinite(incomingAt) || incomingAt === startedAt) {
+      throw new Error("Cannot establish subscription ordering; retry required")
+    }
+  }
+  return rejectCancelled && !profile.stripe_subscription_id && profile.membership_status === "cancelled"
+    && Number.isFinite(startedAt) && incomingAt <= startedAt
+}
+
+async function updateMembership(profile: BillingProfile, updates: Record<string, unknown>) {
+  const supabase = getSupabase()
+  if (!supabase) throw new Error("Database not configured")
+  let query = supabase.from("profiles").update(updates, { count: "exact" }).eq("id", profile.id)
+  query = profile.membership_tier === null
+    ? query.is("membership_tier", null) : query.eq("membership_tier", profile.membership_tier)
+  query = profile.stripe_subscription_id
+    ? query.eq("stripe_subscription_id", profile.stripe_subscription_id) : query.is("stripe_subscription_id", null)
+  if (profile.trial_expires_at !== undefined) {
+    query = profile.trial_expires_at === null
+      ? query.is("trial_expires_at", null) : query.eq("trial_expires_at", profile.trial_expires_at)
+  }
+  const { error, count } = await query
+  if (error) throw new Error(`[webhook] Membership update failed: ${error.message}`)
+  if (count !== 1) throw new Error("Membership changed during webhook processing; retry required")
+}
+
 // Next.js must NOT parse the body — we need the raw bytes for signature verification
 
 /** Look up a profile by Stripe customer ID */
 async function getProfileByCustomerId(customerId: string) {
   const supabase = getSupabase()
-  if (!supabase) return null
-  const { data } = await supabase
+  if (!supabase) throw new Error("Database not configured")
+  return requireDb(supabase
     .from("profiles")
-    .select("id")
+    .select("id, membership_tier, stripe_subscription_id, membership_started_at, membership_status")
     .eq("stripe_customer_id", customerId)
-    .single()
-  return data
+    .maybeSingle())
 }
 
 /** Write a subscription_events row */
@@ -40,14 +90,18 @@ async function logEvent(opts: {
   stripeEventId: string
 }) {
   const supabase = getSupabase()
-  if (!supabase) return
-  await supabase.from("subscription_events").insert({
+  if (!supabase) throw new Error("Database not configured")
+  const existing = await requireDb(supabase.from("subscription_events")
+    .select("stripe_event_id").eq("user_id", opts.userId).eq("stripe_event_id", opts.stripeEventId)
+    .limit(1).maybeSingle())
+  if (existing) return
+  await requireDb(supabase.from("subscription_events").insert({
     user_id:         opts.userId,
     event_type:      opts.eventType,
     from_tier:       opts.fromTier ?? null,
     to_tier:         opts.toTier   ?? null,
     stripe_event_id: opts.stripeEventId,
-  })
+  }))
 }
 
 export async function POST(req: NextRequest) {
@@ -77,7 +131,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 })
   }
 
-  /* ══ IDEMPOTENCY: READ FAILS CLOSED, THEN CLAIM BEFORE ANY SIDE EFFECT ════
+  /* ══ IDEMPOTENCY: FAIL CLOSED, RECORD COMPLETION AFTER DURABLE WRITES ═════
    *
    * Stripe redelivers on retry, and two deliveries of one event can overlap.
    *
@@ -89,7 +143,7 @@ export async function POST(req: NextRequest) {
    * error, so any transient read failure silently read as "not processed yet"
    * and re-ran everything — fail-open idempotency.
    *
-   * Both are repaired here:
+   * The read remains fail-closed. Completion ordering is deliberately different:
    *
    *   1. A read error is fatal. If the store cannot say whether this event was
    *      handled, the safe answer is not "run all the side effects again" —
@@ -97,34 +151,37 @@ export async function POST(req: NextRequest) {
    *      swallow with "if the table isn't present yet"; `stripe_processed_
    *      events` has been in production since Migration 17, verified.)
    *
-   *   2. The marker is INSERTED AS A CLAIM before any side effect. The primary
-   *      key makes that atomic, so exactly one of two concurrent deliveries
-   *      can win it; the loser sees 23505 and stops. The winner owns the
-   *      outcome — and if its handler fails, it DELETES the claim on the way
-   *      out so Stripe's retry can claim it cleanly.
+   *   2. Previously the marker was INSERTED AS A CLAIM before any side effect.
+   *      The primary key excluded concurrent deliveries, but a crash or failed
+   *      compensating delete permanently marked unfinished work as processed.
+   *      A duplicate could even receive 200 while the claimant was failing.
+   *      Now every required database operation is checked, and the marker is
+   *      inserted only AFTER they succeed. No failed operation needs cleanup.
+   *      Only the completion-marker winner sends optional email and analytics.
    *
    * ══ THE RESIDUAL WINDOW, STATED RATHER THAN IMPLIED ══════════════════════
    *
-   * If the process dies between claiming and completing, no compensating
-   * delete runs and that event's side effects are lost. Closing that needs an
-   * explicit claimed/completed state with takeover-after-staleness, which
-   * needs a column on `stripe_processed_events`, which is a migration — and
-   * migrations are drafted, never applied by an agent session. It is not
-   * written here on the strength of a hypothetical.
+   * Completion-only markers cannot serialize durable writes across instances.
+   * Profile writes use optimistic guards; paid rows preserve progress; audit
+   * lookup prevents sequential retry duplicates but is NOT an atomic unique
+   * constraint. Concurrent audit duplicates remain possible. Exactly-once
+   * durable processing needs a transaction or leased claimed/completed state,
+   * which requires a migration, excluded from this change. A crash after the
+   * completion marker can lose optional email/analytics; an outbox is needed
+   * for guaranteed delivery. Historical early claims are indistinguishable
+   * from completed rows and are not repaired by this code.
    *
    * What bounds the damage today: the one commercially load-bearing effect —
    * the 30-day entitlement — is recoverable without this event, because the
    * paid row carries the buyer's email and `reconcileAccountAfterAuth` grants
    * the purchase-anchored window at their next sign-in.
    */
-  const { data: alreadyProcessed, error: idempotencyReadError } = await supabase
-    .from("stripe_processed_events")
-    .select("event_id")
-    .eq("event_id", event.id)
-    .maybeSingle()
-
-  if (idempotencyReadError) {
-    console.error("[webhook] idempotency read failed:", idempotencyReadError.message)
+  let alreadyProcessed
+  try {
+    alreadyProcessed = await requireDb(supabase.from("stripe_processed_events")
+      .select("event_id").eq("event_id", event.id).maybeSingle())
+  } catch (err) {
+    console.error("[webhook] idempotency read failed:", err)
     return NextResponse.json({ error: "Idempotency store unavailable" }, { status: 500 })
   }
 
@@ -132,20 +189,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, deduped: true })
   }
 
-  const { error: claimError } = await supabase
-    .from("stripe_processed_events")
-    .insert({ event_id: event.id, event_type: event.type })
-
-  if (claimError) {
-    // 23505: a concurrent delivery claimed it first. That run owns the
-    // outcome, including retrying if it fails, so this one stops here.
-    if (claimError.code === "23505") {
-      return NextResponse.json({ received: true, deduped: true })
-    }
-    console.error("[webhook] could not claim event:", claimError.message)
-    return NextResponse.json({ error: "Idempotency store unavailable" }, { status: 500 })
-  }
-
+  const afterCompletion: Array<() => Promise<void>> = []
   try {
     switch (event.type) {
 
@@ -156,36 +200,41 @@ export async function POST(req: NextRequest) {
         if (!isCheckoutSessionSettled(session)) break
 
         // Identify the user via customer_email or user_id from metadata
-        const summary = await resolvePaidReportSummary(session, supabase)
+        const summary = await resolvePaidReportSummary(session, supabase, { failOnReadError: true })
         const email = summary?.email ?? session.customer_details?.email ?? null
         if (!email) break
 
         if (summary) {
-          await supabase.from("deep_assessments").upsert(
+          const reportData = {
+            stripe_session_id: session.id,
+            email: email.toLowerCase().trim(),
+            tier: summary.tier,
+            free_scores: {
+              overall: summary.overall,
+              subScores: summary.subScores,
+              profile: summary.profile,
+              foundationType: summary.foundationType ?? null,
+              selectedAddon: summary.selectedAddon ?? null,
+            },
+          }
+          await requireDb(supabase.from("deep_assessments").upsert(
             {
-              stripe_session_id: session.id,
-              email: email.toLowerCase().trim(),
-              tier: summary.tier,
-              free_scores: {
-                overall: summary.overall,
-                subScores: summary.subScores,
-                profile: summary.profile,
-                foundationType: summary.foundationType ?? null,
-                selectedAddon: summary.selectedAddon ?? null,
-              },
+              ...reportData,
               status: "in_progress",
               updated_at: new Date().toISOString(),
             },
-            { onConflict: "stripe_session_id" }
-          )
+            { onConflict: "stripe_session_id", ignoreDuplicates: true }
+          ))
+          await requireDb(supabase.from("deep_assessments").update(reportData)
+            .eq("stripe_session_id", session.id))
         }
 
         // Find user profile by email
-        const { data: profile } = await supabase
+        const profile = await requireDb(supabase
           .from("profiles")
-          .select("id, membership_tier, trial_expires_at")
+          .select("id, membership_tier, trial_expires_at, stripe_subscription_id")
           .eq("email", email)
-          .maybeSingle()
+          .maybeSingle())
 
         // If the buyer has no account yet, access can't be granted now — it's
         // activated the first time they sign in (see lib/auth/reconcile-account.ts).
@@ -217,30 +266,29 @@ export async function POST(req: NextRequest) {
         )
         let trialGranted = false
         if (decision.activate) {
-          await supabase
-            .from("profiles")
-            .update({
+          await updateMembership(profile, {
               membership_tier:   "trial",
               membership_status: "active",
               trial_expires_at:  decision.expiresAt,
             })
-            .eq("id", profile.id)
           trialGranted = true
         }
 
         // Revenue analytics: report purchase + trial start
-        await logServerEvent("report_purchased", profile.id, {
-          tier:            summary?.tier ?? "personal",
-          amount:          String((session.amount_total ?? 0) / 100),
-          currency:        (session.currency ?? "eur").toUpperCase(),
-          stripe_event_id: event.id,
-        })
-        if (trialGranted) {
-          await logServerEvent("trial_started", profile.id, {
-            source:          "report_purchase",
+        afterCompletion.push(async () => {
+          await logServerEvent("report_purchased", profile.id, {
+            tier:            summary?.tier ?? "personal",
+            amount:          String((session.amount_total ?? 0) / 100),
+            currency:        (session.currency ?? "eur").toUpperCase(),
             stripe_event_id: event.id,
           })
-        }
+          if (trialGranted) {
+            await logServerEvent("trial_started", profile.id, {
+              source:          "report_purchase",
+              stripe_event_id: event.id,
+            })
+          }
+        })
         break
       }
 
@@ -254,12 +302,11 @@ export async function POST(req: NextRequest) {
 
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
+        if (isSuperseded(profile, sub)) break
 
         const founding = isFoundingMember(new Date(sub.created * 1000))
 
-        await supabase
-          .from("profiles")
-          .update({
+        await updateMembership(profile, {
             membership_tier:          tier,
             membership_status:        "active",
             stripe_subscription_id:   sub.id,
@@ -268,7 +315,6 @@ export async function POST(req: NextRequest) {
             is_founding_member:       founding,
             trial_expires_at:         null,  // clear any pending trial
           })
-          .eq("id", profile.id)
 
         await logEvent({
           userId:      profile.id,
@@ -278,42 +324,44 @@ export async function POST(req: NextRequest) {
           stripeEventId: event.id,
         })
 
-        // Welcome email
-        try {
-          const resendKey = process.env.RESEND_API_KEY
-          const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
-          if (resendKey) {
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("email, name")
-              .eq("id", profile.id)
-              .single()
-            if (prof?.email) {
-              // New-subscription welcome (transactional) — bypasses the marketing opt-out.
-              await sendEmail({
-                from:    `EatoBiotics <${emailFrom}>`,
-                to:      prof.email as string,
-                subject: `Welcome to EatoBiotics ${tier.charAt(0).toUpperCase() + tier.slice(1)} 🎉`,
-                html:    welcomeSubscriptionEmailHtml({ name: (prof.name as string | null) ?? null, tier }),
-                skipOptOutCheck: true,
-              })
+        afterCompletion.push(async () => {
+          // Welcome email
+          try {
+            const resendKey = process.env.RESEND_API_KEY
+            const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
+            if (resendKey) {
+              const { data: prof } = await supabase
+                .from("profiles")
+                .select("email, name")
+                .eq("id", profile.id)
+                .single()
+              if (prof?.email) {
+                // New-subscription welcome (transactional) — bypasses the marketing opt-out.
+                await sendEmail({
+                  from:    `EatoBiotics <${emailFrom}>`,
+                  to:      prof.email as string,
+                  subject: `Welcome to EatoBiotics ${tier.charAt(0).toUpperCase() + tier.slice(1)} 🎉`,
+                  html:    welcomeSubscriptionEmailHtml({ name: (prof.name as string | null) ?? null, tier }),
+                  skipOptOutCheck: true,
+                })
+              }
             }
+          } catch (emailErr) {
+            console.error("[webhook] Welcome email failed:", emailErr)
+            // Non-fatal — don't throw
           }
-        } catch (emailErr) {
-          console.error("[webhook] Welcome email failed:", emailErr)
-          // Non-fatal — don't throw
-        }
 
-        // Statsig: subscription_started — fires once when a new subscription is created.
-        // TODO: Replace profile.id with the Supabase user ID linked to a Statsig userID
-        //       once you call client.updateUser({ userID: user.id }) after login.
-        await logServerEvent("subscription_started", profile.id, {
-          tier,
-          amount:             String((sub.items.data[0]?.price.unit_amount ?? 0) / 100),
-          currency:           (sub.items.data[0]?.price.currency ?? "eur").toUpperCase(),
-          interval:           sub.items.data[0]?.price.recurring?.interval ?? "month",
-          is_founding_member: String(founding),
-          stripe_event_id:    event.id,
+          // Statsig: subscription_started — fires once when a new subscription is created.
+          // TODO: Replace profile.id with the Supabase user ID linked to a Statsig userID
+          //       once you call client.updateUser({ userID: user.id }) after login.
+          await logServerEvent("subscription_started", profile.id, {
+            tier,
+            amount:             String((sub.items.data[0]?.price.unit_amount ?? 0) / 100),
+            currency:           (sub.items.data[0]?.price.currency ?? "eur").toUpperCase(),
+            interval:           sub.items.data[0]?.price.recurring?.interval ?? "month",
+            is_founding_member: String(founding),
+            stripe_event_id:    event.id,
+          })
         })
         break
       }
@@ -327,14 +375,10 @@ export async function POST(req: NextRequest) {
 
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
+        if (isSuperseded(profile, sub)) break
 
         // Fetch existing tier for change detection
-        const { data: existing } = await supabase
-          .from("profiles")
-          .select("membership_tier")
-          .eq("id", profile.id)
-          .single()
-        const oldTier = (existing?.membership_tier as string | null) ?? null
+        const oldTier = (profile.membership_tier as string | null) ?? null
 
         const statusMap: Record<Stripe.Subscription.Status, string> = {
           active:             "active",
@@ -352,11 +396,12 @@ export async function POST(req: NextRequest) {
          * `stripe_subscription_id`, `membership_started_at` and
          * `is_founding_member` used to be written ONLY by
          * `customer.subscription.created`. That was survivable while a failed
-         * handler left the event unmarked and Stripe's retry re-ran it — but
-         * the claim above is taken BEFORE the side effects, so a process that
-         * dies mid-handler leaves the event marked handled and those fields
-         * never written. Founding-member status is a real benefit; losing it
-         * to a crash is not acceptable, and it is not analytics.
+         * handler left the event unmarked and Stripe's retry re-ran it. The
+         * previous early claim could survive a mid-handler crash and leave
+         * those fields never written. Founding-member status is a real
+         * benefit; losing it to a crash is not acceptable, and it is not
+         * analytics. Keep convergence even with completion-only markers: it
+         * also repairs historical early claims that were never cleaned up.
          *
          * Every one of them is derivable from the Stripe object this branch is
          * already holding, so membership state converges to Stripe's truth
@@ -383,7 +428,7 @@ export async function POST(req: NextRequest) {
         // €49 report entitlement that has nothing to do with this subscription.
         if (status === "active") updates.trial_expires_at = null
 
-        await supabase.from("profiles").update(updates).eq("id", profile.id)
+        await updateMembership(profile, updates)
 
         // Determine event type for logging
         let eventType = "updated"
@@ -403,11 +448,11 @@ export async function POST(req: NextRequest) {
 
         // Analytics: only surface real tier changes (not status-only updates).
         if (eventType === "upgraded" || eventType === "downgraded") {
-          await logServerEvent(`subscription_${eventType}`, profile.id, {
+          afterCompletion.push(() => logServerEvent(`subscription_${eventType}`, profile.id, {
             from_tier:       oldTier ?? "unknown",
             to_tier:         newTier ?? "unknown",
             stripe_event_id: event.id,
-          })
+          }))
         }
         break
       }
@@ -419,80 +464,76 @@ export async function POST(req: NextRequest) {
 
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
+        if (profile.stripe_subscription_id && profile.stripe_subscription_id !== sub.id) break
+        if (isSuperseded(profile, sub, false)) break
 
-        const { data: existing } = await supabase
-          .from("profiles")
-          .select("membership_tier")
-          .eq("id", profile.id)
-          .single()
-
-        await supabase
-          .from("profiles")
-          .update({
+        await updateMembership(profile, {
             membership_tier:        "free",
             membership_status:      "cancelled",
             stripe_subscription_id: null,
             membership_expires_at:  (() => { const pe = field<number>(sub, "current_period_end"); return pe ? new Date(pe * 1000).toISOString() : null })(),
           })
-          .eq("id", profile.id)
 
         await logEvent({
           userId:       profile.id,
           eventType:    "cancelled",
-          fromTier:     existing?.membership_tier ?? null,
+          fromTier:     profile.membership_tier ?? null,
           toTier:       "free",
           stripeEventId: event.id,
         })
 
-        await logServerEvent("subscription_cancelled", profile.id, {
-          from_tier:       (existing?.membership_tier as string | null) ?? "unknown",
-          stripe_event_id: event.id,
-        })
+        afterCompletion.push(async () => {
+          await logServerEvent("subscription_cancelled", profile.id, {
+            from_tier:       (profile.membership_tier as string | null) ?? "unknown",
+            stripe_event_id: event.id,
+          })
 
-        // Goodbye / win-back email
-        try {
-          const resendKey = process.env.RESEND_API_KEY
-          const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
-          if (resendKey) {
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("email, name")
-              .eq("id", profile.id)
-              .single()
-            if (prof?.email) {
-              const { subject, html } = cancellationEmail({
-                name: (prof.name as string | null) ?? null,
-                tier: (existing?.membership_tier as string | null) ?? "membership",
-              })
-              // Cancellation confirmation (transactional account email).
-              await sendEmail({
-                from: `EatoBiotics <${emailFrom}>`,
-                to:   prof.email as string,
-                subject,
-                html,
-                skipOptOutCheck: true,
-              })
+          // Goodbye / win-back email
+          try {
+            const resendKey = process.env.RESEND_API_KEY
+            const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
+            if (resendKey) {
+              const { data: prof } = await supabase
+                .from("profiles")
+                .select("email, name")
+                .eq("id", profile.id)
+                .single()
+              if (prof?.email) {
+                const { subject, html } = cancellationEmail({
+                  name: (prof.name as string | null) ?? null,
+                  tier: (profile.membership_tier as string | null) ?? "membership",
+                })
+                // Cancellation confirmation (transactional account email).
+                await sendEmail({
+                  from: `EatoBiotics <${emailFrom}>`,
+                  to:   prof.email as string,
+                  subject,
+                  html,
+                  skipOptOutCheck: true,
+                })
+              }
             }
+          } catch (emailErr) {
+            console.error("[webhook] Cancellation email failed:", emailErr)
+            // Non-fatal — don't throw
           }
-        } catch (emailErr) {
-          console.error("[webhook] Cancellation email failed:", emailErr)
-          // Non-fatal — don't throw
-        }
+        })
         break
       }
 
       // ── Payment failed ────────────────────────────────────────────────
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice
+        const subId = invoiceSubscriptionId(invoice)
+        if (!subId) break
         const customerId = invoice.customer as string
 
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
+        if (profile.stripe_subscription_id && subId !== profile.stripe_subscription_id) break
+        if (!profile.stripe_subscription_id && profile.membership_status === "cancelled") break
 
-        await supabase
-          .from("profiles")
-          .update({ membership_status: "past_due" })
-          .eq("id", profile.id)
+        await updateMembership(profile, { membership_status: "past_due" })
 
         await logEvent({
           userId:       profile.id,
@@ -505,28 +546,25 @@ export async function POST(req: NextRequest) {
       // ── Payment succeeded ─────────────────────────────────────────────
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice
+        const subId = invoiceSubscriptionId(invoice)
+        if (!subId) break
         const customerId = invoice.customer as string
 
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
-
-        // Fetch current subscription to get period end
-        const invoiceSub = field<string | Stripe.Subscription>(invoice, "subscription")
-        const subId = typeof invoiceSub === "string"
-          ? invoiceSub
-          : (invoiceSub as Stripe.Subscription | null)?.id
+        if (profile.stripe_subscription_id && subId !== profile.stripe_subscription_id) break
+        if (!profile.stripe_subscription_id && profile.membership_status === "cancelled") break
 
         const updates: Record<string, unknown> = { membership_status: "active" }
 
-        if (subId) {
-          const sub = await stripe.subscriptions.retrieve(subId)
-          const periodEnd = field<number>(sub, "current_period_end")
-          if (periodEnd) {
-            updates.membership_expires_at = new Date(periodEnd * 1000).toISOString()
-          }
+        // Fetch current subscription to get period end
+        const sub = await stripe.subscriptions.retrieve(subId)
+        const periodEnd = field<number>(sub, "current_period_end")
+        if (periodEnd) {
+          updates.membership_expires_at = new Date(periodEnd * 1000).toISOString()
         }
 
-        await supabase.from("profiles").update(updates).eq("id", profile.id)
+        await updateMembership(profile, updates)
         break
       }
 
@@ -537,25 +575,24 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     await reportError("stripe-webhook", err)
 
-    // Release the claim so Stripe's retry can take it. Without this the event
-    // would stay marked as handled while none of its side effects happened —
-    // turning a transient failure into permanent event loss, which is a worse
-    // bug than the duplicate processing the claim exists to prevent.
-    const { error: releaseError } = await supabase
-      .from("stripe_processed_events")
-      .delete()
-      .eq("event_id", event.id)
-    if (releaseError) {
-      console.error(
-        `[webhook] could not release the claim on ${event.id} after a handler failure:`,
-        releaseError.message,
-      )
-    }
-
     return NextResponse.json({ error: "Handler error" }, { status: 500 })
   }
 
-  // The claim was taken before processing and survives it, so there is nothing
-  // to record here — see the idempotency block above.
+  try {
+    const { error: markerError } = await supabase.from("stripe_processed_events")
+      .insert({ event_id: event.id, event_type: event.type })
+    if (markerError?.code === "23505") return NextResponse.json({ received: true, deduped: true })
+    if (markerError) throw new Error(`Completion marker failed: ${markerError.message}`)
+  } catch (err) {
+    await reportError("stripe-webhook", err)
+    return NextResponse.json({ error: "Idempotency store unavailable" }, { status: 500 })
+  }
+  for (const effect of afterCompletion) {
+    try {
+      await effect()
+    } catch (err) {
+      console.error("[webhook] Non-critical notification failed:", err)
+    }
+  }
   return NextResponse.json({ received: true })
 }

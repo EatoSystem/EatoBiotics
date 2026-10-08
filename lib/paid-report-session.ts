@@ -271,6 +271,7 @@ type IntentQuery = {
 export async function resolvePaidReportSummary(
   session: Stripe.Checkout.Session,
   supabase: PaidReportIntentReader | null,
+  options: { failOnReadError?: boolean } = {},
 ): Promise<PaidReportSummary | null> {
   const token = session.metadata?.[SUMMARY_TOKEN_KEY]
 
@@ -283,11 +284,14 @@ export async function resolvePaidReportSummary(
         .eq("stripe_session_id", session.id)
         .maybeSingle()
 
+      if (error && options.failOnReadError) throw new Error("Paid report intent read failed")
+
       const summary = (data as { summary?: unknown } | null)?.summary
       if (!error && summary) {
         return coercePaidReportSummary(summary)
       }
-    } catch {
+    } catch (err) {
+      if (options.failOnReadError) throw err
       // Fall through to the legacy path rather than failing a paid report on a
       // transport error.
     }
