@@ -42,6 +42,16 @@ function requireDbRead(error: DbError, operation: string): void {
   requireDb(error, operation)
 }
 
+/**
+ * True when the profile is already on a different Stripe subscription than the
+ * event's. A late or retried event for the old subscription must not overwrite
+ * or revoke the newer one.
+ */
+function isSupersededSubscription(profile: { stripe_subscription_id?: unknown } | null, subscriptionId: string): boolean {
+  const current = profile?.stripe_subscription_id
+  return typeof current === "string" && current !== "" && current !== subscriptionId
+}
+
 /** Look up a profile by Stripe customer ID */
 async function getProfileByCustomerId(customerId: string) {
   const supabase = getSupabase()
@@ -164,28 +174,37 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Deliberately the last required write: if it ran first and a later
-        // write failed, Stripe's retry would upsert again and could reset a row
-        // the buyer has already moved past `in_progress`.
         if (summary) {
-          const { error } = await supabase.from("deep_assessments").upsert(
-            {
-              stripe_session_id: session.id,
-              email: email.toLowerCase().trim(),
-              tier: summary.tier,
-              free_scores: {
-                overall: summary.overall,
-                subScores: summary.subScores,
-                profile: summary.profile,
-                foundationType: summary.foundationType ?? null,
-                selectedAddon: summary.selectedAddon ?? null,
-              },
-              status: "in_progress",
-              updated_at: new Date().toISOString(),
+          const sessionFields = {
+            email: email.toLowerCase().trim(),
+            tier: summary.tier,
+            free_scores: {
+              overall: summary.overall,
+              subScores: summary.subScores,
+              profile: summary.profile,
+              foundationType: summary.foundationType ?? null,
+              selectedAddon: summary.selectedAddon ?? null,
             },
-            { onConflict: "stripe_session_id" }
-          )
-          requireDb(error, "deep_assessments upsert")
+          }
+          const { error: insertError } = await supabase.from("deep_assessments").insert({
+            stripe_session_id: session.id,
+            ...sessionFields,
+            status: "in_progress",
+            updated_at: new Date().toISOString(),
+          })
+          if (insertError?.code === "23505") {
+            // The row already exists: generate-deep-questions created it first, or
+            // this is a retry. Re-assert the session-derived columns only — never
+            // move `status` or `updated_at` of an assessment the buyer may have
+            // progressed (save-deep-progress uses `updated_at` as its CAS token).
+            const { error } = await supabase
+              .from("deep_assessments")
+              .update(sessionFields)
+              .eq("stripe_session_id", session.id)
+            requireDb(error, "deep_assessments update")
+          } else {
+            requireDb(insertError, "deep_assessments insert")
+          }
         }
 
         if (!profile) break
@@ -294,10 +313,11 @@ export async function POST(req: NextRequest) {
         // Fetch existing tier for change detection
         const { data: existing, error: existingError } = await supabase
           .from("profiles")
-          .select("membership_tier")
+          .select("membership_tier, stripe_subscription_id")
           .eq("id", profile.id)
           .single()
         requireDbRead(existingError, "profiles tier read")
+        if (isSupersededSubscription(existing, sub.id)) break
         const oldTier = (existing?.membership_tier as string | null) ?? null
 
         const statusMap: Record<Stripe.Subscription.Status, string> = {
@@ -359,10 +379,11 @@ export async function POST(req: NextRequest) {
 
         const { data: existing, error: existingError } = await supabase
           .from("profiles")
-          .select("membership_tier")
+          .select("membership_tier, stripe_subscription_id")
           .eq("id", profile.id)
           .single()
         requireDbRead(existingError, "profiles tier read")
+        if (isSupersededSubscription(existing, sub.id)) break
 
         const { error: updateError } = await supabase
           .from("profiles")

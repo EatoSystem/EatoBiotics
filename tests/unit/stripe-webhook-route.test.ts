@@ -34,7 +34,7 @@ function failNext(table: string, op: Op, { skip = 0, error = TRANSIENT }: { skip
   queue.push(error)
 }
 
-const PRIMARY_KEY: Record<string, string> = { stripe_processed_events: "event_id" }
+const PRIMARY_KEY: Record<string, string> = { stripe_processed_events: "event_id", deep_assessments: "stripe_session_id" }
 
 function query(table: string) {
   let op: Op = "select"
@@ -379,11 +379,11 @@ describe("checkout.session.completed", () => {
     expect(analytics("trial_started")).toBe(1)
   })
 
-  it("deep_assessments upsert fails → 500, not recorded; the retry creates the row and fires analytics once", async () => {
+  it("deep_assessments insert fails → 500, not recorded; the retry creates the row and fires analytics once", async () => {
     vi.useFakeTimers({ toFake: ["Date"] })
     const t0 = Date.parse("2026-10-07T12:00:00.000Z")
     vi.setSystemTime(t0)
-    failNext("deep_assessments", "upsert")
+    failNext("deep_assessments", "insert")
     expectRetryable(await deliver(checkoutCompleted("evt_c8")), "evt_c8")
     // The trial write ran before the failure and is not rolled back.
     expect(profile()).toMatchObject({ membership_tier: "trial", trial_expires_at: new Date(t0 + THIRTY_DAYS_MS).toISOString() })
@@ -401,6 +401,43 @@ describe("checkout.session.completed", () => {
     expect(processedIds()).toEqual(["evt_c8"])
     expect(analytics("report_purchased")).toBe(1)
     expect(analytics("trial_started")).toBe(1)
+  })
+
+  it("a retry re-asserts the session fields but never moves an assessment the buyer has progressed", async () => {
+    failNext("profiles", "update")
+    expectRetryable(await deliver(checkoutCompleted("evt_c10")), "evt_c10")
+
+    // Before Stripe retries, the buyer opens the paid session: generate-deep-questions
+    // creates the row and they start answering.
+    tables.deep_assessments = [{
+      stripe_session_id: "cs_test_1",
+      email: "buyer@example.com",
+      tier: "personal",
+      free_scores: { overall: 62 },
+      questions: ["q1"],
+      answers: { q1: "a" },
+      status: "questions_generated",
+      updated_at: "2026-10-07T12:00:00.000Z",
+    }]
+
+    expect((await deliver(checkoutCompleted("evt_c10"))).status).toBe(200)
+    expect(rowsOf("deep_assessments")).toHaveLength(1)
+    expect(rowsOf("deep_assessments")[0]).toMatchObject({
+      status: "questions_generated",
+      updated_at: "2026-10-07T12:00:00.000Z",
+      questions: ["q1"],
+      answers: { q1: "a" },
+      tier: "personal",
+      free_scores: expect.objectContaining({ overall: 62, subScores: SUMMARY.subScores }),
+    })
+    expect(profile().membership_tier).toBe("trial")
+    expect(processedIds()).toEqual(["evt_c10"])
+  })
+
+  it("existing row whose session-field update fails → 500, not recorded", async () => {
+    tables.deep_assessments = [{ stripe_session_id: "cs_test_1", status: "questions_generated" }]
+    failNext("deep_assessments", "update")
+    expectRetryable(await deliver(checkoutCompleted("evt_c11")), "evt_c11")
   })
 
   it("profile lookup error → 500 before anything is written (not mistaken for 'no account')", async () => {
@@ -526,6 +563,15 @@ describe("customer.subscription.updated", () => {
     expect(processedIds()).toEqual(["evt_u3"])
   })
 
+  it("ignores a late update for a subscription the profile has since replaced", async () => {
+    seedProfile({ membership_tier: "member", membership_status: "active", stripe_subscription_id: "sub_new" })
+    expect((await deliver(updated("evt_u5", { status: "canceled" }))).status).toBe(200)
+    expect(profile()).toMatchObject({ membership_status: "active", stripe_subscription_id: "sub_new" })
+    expect(writesTo("profiles")).toEqual([])
+    expect(rowsOf("subscription_events")).toEqual([])
+    expect(processedIds()).toEqual(["evt_u5"])
+  })
+
   it("current-tier read error → 500 before the profile is written", async () => {
     failNext("profiles", "select", { skip: 1 }) // the customer lookup succeeds; the tier read fails
     expectRetryable(await deliver(updated("evt_u4")), "evt_u4")
@@ -572,6 +618,27 @@ describe("customer.subscription.deleted", () => {
     expect(mocks.sendEmail).toHaveBeenCalledTimes(1)
     expect(analytics("subscription_cancelled")).toBe(1)
     expect(processedIds()).toEqual(["evt_d2"])
+  })
+})
+
+describe("customer.subscription.deleted — superseded subscriptions", () => {
+  it("a retried cancellation of an old subscription does not revoke a newer one", async () => {
+    seedProfile({ membership_tier: "member", membership_status: "active", stripe_subscription_id: "sub_1" })
+    failNext("subscription_events", "insert")
+    expectRetryable(await deliver(subscriptionEvent("customer.subscription.deleted", "evt_d3")), "evt_d3")
+    expect(profile().membership_status).toBe("cancelled")
+
+    // Before Stripe retries, the customer subscribes again.
+    const resubscribe = subscriptionEvent("customer.subscription.created", "evt_d3_new", { id: "sub_2" })
+    expect((await deliver(resubscribe)).status).toBe(200)
+    expect(profile()).toMatchObject({ membership_tier: "member", membership_status: "active", stripe_subscription_id: "sub_2" })
+
+    const emailsBefore = mocks.sendEmail.mock.calls.length
+    expect((await deliver(subscriptionEvent("customer.subscription.deleted", "evt_d3"))).status).toBe(200)
+    expect(profile()).toMatchObject({ membership_tier: "member", membership_status: "active", stripe_subscription_id: "sub_2" })
+    expect(mocks.sendEmail.mock.calls.length).toBe(emailsBefore)
+    expect(analytics("subscription_cancelled")).toBe(0)
+    expect(processedIds()).toEqual(["evt_d3_new", "evt_d3"])
   })
 })
 
