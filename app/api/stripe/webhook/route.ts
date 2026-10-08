@@ -18,15 +18,50 @@ function field<T>(obj: unknown, key: string): T | undefined { return (obj as any
 
 // Next.js must NOT parse the body — we need the raw bytes for signature verification
 
+// PostgREST's code when .single()/.maybeSingle() finds no row (or more than
+// one). For a lookup that is an answer — "no matching profile" — not a failure.
+const NO_SINGLE_ROW = "PGRST116"
+
+type DbError = { message?: string; code?: string } | null
+
+/**
+ * Throw when a database operation required to honour the event failed. The
+ * catch in POST then returns 500 without recording the event in
+ * stripe_processed_events, so Stripe retries it instead of the change being
+ * silently lost.
+ */
+function requireDb(error: DbError, operation: string): void {
+  if (error) {
+    throw new Error(`${operation} failed: ${error.message ?? "unknown error"}${error.code ? ` (${error.code})` : ""}`)
+  }
+}
+
+/** requireDb for a single-row read, where "no row" is an answer, not a failure. */
+function requireDbRead(error: DbError, operation: string): void {
+  if (error?.code === NO_SINGLE_ROW) return
+  requireDb(error, operation)
+}
+
+/**
+ * True when the profile is already on a different Stripe subscription than the
+ * event's. A late or retried event for the old subscription must not overwrite
+ * or revoke the newer one.
+ */
+function isSupersededSubscription(profile: { stripe_subscription_id?: unknown } | null, subscriptionId: string): boolean {
+  const current = profile?.stripe_subscription_id
+  return typeof current === "string" && current !== "" && current !== subscriptionId
+}
+
 /** Look up a profile by Stripe customer ID */
 async function getProfileByCustomerId(customerId: string) {
   const supabase = getSupabase()
   if (!supabase) return null
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("id")
     .eq("stripe_customer_id", customerId)
     .single()
+  requireDbRead(error, "profiles lookup by stripe_customer_id")
   return data
 }
 
@@ -40,13 +75,14 @@ async function logEvent(opts: {
 }) {
   const supabase = getSupabase()
   if (!supabase) return
-  await supabase.from("subscription_events").insert({
+  const { error } = await supabase.from("subscription_events").insert({
     user_id:         opts.userId,
     event_type:      opts.eventType,
     from_tier:       opts.fromTier ?? null,
     to_tier:         opts.toTier   ?? null,
     stripe_event_id: opts.stripeEventId,
   })
+  requireDb(error, "subscription_events insert")
 }
 
 export async function POST(req: NextRequest) {
@@ -104,57 +140,74 @@ export async function POST(req: NextRequest) {
         const email = summary?.email ?? session.customer_details?.email ?? null
         if (!email) break
 
-        if (summary) {
-          await supabase.from("deep_assessments").upsert(
-            {
-              stripe_session_id: session.id,
-              email: email.toLowerCase().trim(),
-              tier: summary.tier,
-              free_scores: {
-                overall: summary.overall,
-                subScores: summary.subScores,
-                profile: summary.profile,
-                foundationType: summary.foundationType ?? null,
-                selectedAddon: summary.selectedAddon ?? null,
-              },
-              status: "in_progress",
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "stripe_session_id" }
-          )
-        }
-
         // Find user profile by email
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("id, membership_tier, trial_expires_at")
           .eq("email", email)
           .maybeSingle()
+        requireDbRead(profileError, "profiles lookup by email")
 
         // If the buyer has no account yet, access can't be granted now — it's
         // activated the first time they sign in (see lib/auth/reconcile-account.ts).
-        if (!profile) break
-
-        // Activate the 30-day report trial. Shared decision with the auth path so
-        // both behave identically: only free/trial accounts (never downgrade a
-        // subscriber), never shorten an existing trial, idempotent.
-        const decision = decideTrialActivation(
-          profile.membership_tier as string | null,
-          profile.trial_expires_at as string | null,
-          true // a settled payment just landed
-        )
         let trialGranted = false
-        if (decision.activate) {
-          await supabase
-            .from("profiles")
-            .update({
-              membership_tier:   "trial",
-              membership_status: "active",
-              trial_expires_at:  decision.expiresAt,
-            })
-            .eq("id", profile.id)
-          trialGranted = true
+        if (profile) {
+          // Activate the 30-day report trial. Shared decision with the auth path so
+          // both behave identically: only free/trial accounts (never downgrade a
+          // subscriber), never shorten an existing trial, idempotent.
+          const decision = decideTrialActivation(
+            profile.membership_tier as string | null,
+            profile.trial_expires_at as string | null,
+            true // a settled payment just landed
+          )
+          if (decision.activate) {
+            const { error } = await supabase
+              .from("profiles")
+              .update({
+                membership_tier:   "trial",
+                membership_status: "active",
+                trial_expires_at:  decision.expiresAt,
+              })
+              .eq("id", profile.id)
+            requireDb(error, "profiles trial activation")
+            trialGranted = true
+          }
         }
+
+        if (summary) {
+          const sessionFields = {
+            email: email.toLowerCase().trim(),
+            tier: summary.tier,
+            free_scores: {
+              overall: summary.overall,
+              subScores: summary.subScores,
+              profile: summary.profile,
+              foundationType: summary.foundationType ?? null,
+              selectedAddon: summary.selectedAddon ?? null,
+            },
+          }
+          const { error: insertError } = await supabase.from("deep_assessments").insert({
+            stripe_session_id: session.id,
+            ...sessionFields,
+            status: "in_progress",
+            updated_at: new Date().toISOString(),
+          })
+          if (insertError?.code === "23505") {
+            // The row already exists: generate-deep-questions created it first, or
+            // this is a retry. Re-assert the session-derived columns only — never
+            // move `status` or `updated_at` of an assessment the buyer may have
+            // progressed (save-deep-progress uses `updated_at` as its CAS token).
+            const { error } = await supabase
+              .from("deep_assessments")
+              .update(sessionFields)
+              .eq("stripe_session_id", session.id)
+            requireDb(error, "deep_assessments update")
+          } else {
+            requireDb(insertError, "deep_assessments insert")
+          }
+        }
+
+        if (!profile) break
 
         // Revenue analytics: report purchase + trial start
         await logServerEvent("report_purchased", profile.id, {
@@ -185,7 +238,7 @@ export async function POST(req: NextRequest) {
 
         const founding = isFoundingMember(new Date(sub.created * 1000))
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("profiles")
           .update({
             membership_tier:          tier,
@@ -197,6 +250,7 @@ export async function POST(req: NextRequest) {
             trial_expires_at:         null,  // clear any pending trial
           })
           .eq("id", profile.id)
+        requireDb(updateError, "profiles subscription activation")
 
         await logEvent({
           userId:      profile.id,
@@ -257,11 +311,13 @@ export async function POST(req: NextRequest) {
         if (!profile) break
 
         // Fetch existing tier for change detection
-        const { data: existing } = await supabase
+        const { data: existing, error: existingError } = await supabase
           .from("profiles")
-          .select("membership_tier")
+          .select("membership_tier, stripe_subscription_id")
           .eq("id", profile.id)
           .single()
+        requireDbRead(existingError, "profiles tier read")
+        if (isSupersededSubscription(existing, sub.id)) break
         const oldTier = (existing?.membership_tier as string | null) ?? null
 
         const statusMap: Record<Stripe.Subscription.Status, string> = {
@@ -283,7 +339,8 @@ export async function POST(req: NextRequest) {
 
         if (newTier) updates.membership_tier = newTier
 
-        await supabase.from("profiles").update(updates).eq("id", profile.id)
+        const { error: updateError } = await supabase.from("profiles").update(updates).eq("id", profile.id)
+        requireDb(updateError, "profiles subscription update")
 
         // Determine event type for logging
         let eventType = "updated"
@@ -320,13 +377,15 @@ export async function POST(req: NextRequest) {
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
 
-        const { data: existing } = await supabase
+        const { data: existing, error: existingError } = await supabase
           .from("profiles")
-          .select("membership_tier")
+          .select("membership_tier, stripe_subscription_id")
           .eq("id", profile.id)
           .single()
+        requireDbRead(existingError, "profiles tier read")
+        if (isSupersededSubscription(existing, sub.id)) break
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("profiles")
           .update({
             membership_tier:        "free",
@@ -335,6 +394,7 @@ export async function POST(req: NextRequest) {
             membership_expires_at:  (() => { const pe = field<number>(sub, "current_period_end"); return pe ? new Date(pe * 1000).toISOString() : null })(),
           })
           .eq("id", profile.id)
+        requireDb(updateError, "profiles cancellation")
 
         await logEvent({
           userId:       profile.id,
@@ -389,10 +449,11 @@ export async function POST(req: NextRequest) {
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("profiles")
           .update({ membership_status: "past_due" })
           .eq("id", profile.id)
+        requireDb(updateError, "profiles past_due update")
 
         await logEvent({
           userId:       profile.id,
@@ -426,7 +487,8 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        await supabase.from("profiles").update(updates).eq("id", profile.id)
+        const { error: updateError } = await supabase.from("profiles").update(updates).eq("id", profile.id)
+        requireDb(updateError, "profiles payment renewal")
         break
       }
 

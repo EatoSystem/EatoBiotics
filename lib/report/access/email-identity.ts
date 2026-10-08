@@ -73,7 +73,7 @@ export interface PurchaseEmailSources {
  *
  *     summary.email → customer_details.email → customer_email → null
  *
- * This is the precedence `app/api/stripe/webhook/route.ts:104` already uses, and
+ * This is the precedence `app/api/stripe/webhook/route.ts` already uses, and
  * it is mirrored rather than reinvented: two definitions of "the purchase email"
  * that disagree would be two definitions of who owns a Report.
  *
