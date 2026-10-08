@@ -282,6 +282,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.resetModules()
   process.env.STRIPE_WEBHOOK_SECRET = WEBHOOK_SECRET
+  vi.stubEnv("RESEND_API_KEY", "re_test_fixture")
   process.env.STRIPE_MEMBER_PRICE_ID = MEMBER_PRICE
   // Every subscription in these fixtures is created before the cutoff, so
   // founding-member status is a real benefit that a crash could destroy.
@@ -289,8 +290,212 @@ beforeEach(() => {
   hoisted.db = freshDb()
 })
 
+describe("canonical webhook reliability regressions", () => {
+  const failure = { code: "08006", message: "transient database failure" }
+  const cases = [
+    ["checkout.session.completed", "paid_report_intents", "select"],
+    ["checkout.session.completed", "deep_assessments", "upsert"],
+    ["checkout.session.completed", "profiles", "select"],
+    ["checkout.session.completed", "profiles", "update"],
+    ["customer.subscription.created", "profiles", "select"],
+    ["customer.subscription.created", "profiles", "update"],
+    ["customer.subscription.created", "subscription_events", "insert"],
+    ["customer.subscription.updated", "profiles", "update"],
+    ["customer.subscription.updated", "subscription_events", "insert"],
+    ["customer.subscription.deleted", "profiles", "update"],
+    ["customer.subscription.deleted", "subscription_events", "insert"],
+    ["invoice.payment_failed", "profiles", "update"],
+    ["invoice.payment_failed", "subscription_events", "insert"],
+    ["invoice.payment_succeeded", "profiles", "update"],
+  ] as const
+
+  it.each(cases)("retries %s after returned %s.%s failure", async (type, table, op) => {
+    if (type !== "checkout.session.completed") hoisted.db = subscriptionDb()
+    const event = type === "checkout.session.completed"
+      ? checkoutCompleted()
+      : type.startsWith("invoice.")
+        ? { ...subscriptionEvent(type, "evt_failure"), data: { object: { customer: CUSTOMER, subscription: SUB_ID } } }
+        : subscriptionEvent(type, "evt_failure")
+    hoisted.db!.fail({ table, op, error: failure, times: 1 })
+    expect((await deliver(event)).status).toBe(500)
+    expect(hoisted.db!.rowsOf("stripe_processed_events")).toHaveLength(0)
+    expect(sendEmail).not.toHaveBeenCalled()
+    expect(logServerEvent).not.toHaveBeenCalled()
+    expect((await deliver(event)).status).toBe(200)
+    expect(hoisted.db!.rowsOf("stripe_processed_events")).toHaveLength(1)
+    const profile = hoisted.db!.rowsOf("profiles")[0]
+    if (type === "checkout.session.completed") expect(profile.membership_tier).toBe("trial")
+    if (type === "customer.subscription.created" || type === "customer.subscription.updated") {
+      expect(profile).toMatchObject({ membership_tier: "member", membership_status: "active", stripe_subscription_id: SUB_ID })
+    }
+    if (type === "customer.subscription.deleted") expect(profile).toMatchObject({ membership_tier: "free", membership_status: "cancelled", stripe_subscription_id: null })
+    if (type === "invoice.payment_failed") expect(profile.membership_status).toBe("past_due")
+    if (type === "invoice.payment_succeeded") expect(profile.membership_status).toBe("active")
+    const writes = hoisted.db!.writes.length
+    expect((await deliver(event)).status).toBe(200)
+    expect(hoisted.db!.writes).toHaveLength(writes)
+  })
+
+  it("does not store a completed marker before the required mutations", async () => {
+    hoisted.db!.beforeSettle = (table, op) => {
+      if (table === "deep_assessments" && op === "upsert") {
+        expect(hoisted.db!.rowsOf("stripe_processed_events")).toHaveLength(0)
+      }
+    }
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
+  })
+
+  it("remains retryable even when the old claim-cleanup operation is unavailable", async () => {
+    hoisted.db!.fail({ table: "profiles", op: "update", error: failure, throws: true, times: 1 })
+    hoisted.db!.fail({ table: "stripe_processed_events", op: "delete", error: failure })
+    expect((await deliver(checkoutCompleted())).status).toBe(500)
+    expect(hoisted.db!.rowsOf("stripe_processed_events")).toHaveLength(0)
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
+    expect(hoisted.db!.writesTo("stripe_processed_events", "delete")).toHaveLength(0)
+  })
+
+  it("retries marker failure without resetting a completed assessment", async () => {
+    hoisted.db!.fail({ table: "stripe_processed_events", op: "insert", error: failure, times: 1 })
+    expect((await deliver(checkoutCompleted())).status).toBe(500)
+    expect(hoisted.db!.rowsOf("deep_assessments")).toHaveLength(1)
+    Object.assign(hoisted.db!.rowsOf("deep_assessments")[0], { status: "complete", updated_at: "2026-09-01T12:00:00Z", answers: ["saved"], report_json: { saved: true } })
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
+    expect(hoisted.db!.rowsOf("deep_assessments")[0]).toMatchObject({ status: "complete", updated_at: "2026-09-01T12:00:00Z", answers: ["saved"], report_json: { saved: true } })
+    expect(logServerEvent.mock.calls.filter(c => c[0] === "report_purchased")).toHaveLength(1)
+  })
+
+  it.each(["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted", "invoice.payment_failed", "invoice.payment_succeeded"])("does not let an older %s replace a newer subscription", async type => {
+    hoisted.db = subscriptionDb()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], { stripe_subscription_id: "sub_new", membership_started_at: new Date((SUB_CREATED + 100) * 1000).toISOString(), membership_tier: "transform", membership_status: "active" })
+    const before = durableState(hoisted.db)
+    const event = type.startsWith("invoice.")
+      ? { ...subscriptionEvent(type, "evt_stale"), data: { object: { customer: CUSTOMER, subscription: SUB_ID } } }
+      : subscriptionEvent(type, "evt_stale")
+    expect((await deliver(event)).status).toBe(200)
+    expect(durableState(hoisted.db)).toEqual(before)
+    expect(hoisted.db.writesTo("profiles")).toHaveLength(0)
+    expect(sendEmail).not.toHaveBeenCalled()
+    expect(logServerEvent).not.toHaveBeenCalled()
+  })
+
+  it("still allows a genuinely newer subscription to replace an older one", async () => {
+    hoisted.db = subscriptionDb()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], { stripe_subscription_id: "sub_old", membership_started_at: new Date((SUB_CREATED - 100) * 1000).toISOString() })
+    expect((await deliver(subscriptionEvent("customer.subscription.created", "evt_new"))).status).toBe(200)
+    expect(hoisted.db.rowsOf("profiles")[0].stripe_subscription_id).toBe(SUB_ID)
+  })
+
+  it.each(["invoice.payment_failed", "invoice.payment_succeeded"])("rejects an older %s in the Stripe v20 invoice shape", async type => {
+    hoisted.db = subscriptionDb()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], { stripe_subscription_id: "sub_new", membership_tier: "transform", membership_status: "active" })
+    const before = durableState(hoisted.db)
+    const event = { ...subscriptionEvent(type, "evt_v20_stale"), data: { object: {
+      customer: CUSTOMER,
+      parent: { type: "subscription_details", subscription_details: { subscription: SUB_ID } },
+    } } }
+    expect((await deliver(event)).status).toBe(200)
+    expect(durableState(hoisted.db)).toEqual(before)
+    expect(hoisted.db.writesTo("profiles")).toHaveLength(0)
+    expect(subscriptionsRetrieve).not.toHaveBeenCalled()
+  })
+
+  it.each([SUB_ID, { id: SUB_ID }])("honours a matching Stripe v20 invoice subscription (%s)", async subscription => {
+    hoisted.db = subscriptionDb()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], { stripe_subscription_id: SUB_ID, membership_tier: "member", membership_status: "past_due" })
+    const event = { ...subscriptionEvent("invoice.payment_succeeded", "evt_v20_current"), data: { object: {
+      customer: CUSTOMER,
+      parent: { type: "subscription_details", subscription_details: { subscription } },
+    } } }
+    expect((await deliver(event)).status).toBe(200)
+    expect(hoisted.db.rowsOf("profiles")[0].membership_status).toBe("active")
+    expect(subscriptionsRetrieve).toHaveBeenCalledWith(SUB_ID)
+    expect(hoisted.db.rowsOf("stripe_processed_events")).toHaveLength(1)
+  })
+
+  it.each([null, new Date(SUB_CREATED * 1000).toISOString()])("does not acknowledge ambiguous subscription ordering (%s)", async (startedAt) => {
+    hoisted.db = subscriptionDb()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], { stripe_subscription_id: "sub_other", membership_started_at: startedAt })
+    expect((await deliver(subscriptionEvent("customer.subscription.created", "evt_ambiguous"))).status).toBe(500)
+    expect(hoisted.db.rowsOf("stripe_processed_events")).toHaveLength(0)
+    expect(hoisted.db.rowsOf("profiles")[0].stripe_subscription_id).toBe("sub_other")
+  })
+
+  it("does not duplicate an audit row after marker failure", async () => {
+    hoisted.db = subscriptionDb()
+    hoisted.db.fail({ table: "stripe_processed_events", op: "insert", error: failure, times: 1 })
+    const event = subscriptionEvent("customer.subscription.created", "evt_log_retry")
+    expect((await deliver(event)).status).toBe(500)
+    expect(hoisted.db.rowsOf("subscription_events")).toHaveLength(1)
+    expect((await deliver(event)).status).toBe(200)
+    expect(hoisted.db.rowsOf("subscription_events")).toHaveLength(1)
+  })
+
+  it("retries a cancellation audit failure after the profile has already been cleared", async () => {
+    hoisted.db = subscriptionDb()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], { stripe_subscription_id: SUB_ID, membership_started_at: new Date(SUB_CREATED * 1000).toISOString(), membership_tier: "member" })
+    hoisted.db.fail({ table: "subscription_events", op: "insert", error: failure, times: 1 })
+    const event = subscriptionEvent("customer.subscription.deleted", "evt_cancel_retry")
+    expect((await deliver(event)).status).toBe(500)
+    expect(hoisted.db.rowsOf("profiles")[0].stripe_subscription_id).toBeNull()
+    expect((await deliver(event)).status).toBe(200)
+    expect(hoisted.db.rowsOf("subscription_events")).toHaveLength(1)
+  })
+
+  it("refuses a stale write if a newer subscription arrives after the profile read", async () => {
+    hoisted.db = subscriptionDb()
+    let changed = false
+    hoisted.db.beforeSettle = (table, op) => {
+      if (table === "profiles" && op === "update" && !changed) {
+        changed = true
+        Object.assign(hoisted.db!.rowsOf("profiles")[0], { stripe_subscription_id: "sub_new", membership_tier: "transform", membership_started_at: new Date((SUB_CREATED + 100) * 1000).toISOString() })
+      }
+    }
+    const event = subscriptionEvent("customer.subscription.created", "evt_racing")
+    expect((await deliver(event)).status).toBe(500)
+    expect(hoisted.db.rowsOf("stripe_processed_events")).toHaveLength(0)
+    expect(hoisted.db.rowsOf("profiles")[0].stripe_subscription_id).toBe("sub_new")
+    expect((await deliver(event)).status).toBe(200)
+    expect(hoisted.db.rowsOf("profiles")[0].stripe_subscription_id).toBe("sub_new")
+  })
+
+  it("leaves required work retryable when the paid-row enrichment update fails", async () => {
+    hoisted.db!.fail({ table: "deep_assessments", op: "update", error: failure, times: 1 })
+    expect((await deliver(checkoutCompleted())).status).toBe(500)
+    expect(hoisted.db!.rowsOf("stripe_processed_events")).toHaveLength(0)
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
+  })
+
+  it("does not let optional analytics failure invalidate a completed event", async () => {
+    logServerEvent.mockRejectedValueOnce(new Error("analytics unavailable"))
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
+    expect(hoisted.db!.rowsOf("stripe_processed_events")).toHaveLength(1)
+    const count = logServerEvent.mock.calls.length
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
+    expect(logServerEvent.mock.calls).toHaveLength(count)
+  })
+
+  it("sends one welcome email only after completion and does not retry email failure", async () => {
+    hoisted.db = subscriptionDb()
+    sendEmail.mockRejectedValueOnce(new Error("email unavailable"))
+    const event = subscriptionEvent("customer.subscription.created", "evt_email")
+    expect((await deliver(event)).status).toBe(200)
+    expect(sendEmail).toHaveBeenCalledTimes(1)
+    expect(hoisted.db.rowsOf("stripe_processed_events")).toHaveLength(1)
+    expect((await deliver(event)).status).toBe(200)
+    expect(sendEmail).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(["select", "insert"] as const)("returns a retryable response for a thrown marker %s error", async op => {
+    hoisted.db!.fail({ table: "stripe_processed_events", op, error: failure, throws: true, times: 1 })
+    expect((await deliver(checkoutCompleted())).status).toBe(500)
+    expect(hoisted.db!.rowsOf("stripe_processed_events")).toHaveLength(0)
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
+  })
+})
+
 afterEach(() => {
   hoisted.db = null
+  vi.unstubAllEnvs()
 })
 
 /* ══ 1. Signature verification, for real ═════════════════════════════════ */
@@ -407,11 +612,15 @@ describe("duplicate delivery", () => {
     ])
     barrier.abort()
 
-    expect(a.status).toBe(200)
-    expect(b.status).toBe(200)
+    // An optimistic-write loser must retry, never overwrite a changed profile.
+    // At least one completed delivery is required, and the loser then dedupes.
+    expect([a.status, b.status]).toContain(200)
+    expect([a.status, b.status].every(status => status === 200 || status === 500)).toBe(true)
+    hoisted.db!.beforeSettle = () => {}
+    expect((await deliver(checkoutCompleted())).status).toBe(200)
 
     // The invariant: one delivery, one purchase recorded. Exactly one of the
-    // two must have been refused the claim.
+    // two must win the completion marker. Durable writes are not serialized.
     const purchases = logServerEvent.mock.calls.filter((c) => c[0] === "report_purchased")
     expect(purchases).toHaveLength(1)
   })

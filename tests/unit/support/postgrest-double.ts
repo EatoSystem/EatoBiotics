@@ -161,7 +161,7 @@ export class PostgrestDouble {
   private builder(table: string) {
     const filters: { column: string; value: unknown; kind: "eq" | "is" }[] = []
     let pending:
-      | { op: "insert" | "upsert"; payload: Row | Row[]; onConflict?: string }
+      | { op: "insert" | "upsert"; payload: Row | Row[]; onConflict?: string; ignoreDuplicates?: boolean }
       | { op: "update"; payload: Row }
       | { op: "delete" }
       | null = null
@@ -197,7 +197,7 @@ export class PostgrestDouble {
                   },
                 }
               }
-              Object.assign(existing, row)
+              if (!pending.ignoreDuplicates) Object.assign(existing, row)
               continue
             }
           }
@@ -214,8 +214,9 @@ export class PostgrestDouble {
         const injected = this.takeFailure(table, "update")
         this.writes.push({ table, op: "update", payload: pending.payload })
         if (injected) return { data: null, error: injected }
-        for (const row of t.rows) if (matches(row)) Object.assign(row, pending.payload)
-        return { data: null, error: null }
+        const matched = t.rows.filter(matches)
+        for (const row of matched) Object.assign(row, pending.payload)
+        return { data: null, error: null, count: countMode === "exact" ? matched.length : null }
       }
 
       if (pending?.op === "delete") {
@@ -258,11 +259,12 @@ export class PostgrestDouble {
         pending = { op: "insert", payload }
         return chain
       },
-      upsert: (payload: Row | Row[], opts?: { onConflict?: string }) => {
-        pending = { op: "upsert", payload, onConflict: opts?.onConflict }
+      upsert: (payload: Row | Row[], opts?: { onConflict?: string; ignoreDuplicates?: boolean }) => {
+        pending = { op: "upsert", payload, onConflict: opts?.onConflict, ignoreDuplicates: opts?.ignoreDuplicates }
         return chain
       },
-      update: (payload: Row) => {
+      update: (payload: Row, opts?: { count?: "exact" }) => {
+        if (opts?.count === "exact") countMode = "exact"
         pending = { op: "update", payload }
         return chain
       },

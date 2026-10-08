@@ -121,15 +121,13 @@ describe("POST /api/stripe/webhook", () => {
     mockConstructEvent.mockReturnValue({
       id: "evt_2",
       type: "customer.subscription.deleted",
-      data: { object: { customer: "cus_1", current_period_end: 1893456000 } },
+      data: { object: { id: "sub_1", customer: "cus_1", created: 1700000000, current_period_end: 1893456000 } },
     })
     const { client, writes } = makeSupabaseStub({
       stripe_processed_events: [{ data: null }],          // not yet processed
       profiles: [
-        { data: { id: "user-1" } },                       // lookup by customer id
-        { data: { membership_tier: "restore" } },         // existing tier
-        { data: null },                                   // update result
-        { data: { email: "j@example.com", name: "J" } },  // (email branch — skipped, no RESEND key)
+        { data: { id: "user-1", membership_tier: "restore", stripe_subscription_id: "sub_1" } },
+        { data: null, count: 1 },                         // optimistic update matched the profile
       ],
     })
     mockGetSupabase.mockReturnValue(client)
