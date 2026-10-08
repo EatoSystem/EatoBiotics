@@ -524,13 +524,14 @@ export async function POST(req: NextRequest) {
       // ── Payment failed ────────────────────────────────────────────────
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice
+        const subId = invoiceSubscriptionId(invoice)
+        if (!subId) break
         const customerId = invoice.customer as string
 
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
-        const subId = invoiceSubscriptionId(invoice)
-        if (subId && profile.stripe_subscription_id && subId !== profile.stripe_subscription_id) break
-        if (subId && !profile.stripe_subscription_id && profile.membership_status === "cancelled") break
+        if (profile.stripe_subscription_id && subId !== profile.stripe_subscription_id) break
+        if (!profile.stripe_subscription_id && profile.membership_status === "cancelled") break
 
         await updateMembership(profile, { membership_status: "past_due" })
 
@@ -545,24 +546,22 @@ export async function POST(req: NextRequest) {
       // ── Payment succeeded ─────────────────────────────────────────────
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice
+        const subId = invoiceSubscriptionId(invoice)
+        if (!subId) break
         const customerId = invoice.customer as string
 
         const profile = await getProfileByCustomerId(customerId)
         if (!profile) break
-
-        // Fetch current subscription to get period end
-        const subId = invoiceSubscriptionId(invoice)
-        if (subId && profile.stripe_subscription_id && subId !== profile.stripe_subscription_id) break
-        if (subId && !profile.stripe_subscription_id && profile.membership_status === "cancelled") break
+        if (profile.stripe_subscription_id && subId !== profile.stripe_subscription_id) break
+        if (!profile.stripe_subscription_id && profile.membership_status === "cancelled") break
 
         const updates: Record<string, unknown> = { membership_status: "active" }
 
-        if (subId) {
-          const sub = await stripe.subscriptions.retrieve(subId)
-          const periodEnd = field<number>(sub, "current_period_end")
-          if (periodEnd) {
-            updates.membership_expires_at = new Date(periodEnd * 1000).toISOString()
-          }
+        // Fetch current subscription to get period end
+        const sub = await stripe.subscriptions.retrieve(subId)
+        const periodEnd = field<number>(sub, "current_period_end")
+        if (periodEnd) {
+          updates.membership_expires_at = new Date(periodEnd * 1000).toISOString()
         }
 
         await updateMembership(profile, updates)

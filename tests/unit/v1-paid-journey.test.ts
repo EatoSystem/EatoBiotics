@@ -399,6 +399,48 @@ describe("canonical webhook reliability regressions", () => {
     expect(subscriptionsRetrieve).not.toHaveBeenCalled()
   })
 
+  describe.each([
+    ["legacy invoice without subscription", {}],
+    ["Stripe v20 invoice without parent", { parent: null }],
+    ["Stripe v20 quote invoice", { parent: { type: "quote_details", quote_details: { quote: "qt_test" }, subscription_details: null } }],
+    ["Stripe v20 invoice without subscription id", { parent: { type: "subscription_details", subscription_details: {} } }],
+  ] as const)("ignores %s for membership", (_shape, invoiceFields) => {
+    it.each(["invoice.payment_failed", "invoice.payment_succeeded"])("completes and dedupes %s without membership effects", async type => {
+      hoisted.db = subscriptionDb()
+      Object.assign(hoisted.db.rowsOf("profiles")[0], {
+        stripe_subscription_id: SUB_ID,
+        membership_tier: "member",
+        membership_status: type === "invoice.payment_failed" ? "active" : "past_due",
+      })
+      const before = structuredClone(hoisted.db.rowsOf("profiles"))
+      const event = { ...subscriptionEvent(type, "evt_irrelevant_invoice"), data: { object: {
+        id: "in_test_irrelevant",
+        object: "invoice",
+        customer: CUSTOMER,
+        ...invoiceFields,
+      } } }
+
+      const response = await deliver(event)
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ received: true })
+      expect(hoisted.db.rowsOf("profiles")).toEqual(before)
+      expect(hoisted.db.writesTo("profiles")).toHaveLength(0)
+      expect(hoisted.db.rowsOf("subscription_events")).toHaveLength(0)
+      expect(hoisted.db.writesTo("subscription_events")).toHaveLength(0)
+      expect(hoisted.db.rowsOf("stripe_processed_events")).toEqual([{ event_id: event.id, event_type: type }])
+
+      const writes = hoisted.db.writes.length
+      const replay = await deliver(event)
+      expect(replay.status).toBe(200)
+      expect(await replay.json()).toEqual({ received: true, deduped: true })
+      expect(hoisted.db.writes).toHaveLength(writes)
+      expect(hoisted.db.rowsOf("profiles")).toEqual(before)
+      expect(subscriptionsRetrieve).not.toHaveBeenCalled()
+      expect(sendEmail).not.toHaveBeenCalled()
+      expect(logServerEvent).not.toHaveBeenCalled()
+    })
+  })
+
   it.each([SUB_ID, { id: SUB_ID }])("honours a matching Stripe v20 invoice subscription (%s)", async subscription => {
     hoisted.db = subscriptionDb()
     Object.assign(hoisted.db.rowsOf("profiles")[0], { stripe_subscription_id: SUB_ID, membership_tier: "member", membership_status: "past_due" })
