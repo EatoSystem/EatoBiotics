@@ -72,25 +72,37 @@ import AxeBuilder from "@axe-core/playwright"
  * content axe could see", which is a weaker claim than it looks.
  */
 
+/**
+ * The pages scanned.
+ *
+ * This list used to include /you, /family, /glucose, /glucose/glp1,
+ * /stability, /living-plate, /digital-twin and /start. All eight are outside
+ * the V1 launch surface and now refuse at runtime (lib/v1-surface.ts), and the
+ * status assertion below would fail on every one — correctly: scanning Next's
+ * 404 shell is not an accessibility result. They were replaced by served
+ * pages, which is a better list anyway: the V1 funnel and the legal and
+ * support pages a customer actually has to read were barely covered, while
+ * nine unsellable product landings were.
+ */
 const PAGES: Array<{ name: string; path: string }> = [
   { name: "homepage", path: "/" },
   { name: "waitlist gate", path: "/enter" },
   { name: "pricing", path: "/pricing" },
   { name: "assessment chooser", path: "/assessment" },
   { name: "foundation assessment", path: "/assessment/you" },
-  { name: "vertical landing (you)", path: "/you" },
-  { name: "vertical landing (family)", path: "/family" },
+  { name: "sign in", path: "/login" },
+  { name: "account sign-in", path: "/account/signin" },
+  { name: "how it works", path: "/method" },
+  { name: "help and support", path: "/help" },
+  { name: "privacy", path: "/privacy" },
+  { name: "terms", path: "/terms" },
   { name: "condition vertical (adhd — covers anxiety/depression/bipolar)", path: "/adhd" },
-  { name: "start funnel (covers start-family/start-mind)", path: "/start" },
-  { name: "glucose pathway", path: "/glucose" },
-  { name: "glp1 companion", path: "/glucose/glp1" },
-  { name: "stability landing", path: "/stability" },
   { name: "food directory", path: "/food" },
   { name: "food detail (covers all /food/[slug])", path: "/food/garlic" },
   { name: "book landing", path: "/book" },
+  { name: "the trilogy", path: "/books" },
   { name: "book chapter (covers all 25 chapters)", path: "/book-chapter-1" },
-  { name: "plate page (covers all four plates)", path: "/living-plate" },
-  { name: "digital twin", path: "/digital-twin" },
+  { name: "biotics explainer", path: "/biotics" },
   { name: "about", path: "/about" },
   { name: "eatosystem bridge", path: "/eatosystem" },
 ]

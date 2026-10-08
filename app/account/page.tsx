@@ -9,7 +9,6 @@ import { LiveDashboard } from "@/components/account/live-dashboard"
 import type { RealAnalysis, RealWeeklyReport, LivePaidReport } from "@/components/account/live-dashboard"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 import { computeStreak } from "@/lib/streak"
-import { dailyNudge } from "@/lib/habit"
 import type { DailyLoopData } from "@/components/account/daily-loop-card"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
@@ -254,20 +253,20 @@ export default async function AccountPage({
 
   const streak = streakInfo.current
 
-  // Daily loop card data — streak + the weakest-pillar nudge from the Food System Core.
-  const dailyLoop: DailyLoopData = {
-    streak: streakInfo,
-    focus: bioticsProfile
-      ? (() => {
-          const n = dailyNudge({
-            prebiotics:  bioticsProfile.prebiotic,
-            probiotics:  bioticsProfile.probiotic,
-            postbiotics: bioticsProfile.postbiotic,
-          })
-          return { key: n.pillar.key, color: n.pillar.color, score: n.score }
-        })()
-      : null,
-  }
+  /*
+   * Daily loop card data — the streak.
+   *
+   * 0R-5 removed the `focus` nudge: it was `dailyNudge(bioticsProfile)`, whose
+   * whole job was to pick the member's WEAKEST Biotic and hand the card its
+   * name, its score and its colour. `lib/habit.ts` existed only to compute
+   * that, and is deleted rather than left unwired.
+   *
+   * `bioticsProfile` is still read below by `buildAccountTwin`, which does not
+   * surface a per-Biotic state (Gate 3.6 removed those fields from the Twin's
+   * hotspots); the query itself is untouched, so `P0-TRUST-02`'s recorded
+   * reachability argument stays checkable.
+   */
+  const dailyLoop: DailyLoopData = { streak: streakInfo }
 
   /* ── Living Digital Twin — assembled from real account data (score, biotics,
        recent meals, streak) via the shared agent-loop read-model. Only built
@@ -336,7 +335,6 @@ export default async function AccountPage({
         previousScore={(assessments[1]?.overall_score as number | null) ?? null}
         profileType={(assessments[0]?.profile_type as string | null) ?? null}
         retest={retest}
-        biotics={bioticsProfile}
         recentAnalyses={recentAnalyses}
         scoreHistory={scoreHistory}
         paidReports={paidReports}

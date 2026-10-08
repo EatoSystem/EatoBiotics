@@ -30,6 +30,7 @@ function sampleBaseline(over: Partial<Parameters<typeof buildBaseline>[0]> = {})
     score: 62,
     scoreLabel: "Strong Foundation",
     biotics: { prebiotics: 40, probiotics: 75, postbiotics: 55 },
+    bioticsSource: "assessment",
     strengths: ["Fermented foods"],
     priorities: ["Fibre diversity"],
     ...over,
@@ -56,9 +57,26 @@ describe("biotics adapter", () => {
 })
 
 describe("baseline", () => {
-  it("flags low biotics as gaps and keeps the band", () => {
+  /*
+   * ── REPOINTED IN GATE 3.6, AND DELIBERATELY STRONGER ────────────────
+   *
+   * This asserted `gaps.some(g => g.includes("Prebiotics"))` — that is, it
+   * required the gap sentence to NAME A BIOTIC, which is precisely the claim
+   * Gate 3.6 removes. The anchor was legitimately invalidated, so it is
+   * repointed rather than deleted, and repointed to the real invariant:
+   * the gap names the observable FOOD PATTERN, and names no Biotic at all.
+   *
+   * Both halves matter. Asserting only the new phrase would stay green if a
+   * Biotic were added alongside it.
+   */
+  it("flags low sub-scores as gaps, naming the food pattern and no Biotic", () => {
     const base = sampleBaseline()
-    expect(base.gaps.some((g) => g.includes("Prebiotics"))).toBe(true)
+    expect(base.gaps.some((g) => g.includes("plant variety and fibre"))).toBe(true)
+    for (const g of base.gaps) {
+      expect(g, `a gap still names a Biotic: ${g}`).not.toMatch(
+        /\b(Prebiotics|Probiotics|Postbiotics)\b/,
+      )
+    }
     expect(base.foodSystemScore.band.label).toBeTruthy()
     expect(base.foodSystemScore.value).toBe(62)
   })

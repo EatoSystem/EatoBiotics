@@ -38,6 +38,7 @@ import {
   type QuickPillar,
 } from "@/lib/quick-assessment"
 import { AGE_BRACKETS } from "@/lib/age-brackets"
+import { submitWaitlistJoin, type WaitlistUtm } from "@/lib/waitlist/join"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
@@ -56,7 +57,7 @@ const ENGINE_ORDER: QuickPillar[] = ["prebiotics", "probiotics", "postbiotics"]
 
 /** Standard UTM params captured from the /enter URL for campaign attribution. */
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const
-type Utm = Partial<Record<(typeof UTM_KEYS)[number], string>>
+type Utm = WaitlistUtm
 
 type Phase = "intro" | "questions" | "form" | "done"
 
@@ -193,18 +194,18 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
     setStatus("loading")
     setMessage("")
     try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, ...utm, result, healthDataConsent: healthConsent }),
+      // One description of this request, shared with the /enter experience —
+      // see lib/waitlist/join.ts for why it is not written out twice.
+      const out = await submitWaitlistJoin({
+        email, name, ageBracket, country, diet, mainGoal, foodChallenge,
+        referredBy, utm, result, healthDataConsent: healthConsent,
       })
-      const data = (await res.json()) as { ok?: boolean; error?: string; shareCode?: string }
-      if (res.ok && data.ok) {
-        setShareCode(data.shareCode ?? null); setPhase("done")
+      if (out.ok) {
+        setShareCode(out.shareCode); setPhase("done")
         track("waitlist_join_submitted", { profile_type: result.profile.type, score: result.overall, country: country || undefined, referred: !!referredBy })
       } else {
-        setStatus("error"); setMessage(data.error ?? tw.form.genericError)
-        track("waitlist_join_failed", { reason: data.error ?? "unknown" })
+        setStatus("error"); setMessage(out.error ?? tw.form.genericError)
+        track("waitlist_join_failed", { reason: out.error ?? "unknown" })
       }
     } catch {
       setStatus("error"); setMessage(tw.form.genericError)

@@ -47,6 +47,60 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
   return { allowed: true, remaining: limit - existing.count, retryAfterSeconds: 0 }
 }
 
+/* ── Credential endpoints: a second, failures-only counter ────────────────
+   `rateLimit` above checks and increments in one call, which is right for a
+   request you judge before you know its outcome. A login is the other shape:
+   you only want to spend budget on attempts that FAILED, so a correct password
+   never moves a legitimate operator towards a lockout. That needs two halves.
+
+   ══ WHAT THIS IS, AND WHAT IT IS NOT ═══════════════════════════════════════
+
+   The key is the ENDPOINT, not the caller — so guessing spread across many IPs
+   on one warm instance still hits a wall that a per-IP limit alone would miss.
+   Both are used together: per-IP first, then this.
+
+   It is NOT distributed brute-force protection, and nothing here should be
+   read as claiming otherwise. State lives in the module scope of ONE
+   serverless instance, so an attacker fanned out across N warm instances gets
+   N× the ceiling. That is defence in depth against the cheap attack, bought
+   for no infrastructure; a real cross-instance ledger is a post-V1 decision if
+   production traffic ever justifies the write on the login path.
+
+   The window is bounded, deliberately. An attacker who can trip the ceiling
+   must not be able to keep a legitimate admin locked out indefinitely — the
+   budget expires and the endpoint reopens.
+──────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Has this endpoint's failure budget been spent? Read-only: it never
+ * increments, so asking the question costs nothing.
+ */
+export function isFailureCeilingReached(key: string, limit: number): boolean {
+  const bucket = buckets.get(key)
+  if (!bucket || bucket.resetAt <= Date.now()) return false
+  return bucket.count >= limit
+}
+
+/** Spend one unit of the failure budget. Call this ONLY on a failed attempt. */
+export function recordFailedAttempt(key: string, windowMs: number): void {
+  const now = Date.now()
+  const existing = buckets.get(key)
+
+  if (!existing || existing.resetAt <= now) {
+    if (buckets.size > MAX_BUCKETS) {
+      for (const [k, b] of buckets) if (b.resetAt <= now) buckets.delete(k)
+    }
+    buckets.set(key, { count: 1, resetAt: now + windowMs })
+    return
+  }
+  existing.count++
+}
+
+/** Test-only: drop all counters so cases cannot leak state into each other. */
+export function __resetRateLimitState(): void {
+  buckets.clear()
+}
+
 /** Best-effort client IP from proxy headers (Vercel sets x-forwarded-for). */
 export function getClientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for")

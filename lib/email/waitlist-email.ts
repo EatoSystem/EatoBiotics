@@ -3,8 +3,26 @@
  * Mirrors the gradient-header style used by the magic-link / results emails.
  */
 import { unsubscribeUrl } from "./unsubscribe"
+import type { EarlyAccessPlace } from "@/lib/waitlist/early-access"
 
-export function waitlistConfirmationEmail(email?: string): { subject: string; html: string } {
+export function waitlistConfirmationEmail(
+  email?: string,
+  /**
+   * Their place, and the cohort it falls in, when the signup landed inside the
+   * ladder at all.
+   *
+   * This is what makes the early-access promise honourable later: membership
+   * is derived from `created_at` ordering at launch, and this tells the person
+   * the same number that derivation will produce. Omitted — and silent — past
+   * the final cohort or when the count was unavailable, because a place the
+   * product cannot stand behind is worse than no place at all.
+   *
+   * It carries the cohort rather than a number alone because this line used to
+   * read "of the first 100" as a literal, which would have gone on telling
+   * member #400 they were one of the first hundred.
+   */
+  earlyAccessPlace?: EarlyAccessPlace | null,
+): { subject: string; html: string } {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
   const subject = "You're on the EatoBiotics waitlist 🌱"
   const unsubLink = email
@@ -36,7 +54,7 @@ export function waitlistConfirmationEmail(email?: string): { subject: string; ht
             <td style="padding:36px 40px;">
               <p style="margin:0 0 16px;color:#1A2E12;font-size:18px;font-weight:600;">Welcome to EatoBiotics 👋</p>
               <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.65;">
-                Thank you for joining the waitlist. You&rsquo;re now first in line for early access to
+                ${earlyAccessPlace ? `You&rsquo;re <strong>#${earlyAccessPlace.place} of ${earlyAccessPlace.cohort.name}</strong>. ` : ""}Thank you for joining the waitlist. You&rsquo;re now first in line for early access to
                 the EatoBiotics assessment, your personal report, AI meal scoring, recipes, and
                 membership. We&rsquo;ll email you the moment it opens.
               </p>

@@ -154,7 +154,10 @@ export function TextChat({ seed }: { seed?: string }) {
           {STARTERS.map((chip) => (
             <button
               key={chip}
-              onClick={() => send(chip)}
+              // 0R-3: a starter chip DRAFTS the question. It must not call
+              // `send`, which constructs `{ role: "user" }` — that made
+              // product-authored text into the visitor's own message.
+              onClick={() => setInput(chip)}
               className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-icon-green hover:text-foreground"
             >
               {chip}

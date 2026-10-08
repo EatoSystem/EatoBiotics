@@ -201,9 +201,10 @@ describe("reuse and retry gain a missing lens without regenerating", () => {
 
   it("enrichment does not disturb the core scores", () => {
     const stored = { foodSystem: core() }
-    const before = JSON.stringify(stored.foodSystem.bioticScores)
+    // 0R-6R · `bioticScores` left the contract; the snapshot stands in for it.
+    const before = JSON.stringify(stored.foodSystem.systemSnapshot)
     const after = reconcileAddonLens(stored, { addon: "performance", answers: ANSWERS.performance })
-    expect(JSON.stringify(after.foodSystem!.bioticScores)).toBe(before)
+    expect(JSON.stringify(after.foodSystem!.systemSnapshot)).toBe(before)
   })
 })
 

@@ -2,32 +2,38 @@ import { describe, it, expect } from "vitest"
 
 import { heroTaglineFor, framingForScores, framingFor } from "@/lib/report/framing"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
-import { getProfile, computeOverall } from "@/lib/assessment-scoring"
-import { band } from "@/lib/report/build-food-system-report"
+import { getProfile } from "@/lib/assessment-scoring"
 import type { DeepPremiumReport } from "@/lib/claude-report"
 
 /**
- * The hero headline must never contradict the report's own opening.
+ * The hero headline must never state a personal Biotic state.
  *
- * ── The bug this guards ──────────────────────────────────────────────────────
+ * ══ WHAT THIS FILE USED TO GUARD, AND WHY IT CHANGED AT 0R-6R ══════════════
  *
- * Fix #3 of the PR #216 review pointed the hero at `freeScores.profile.tagline`
- * to stop the opening rendering twice. But that tagline comes from `getProfile`
- * (lib/assessment-scoring.ts), which keys PURELY on the overall score — and its
- * `>= 80` branch returns "Your answers point to all three pathways being well
- * supported."
+ * It guarded a CONTRADICTION. `getProfile` keys purely on the overall score and
+ * its `>= 80` branch returns "Your answers point to all three pathways being
+ * well supported" — reachable with probiotics at 25, because probiotics carries
+ * 20% of the weighted total and is floored at 20. That customer got a hero
+ * claiming all three pathways were well supported, directly above a "Your
+ * Pattern" card telling them Probiotics was under-supported at 25/100.
  *
- * Probiotics carries only 20% of the weighted total and is floored at 20, so
- * that branch is reachable with a strained probiotics pathway:
- * pre 95 / pro 25 / post 95 → 0.4·95 + 0.2·25 + 0.4·95 = 81. That customer got a
- * hero claiming all three pathways are well supported, sitting directly above a
- * "Your Pattern" card correctly telling them Probiotics is under-supported at
- * 25/100 — the exact self-contradiction the Framing work exists to prevent,
- * reintroduced on the most prominent line of the page.
+ * `heroTaglineFor` fixed it by substituting, on `mixed` framing only, a sentence
+ * naming the strongest pathway and the thinnest one.
  *
- * `getProfile` is deliberately NOT changed: it also feeds the free results page,
- * the emails and the share card. The correction lives in `heroTaglineFor`
- * (lib/report/framing.ts), which applies the same `Framing` the report body uses.
+ * ── BOTH HALVES WERE PROHIBITED, WHICH THE CONTRADICTION FRAME HID ────────
+ *
+ * 0R-6R removed the card and the ranking. That left the tagline — and the
+ * tagline is not merely in tension with something else, it is itself a BAND
+ * WORD applied to this member's three Biotics, which the permanent product rule
+ * prohibits alongside a number and a bar.
+ *
+ * So the subject of this file moves from "do the two agree" to "may either be
+ * said at all", and the answer is no. `heroTaglineFor` now REFUSES the claim
+ * and returns null, and the hero falls back to the tier label.
+ *
+ * `getProfile` is still deliberately NOT changed: it feeds the free results
+ * page, the emails and the share card. That those surfaces state the same claim
+ * is a wider finding, recorded in the register rather than repaired here.
  */
 
 const WELL_SUPPORTED_CLAIMS = [
@@ -85,109 +91,78 @@ function openingFor(name: ProfileName): string {
   return report.opening
 }
 
-describe("the defect is real and the fixtures reproduce it", () => {
+describe("the claim is real and the fixtures reproduce it", () => {
   it("getProfile's >= 80 tagline claims all pathways are well supported", () => {
     // If this stops holding, the rest of this file is guarding nothing.
     const profile = getProfile(95, PROFILES.strongOverallStrainedPathway.subScores)
     expect(profile.tagline.toLowerCase()).toContain("all three pathways being well supported")
   })
-
-  it("that profile's priority pathway is genuinely strained", () => {
-    const resolved = framingForScores(95, PROFILES.strongOverallStrainedPathway.subScores)
-    expect(resolved?.priorityPathway).toBe("probiotics")
-    expect(band(resolved!.priorityScore)).toBe("strained")
-    expect(resolved?.framing).toBe("mixed")
-  })
-
-  it("the contradiction is reachable through the real scorer, not just synthetic input", () => {
-    // pre 100 / pro 25 / post 100 is the ceiling with a strained probiotics
-    // pathway, and it still clears 80.
-    const subScores = { prebiotics: 100, probiotics: 25, postbiotics: 100 }
-    const overall = computeOverall(subScores)
-    expect(overall).toBe(85)
-    expect(getProfile(overall, subScores).tagline.toLowerCase()).toContain("well supported")
-    expect(framingForScores(overall, subScores)?.framing).toBe("mixed")
-
-    // …and the fix covers it.
-    const tagline = heroTaglineFor({ overall, subScores, profile: getProfile(overall, subScores) })
-    expect(tagline).toBe("A strong overall base, with Probiotics the thinnest part of your answers.")
-  })
 })
 
-describe("hero tagline never disagrees with the opening", () => {
-  it.each(NAMES)("%s — no 'all pathways well supported' claim over a strained pathway", (name) => {
-    const fs = freeScoresFor(name)
-    const tagline = heroTaglineFor(fs)
-    expect(tagline, `${name} produced no tagline`).toBeTruthy()
-
-    const resolved = framingForScores(fs.overall, fs.subScores)!
-    if (resolved.framing === "mixed") {
-      for (const claim of WELL_SUPPORTED_CLAIMS) {
-        expect(tagline!.toLowerCase(), `${name}: "${tagline}"`).not.toContain(claim)
-      }
+describe("0R-6R · the hero states no personal pathway state", () => {
+  it.each(NAMES)("%s — the hero never claims all three pathways are supported", (name) => {
+    const tagline = heroTaglineFor(freeScoresFor(name))
+    if (tagline === null) return
+    for (const claim of WELL_SUPPORTED_CLAIMS) {
+      expect(
+        tagline.toLowerCase().includes(claim),
+        `the hero rendered "${tagline}" — a band word applied to this member's ` +
+          `three Biotics. heroTaglineFor must refuse it and return null.`,
+      ).toBe(false)
     }
   })
 
-  it.each(NAMES)("%s — tagline and opening agree on whether everything is fine", (name) => {
-    const fs = freeScoresFor(name)
-    const tagline = heroTaglineFor(fs)!.toLowerCase()
-    const opening = openingFor(name).toLowerCase()
-
-    const taglineSaysAllFine = WELL_SUPPORTED_CLAIMS.some((c) => tagline.includes(c))
-    const openingSaysAllFine = WELL_SUPPORTED_CLAIMS.some((c) => opening.includes(c))
-
-    expect(taglineSaysAllFine, `${name}\ntagline: ${tagline}\nopening: ${opening}`).toBe(
-      openingSaysAllFine,
-    )
+  it("the strong-overall profile's tagline is refused outright", () => {
+    // NON-VACUITY: the authored tagline exists and carries the claim, so the
+    // null below is a refusal rather than an absent profile.
+    const fs = freeScoresFor("strongOverallStrainedPathway")
+    expect(fs.profile.tagline.toLowerCase()).toContain("all three pathways")
+    expect(heroTaglineFor(fs)).toBeNull()
   })
 
-  it.each(NAMES)("%s — a strained priority pathway is named, not glossed", (name) => {
-    const fs = freeScoresFor(name)
-    const resolved = framingForScores(fs.overall, fs.subScores)!
-    if (resolved.framing !== "mixed") return
+  it("a tagline that makes no such claim is passed through unchanged", () => {
+    expect(
+      heroTaglineFor({ profile: { tagline: "  A steady pattern worth repeating.  " } }),
+    ).toBe("A steady pattern worth repeating.")
+  })
 
-    const tagline = heroTaglineFor(fs)!
-    expect(tagline).toContain("Probiotics")
-    expect(tagline.toLowerCase()).toMatch(/thinnest|under-supported|strong overall base/)
+  it("degrades safely on a missing or blank tagline", () => {
+    expect(heroTaglineFor({ profile: { tagline: "  " } })).toBeNull()
+    expect(heroTaglineFor({ profile: {} })).toBeNull()
   })
 })
 
-describe("hero tagline leaves honest profiles alone", () => {
-  it.each(["uniformlyStrong", "uniformlyEarly"] as const)("%s keeps its authored tagline", (name) => {
-    const fs = freeScoresFor(name)
-    expect(framingForScores(fs.overall, fs.subScores)!.framing).not.toBe("mixed")
-    expect(heroTaglineFor(fs)).toBe(fs.profile.tagline)
-  })
+describe("0R-6R · the hero names no pathway, and neither does the opening", () => {
+  const BIOTIC = /\b(?:pre|pro|post)biotics?\b/i
 
-  it("the 72 adversarial profile's authored tagline was already honest, and is made specific", () => {
-    const fs = freeScoresFor("adversarial72")
-    // getProfile's >= 65 branch is honest but generic.
-    expect(fs.profile.tagline).toContain("one pathway thinner than the rest")
-    // The override names which one.
-    expect(heroTaglineFor(fs)).toBe(
-      "A strong overall base, with Probiotics the thinnest part of your answers.",
-    )
+  it.each(NAMES)("%s — neither the hero nor the fallback opening names a Biotic", (name) => {
+    const tagline = heroTaglineFor(freeScoresFor(name))
+    if (tagline) expect(tagline, `hero: "${tagline}"`).not.toMatch(BIOTIC)
+
+    const opening = openingFor(name)
+    // NON-VACUITY: the opening is still a real paragraph about this customer.
+    expect(opening.length, "the fallback opening is empty").toBeGreaterThan(80)
+    expect(opening, `opening: "${opening}"`).not.toMatch(BIOTIC)
+    expect(opening, "the opening still ranks the pathways").not.toMatch(/strongest|weakest|thinnest/i)
   })
 })
 
-describe("heroTaglineFor degrades safely", () => {
-  it("returns the authored tagline when sub-scores cannot be resolved", () => {
-    expect(framingForScores(90, {})).toBeNull()
-    expect(heroTaglineFor({ overall: 90, subScores: {}, profile: { tagline: "Authored." } })).toBe(
-      "Authored.",
-    )
+describe("framing keys on the overall band alone", () => {
+  it("framingFor maps the three states", () => {
+    expect(framingFor("strong")).toBe("protect")
+    expect(framingFor("building")).toBe("building")
+    expect(framingFor("strained")).toBe("early")
   })
 
-  it("returns null when there is no tagline to fall back to", () => {
-    expect(heroTaglineFor({ overall: 90, subScores: {}, profile: { tagline: "  " } })).toBeNull()
-    expect(heroTaglineFor({ overall: 90, subScores: null, profile: {} })).toBeNull()
+  it("framingForScores needs nothing but the overall score", () => {
+    expect(framingForScores(95).framing).toBe("protect")
+    expect(framingForScores(22).framing).toBe("early")
   })
 
-  it("framingFor maps the four states", () => {
-    expect(framingFor("strong", "strained")).toBe("mixed")
-    expect(framingFor("strong", "building")).toBe("protect")
-    expect(framingFor("strong", "strong")).toBe("protect")
-    expect(framingFor("building", "strained")).toBe("building")
-    expect(framingFor("strained", "strained")).toBe("early")
+  it("NON-VACUITY: the retired `mixed` framing is unreachable", () => {
+    // `mixed` was the only branch that read a priority band, and the only one
+    // whose copy named two pathways. It cannot be produced from any score.
+    const produced = new Set([0, 22, 50, 64, 65, 72, 79, 80, 95, 100].map((n) => framingForScores(n).framing))
+    expect([...produced].sort()).toEqual(["building", "early", "protect"])
   })
 })

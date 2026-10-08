@@ -251,7 +251,7 @@ const RHYTHM: ConsultationQuestion[] = [
     intent: "Anchors the day, so the 30-day loop can attach a change to a real, repeatable moment.",
     whyNeeded:
       "The first meal is the most repeatable one in most weeks, which makes it the cheapest place to put a change. The Report needs to know whether there is one.",
-    reportTargets: ["thirtyDayLoop", "foodSystemMap", "foodTools"],
+    reportTargets: ["thirtyDayLoop", "foodTools"],
     freeAssessmentOverlap: "none",
   },
   {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { buildAccountTwin, type AccountTwinInput } from "@/lib/agent-loop/account-twin"
-import { twinVisualState, auraGradientForBiotic } from "@/lib/account/twin-visual"
+import { twinVisualState, auraGradientForTone, restingAuraGradient } from "@/lib/account/twin-visual"
 import { buildTwinLenses } from "@/lib/account/twin-data"
 
 function sampleInput(over: Partial<AccountTwinInput> = {}): AccountTwinInput {
@@ -54,7 +54,13 @@ describe("twinVisualState", () => {
     expect(v.pulseSec).toBeLessThan(5) // improving pulses faster
     expect(v.confidence).toBeGreaterThan(0)
     expect(v.confidence).toBeLessThanOrEqual(1)
-    expect(v.auraGradient).toContain("radial-gradient")
+    /*
+     * 0R-5 · `auraGradient` is no longer on `TwinVisualState`. It was
+     * `auraGradientForBiotic(twin.biotics.strongest, …)` — a comparative
+     * personal Biotic verdict encoded as a colour (`P0-SCIENCE-04`) — and the
+     * assertion that it looked like a gradient was the only thing checking it.
+     */
+    expect("auraGradient" in v, "the Biotic-derived aura field is back").toBe(false)
   })
 
   it("lowers confidence when few signals are known", async () => {
@@ -63,13 +69,75 @@ describe("twinVisualState", () => {
     expect(v.confidence).toBeLessThan(0.3)
   })
 
-  it("re-tints the aura per focus biotic (lenses)", () => {
-    const pre = auraGradientForBiotic("prebiotics")
-    const post = auraGradientForBiotic("postbiotics")
-    expect(pre).toContain("radial-gradient")
-    expect(post).toContain("radial-gradient")
-    // Postbiotics leans yellow/orange; prebiotics leans lime/green — so they differ.
-    expect(pre).not.toBe(post)
+  it("tints the aura per palette tone, and the tone is all it is given", () => {
+    /*
+     * 0R-5 · this read `auraGradientForBiotic("prebiotics")` /
+     * `("postbiotics")`. The colours are unchanged — what changed is the
+     * PARAMETER: a palette tone, which `twin.biotics.weakest` is not and cannot
+     * be cast to, so the member's Biotic state can no longer reach the stage's
+     * colour from any call site.
+     */
+    const lime = auraGradientForTone("lime")
+    const amber = auraGradientForTone("amber")
+    const green = auraGradientForTone("green")
+    for (const g of [lime, amber, green]) expect(g).toContain("radial-gradient")
+    expect(new Set([lime, amber, green]).size, "two tones collapsed to one colour").toBe(3)
+  })
+
+  it("changing which Biotic is weakest cannot change the stage aura", async () => {
+    /*
+     * ══ THE 0R-5 PROOF, WITH VARIED VALUES ════════════════════════════════
+     *
+     * `P0-SCIENCE-04` was `auraGradientForBiotic(twin.biotics.weakest, …)`, so
+     * the colour of the glow around the member's figure WAS which of their
+     * three Biotics ranked lowest. The repair is structural — `weakest` is a
+     * `BioticKey` and the aura takes an `AuraTone` — but a structural argument
+     * is only as good as the behaviour, so the behaviour is asserted.
+     *
+     * Three twins, each with a DIFFERENT weakest Biotic and identical
+     * observation counts (so confidence matches and the comparison is about
+     * the Biotics and nothing else). This is the fixture-design lesson the
+     * register records: the captured fixtures all have Probiotic lowest, and a
+     * state chosen to look ordinary can hide a defect by agreeing with it.
+     */
+    const cases = [
+      ["probiotics lowest", { prebiotic: 71, probiotic: 23, postbiotic: 48 }],
+      ["prebiotics lowest", { prebiotic: 18, probiotic: 77, postbiotic: 55 }],
+      ["postbiotics lowest", { prebiotic: 64, probiotic: 69, postbiotic: 11 }],
+    ] as const
+
+    const auras = new Set<string>()
+    const weakests = new Set<string>()
+    for (const [, biotics] of cases) {
+      const { twin } = await buildAccountTwin(sampleInput({ biotics }))
+      weakests.add(twin.biotics.weakest)
+      // The stage's default branch, exactly as `twin-stage.tsx` computes it.
+      auras.add(restingAuraGradient(twinVisualState(twin).confidence))
+    }
+
+    // Non-vacuity: the three fixtures really do disagree about which is weakest.
+    expect(
+      weakests.size,
+      "the three fixtures produced the same weakest Biotic — the comparison " +
+        "would prove nothing",
+    ).toBe(3)
+    expect(
+      auras.size,
+      `the aura changed with the weakest Biotic (${[...auras].length} distinct ` +
+        `gradients across ${[...weakests].join(", ")}). P0-SCIENCE-04 has regressed.`,
+    ).toBe(1)
+  })
+
+  it("the resting aura is one fixed tone for every member", () => {
+    /*
+     * The slot that used to hold the member's weakest Biotic. Non-vacuous: it
+     * must still produce a gradient, and it must be the SAME gradient at a
+     * given intensity no matter what is happening in the account — which is
+     * the property `P0-SCIENCE-04` violated.
+     */
+    expect(restingAuraGradient(0.42)).toContain("radial-gradient")
+    expect(restingAuraGradient(0.42)).toBe(restingAuraGradient(0.42))
+    expect(restingAuraGradient(0.42)).toBe(auraGradientForTone("lime", 0.42))
   })
 })
 

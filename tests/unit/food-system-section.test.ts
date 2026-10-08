@@ -107,7 +107,6 @@ describe("FoodSystemSection", () => {
       expect(body).toContain(mod.title)
       expect(body).toContain(mod.plainEnglish)
       expect(body).toContain(mod.whyItMatters)
-      expect(body).toContain(mod.whatYourAnswersSuggest)
       expect(body).toContain(mod.actionBridge)
     }
   })
@@ -130,21 +129,26 @@ describe("FoodSystemSection", () => {
     expect(body).toContain(report.priorityLever.whatToNotice)
   })
 
-  it("renders both node maps with a written state, never colour alone", () => {
+  it("renders the body-signal map, and no state word anywhere", () => {
     const report = youReport()
     const body = text(renderSection(report))
 
-    for (const node of [...report.foodSystemMap, ...report.bodySignalMap]) {
+    /*
+     * 0R-6R · this used to walk `foodSystemMap` too and REQUIRE a state word
+     * for every pathway node — an accessibility rule (never colour alone)
+     * written over a construct that should not have been rendered in any form.
+     * `foodSystemMap` is gone; body signals remain, and they carry no state.
+     */
+    expect(report.bodySignalMap.length).toBeGreaterThan(0)
+    for (const node of report.bodySignalMap) {
       expect(body).toContain(node.label)
       expect(body).toContain(node.explanation)
+      expect(node).not.toHaveProperty("state")
+      expect(node).not.toHaveProperty("score")
     }
 
-    // Every node's state must reach the reader as words. A coloured dot alone
-    // fails WCAG 1.4.1 and disappears entirely in print.
-    const stateWords = ["Well supported", "Building", "Room to grow", "Not enough to say"]
-    for (const node of report.foodSystemMap) {
-      expect(stateWords.some((w) => body.includes(w))).toBe(true)
-      expect(node.state).toBeTruthy()
+    for (const word of ["Well supported", "Room to grow", "Not enough to say"]) {
+      expect(body, `the band word "${word}" still reaches the reader`).not.toContain(word)
     }
   })
 
@@ -232,24 +236,33 @@ describe("body-led chapter", () => {
     // the pathway (bioticAccent), not its state, and ring position is
     // orientation. Drop the words and the state is not conveyed at all — which
     // is what this assertion is here to prevent.
-    for (const node of report.foodSystemMap) {
-      const label = PATHWAY_LABEL[node.id as keyof typeof PATHWAY_LABEL]
-      if (label) expect(body).toContain(label)
-    }
-    const stateWords = ["Well supported", "Building", "Room to grow", "Not enough to say"]
-    expect(stateWords.some((w) => body.includes(w))).toBe(true)
+    /*
+     * 0R-6R · the ring carries the three pathway NAMES and nothing else. The
+     * state words it used to caption them with are the construct, so the
+     * assertion that one of them is present is inverted.
+     */
+    for (const label of Object.values(PATHWAY_LABEL)) expect(body).toContain(label)
+    const stateWords = ["Well supported", "Room to grow", "Not enough to say"]
+    expect(stateWords.some((w) => body.includes(w))).toBe(false)
   })
 
-  it("numbers the chapters 01-07, adding 08 only for a family report", () => {
-    // The body-led opener is the cover and carries no numeral, so the first
-    // teaching chapter is 01.
+  it("numbers the chapters 01-06, adding 07 only for a family report", () => {
+    /*
+     * 0R-6R · one lower than before. The "Part by Part" chapter — the three
+     * pathway nodes with a band, a score and a band sentence each — is retired,
+     * so the run is 01-06 and a family report adds 07 rather than 08.
+     *
+     * The count is DERIVED at render time (`const ch = () => ++n`), which is
+     * why removing a chapter did not leave a gap in the sequence, and why this
+     * assertion is the one that notices.
+     */
     const plain = text(renderSection(youReport()))
-    for (const n of ["01", "02", "03", "04", "05", "06"]) {
+    for (const n of ["01", "02", "03", "04", "05"]) {
       expect(plain).toContain(n)
     }
     // Evidence is the last chapter on a non-family report.
-    expect(plain.indexOf("07")).toBeGreaterThan(-1)
-    expect(plain).not.toContain("08")
+    expect(plain.indexOf("06")).toBeGreaterThan(-1)
+    expect(plain).not.toContain("07")
 
     const family: FoodSystemReport = {
       ...youReport(),
@@ -262,7 +275,8 @@ describe("body-led chapter", () => {
       },
     }
     // The family chapter slots in before Evidence, so there is one more numeral.
-    expect(text(renderSection(family))).toContain("08")
+    // 0R-6R · 07 now, one lower with the retired chapter.
+    expect(text(renderSection(family))).toContain("07")
   })
 })
 

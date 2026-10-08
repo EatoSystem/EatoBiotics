@@ -23,15 +23,11 @@ const STEPS: { n: string; title: string; body: string; href?: string; cta?: stri
     title: "Get your score and report",
     body: "See your score, your three biotics (prebiotics, probiotics, postbiotics), and a personalised report emailed to you. Save your results to an account with a one-tap sign-in link.",
   },
+  // A "Log meals, one at a time" step sat here and pointed at /analyse. Meal
+  // analysis is outside the V1 launch product (lib/v1-surface.ts), and a
+  // support page must not teach a customer to use something that answers 404.
   {
     n: "3",
-    title: "Log meals, one at a time",
-    body: "Describe or photograph a meal and get its Biotics Score instantly — with a plain-English insight on what it does for your gut and one swap to make it better.",
-    href: "/analyse",
-    cta: "Score a meal",
-  },
-  {
-    n: "4",
     title: "Watch your Food System grow",
     body: "Your living Food System responds to what you feed it. Keep a daily rhythm, build a streak, and retest after 75 days to see how far you've come.",
   },
@@ -59,26 +55,23 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "How do I log a meal?",
-    a: (
-      <>
-        On the <Link href="/analyse" className="underline hover:opacity-80">Score My Meal</Link> page
-        (or inside your account), describe your meal in a sentence or snap a photo. You'll get an
-        instant Biotics Score, the three biotics broken down, and a short insight. You don't need to
-        log every meal — even a few a week builds a useful picture.
-      </>
-    ),
-  },
-  {
     q: "What's the difference between prebiotics, probiotics, and postbiotics?",
-    a: "Prebiotics are fibre-rich plant foods that feed your gut bacteria (vegetables, wholegrains, legumes, seeds). Probiotics are live cultures from fermented foods (yogurt, kefir, kimchi, sauerkraut, miso). Postbiotics are the beneficial compounds your bacteria produce when they're well fed (found in aged cheese, sourdough, extra-virgin olive oil, and made inside you). A strong food system includes all three.",
+    /* Rewritten in Phase 1 to the strict ISAPP definitions. The previous answer
+     * made all three of the equivalences the product no longer stands behind:
+     * "Probiotics are live cultures from fermented foods" (a fermented food is
+     * not a probiotic — many are pasteurised or heated before eating), fibre
+     * read as prebiotic by definition, and postbiotics located IN named foods,
+     * which lib/pillars.ts's house rule forbids outright: no food is a
+     * postbiotic. This is the page that teaches the framework, so it is the
+     * one place the definitions have to be exactly right. */
+    a: "Prebiotics are substrates your gut microbes can use, with a demonstrated benefit — in practice that means fibre-rich plant foods: vegetables, wholegrains, legumes and seeds. Probiotics are live microorganisms that, in adequate amounts, have a demonstrated benefit; fermented foods like yoghurt, kefir, kimchi, sauerkraut and miso are the everyday route to them, though whether microorganisms survive to be eaten depends on the food and how it is made. Postbiotics are preparations of inanimate microorganisms or their components — and the beneficial compounds your own bacteria produce when they are well fed. No food is a postbiotic; foods like sourdough, aged cheese and extra-virgin olive oil support the process rather than being it. A strong food system includes all three.",
   },
   {
     q: "What do the memberships include?",
     a: (
       <>
-        Free tools include the assessment and meal scoring. Paid tiers add deeper features —
-        personalised plans, an AI food-system consultant, and more, depending on the tier. See{" "}
+        The Food System Assessment is free. Paid tiers add deeper features, depending on the
+        tier. See{" "}
         <Link href="/pricing" className="underline hover:opacity-80">Pricing</Link> for the current
         details.
       </>

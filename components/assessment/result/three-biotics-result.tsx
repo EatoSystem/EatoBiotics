@@ -1,11 +1,7 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import { Leaf, Wheat, FlaskConical, Clock, Heart } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { BIOTIC_INTRO, bioticOf, type Biotic } from "@/lib/assessment/biotics"
 import type { PillarInsight } from "@/lib/assessment-scoring"
-import { usePrefersReducedMotion } from "./use-reduced-motion"
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Leaf,
@@ -23,18 +19,39 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
  * sold to was a "weakest pillar" callout that closed by advertising the paid
  * plan. The free result now stands on its own.
  *
- * The three bars come from the score reveal, where they competed with the
- * number; here they sit with the interpretation that explains them, so each
- * Biotic appears once rather than twice within a screen of itself.
- *
  * BIOTIC_INTRO is reused from lib/assessment/biotics.ts rather than restated —
  * the same three lines the questions introduced, including the Postbiotics
  * wording that stays on reported patterns and claims no metabolite, SCFA,
  * microbial or laboratory measurement.
+ *
+ * ══ WHY THERE IS NO NUMBER AND NO BAR ═══════════════════════════════════════
+ *
+ * Each card carried `{insight.score}`, an "{label}: {score} out of 100"
+ * announcement and a bar filled to that percentage. "Postbiotics: 64 out of
+ * 100" is a personal postbiotic state expressed as a number, which
+ * POSTBIOTICS_INFERENCE_BOUNDARY prohibits by name — "personal Postbiotics
+ * state", "low Postbiotics", and the relationships quantify / indicate /
+ * reflect. The other two were the same shape of claim with a weaker spotlight.
+ *
+ * Under the strict ISAPP definitions the product now holds, none of the three
+ * is something a questionnaire can measure in a person: a prebiotic is a
+ * substrate that is selectively utilised AND confers a benefit; a probiotic is
+ * a characterised live organism with a demonstrated benefit; a postbiotic is a
+ * preparation. Fifteen self-reported answers reach none of them.
+ *
+ * So the Biotics keep every bit of their prominence — the heading, the order,
+ * the colour, the icon, the meaning line and the interpretation that explains
+ * what to do — and lose only the number that claimed to measure them. The
+ * overall Biotics Score™ above is untouched and computed by the same
+ * arithmetic. The same change was made to the pre-launch reveal in Tranche 1;
+ * this is the canonical result catching up with it, so the product stops
+ * answering the same question two different ways.
+ *
+ * The scored dimensions that will eventually carry numbers here (Diversity,
+ * Plants & Fibre, Fermented Foods, Food Quality, Meal Rhythm) are FSS-v1
+ * CANDIDATE domains — frozen for scientific review and not yet approved.
  */
 export function ThreeBioticsResult({ insights }: { insights: PillarInsight[] }) {
-  const reducedMotion = usePrefersReducedMotion()
-
   return (
     <section className="border-t border-border bg-secondary/10 px-6 py-14">
       <div className="mx-auto max-w-2xl">
@@ -51,7 +68,7 @@ export function ThreeBioticsResult({ insights }: { insights: PillarInsight[] }) 
         <div className="mt-8 space-y-4">
           {insights.map((insight, i) => (
             <ScrollReveal key={insight.pillar} delay={i * 60}>
-              <BioticCard insight={insight} index={i} reducedMotion={reducedMotion} />
+              <BioticCard insight={insight} />
             </ScrollReveal>
           ))}
         </div>
@@ -60,26 +77,8 @@ export function ThreeBioticsResult({ insights }: { insights: PillarInsight[] }) 
   )
 }
 
-function BioticCard({
-  insight,
-  index,
-  reducedMotion,
-}: {
-  insight: PillarInsight
-  index: number
-  reducedMotion: boolean
-}) {
-  const [visible, setVisible] = useState(reducedMotion)
+function BioticCard({ insight }: { insight: PillarInsight }) {
   const Icon = ICON_MAP[insight.icon] ?? Leaf
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setVisible(true)
-      return
-    }
-    const t = setTimeout(() => setVisible(true), 200 + index * 120)
-    return () => clearTimeout(t)
-  }, [index, reducedMotion])
 
   /* The canonical Biotic name, when the insight's label is one. Family and Mind
    * insights are not Biotics, so this falls back to the label they carry. */
@@ -98,38 +97,11 @@ function BioticCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="text-base font-semibold text-foreground">{insight.label}</p>
-            {/* The score is announced with its name, so it never depends on the
-              * bar's colour or its position in the list to mean anything. */}
-            <span
-              className="text-sm font-bold tabular-nums"
-              style={{ color: insight.color }}
-              aria-hidden
-            >
-              {insight.score}
-            </span>
-            <span className="sr-only">
-              {insight.label}: {insight.score} out of 100.
-            </span>
-          </div>
+          <p className="text-base font-semibold text-foreground">{insight.label}</p>
 
           {meaning && (
             <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{meaning}</p>
           )}
-
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/40" aria-hidden>
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: visible ? `${insight.score}%` : "0%",
-                background: insight.gradient,
-                transition: reducedMotion
-                  ? "none"
-                  : `width 800ms cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 100}ms`,
-              }}
-            />
-          </div>
 
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {insight.strength ?? insight.opportunity}

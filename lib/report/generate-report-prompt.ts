@@ -7,8 +7,6 @@
  */
 import {
   normalizeToBiotics,
-  orderedByNeed,
-  PATHWAY_LABEL,
   type BioticScores,
   type IncomingSubScores,
 } from "./subscores"
@@ -23,11 +21,33 @@ export type RequestBody = {
   profile: { type: string; tagline: string; description: string }
 }
 
+/*
+ * ══ 0R-6R · THE RANKING LEAVES THE PROMPT ══════════════════════════════════
+ *
+ * The score block ended with two lines the model was told to write from:
+ *
+ *   - Weakest pathway: ${PATHWAY_LABEL[weakestKey]} (${weakestScore}/100)
+ *   - Strongest pathway: ${PATHWAY_LABEL[strongestKey]} (${strongestScore}/100)
+ *
+ * — the same argmin/argmax `orderedByNeed` served everywhere else, instructing
+ * a model to assert a comparative personal Biotic verdict in prose. The tone
+ * block below used to add "Reference their specific pathway scores throughout"
+ * and "every sentence should feel earned by their actual numbers", which is as
+ * close to commissioning the construct as an instruction gets.
+ *
+ * ── WHAT IS NOT CHANGED HERE, AND WHY IT IS RECORDED INSTEAD ──────────────
+ *
+ * The three raw per-Biotic scores still appear in the block below. That same
+ * shape appears in `app/api/generate-deep-questions/route.ts` and
+ * `app/api/submit-deep-assessment/route.ts`, both of which CLAUDE.md lists
+ * under "What NOT to Modify". Removing it from one of the three would leave the
+ * finding half-closed and inconsistent across surfaces that do the same thing,
+ * so all three are recorded together as one prompt-surface finding for a
+ * tranche that owns prompts. 0R-6R removes the RANKING, which is its own
+ * finding and is removable here without touching a protected file.
+ */
 export function buildPrompt(body: RequestBody, biotics: BioticScores): string {
   const { tier, overall, profile } = body
-  const ranked = orderedByNeed(biotics)
-  const [weakestKey, weakestScore] = ranked[0]
-  const [strongestKey, strongestScore] = ranked[ranked.length - 1]
 
   const scoreBlock = `
 THEIR ASSESSMENT SCORES:
@@ -38,18 +58,18 @@ THEIR ASSESSMENT SCORES:
 Pillar scores (3 Biotics):
 - Prebiotics (what feeds their microbes): ${biotics.prebiotics}/100
 - Probiotics (live-culture exposure): ${biotics.probiotics}/100
-- Postbiotics (recovery, rhythm, resilience): ${biotics.postbiotics}/100
-- Weakest pathway: ${PATHWAY_LABEL[weakestKey]} (${weakestScore}/100)
-- Strongest pathway: ${PATHWAY_LABEL[strongestKey]} (${strongestScore}/100)`
+- Postbiotics (recovery, rhythm, resilience): ${biotics.postbiotics}/100`
 
   const toneBlock = `
 TONE AND STYLE:
 - Warm, intelligent, non-clinical
 - Never use the word "diet" — always say "food system", "eating habits", or "way of eating"
 - Use "system" frequently to reinforce that this is about building something
-- Write as if this report could ONLY belong to this exact person with these exact scores
-- Reference their specific pathway scores and profile type throughout
-- Be specific, not generic — every sentence should feel earned by their actual numbers`
+- Write as if this report could ONLY belong to this exact person
+- Do NOT rank the three pathways against each other, and do not describe any one
+  of them as this person's strongest or weakest — the assessment cannot measure
+  that comparison
+- Be specific, not generic — ground it in what they told you about their food`
 
   if (tier === "starter") {
     return `You are EatoBiotics — an expert in food system health, food systems, and the microbiome. A user has completed the Food System Inside You Assessment.

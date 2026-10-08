@@ -68,6 +68,9 @@ type TrustedQuestionInput = {
   profile: { type: string; tagline: string; description: string }
   entitledAddon: PaidReportHealthSystem | null
   foundation: "you" | "family"
+  /** The buyer's address from the settled checkout. Null on a legacy session
+   *  that carries none, and on the local unverified-development path. */
+  email: string | null
 }
 
 const PILLAR_LABELS: Record<string, string> = {
@@ -236,6 +239,7 @@ function trustedInputFromSession(summary: PaidReportSummary | null): TrustedQues
     profile: summary.profile,
     entitledAddon: asAddon(summary.selectedAddon),
     foundation: summary.foundationType === "family" ? "family" : "you",
+    email: summary.email ?? null,
   }
 }
 
@@ -255,6 +259,10 @@ function trustedInputForDevMode(body: RequestBody): TrustedQuestionInput {
     profile: body.profile,
     entitledAddon: null,
     foundation: "you",
+    // No settled session means no verified address. Null rather than the
+    // body's claim: an unverified address on a paid row is worse than none,
+    // because reconciliation would link the purchase to whoever was named.
+    email: null,
   }
 }
 
@@ -282,7 +290,7 @@ function trustedInputForDevMode(body: RequestBody): TrustedQuestionInput {
  */
 function ownedAssessmentFields(
   trusted: TrustedQuestionInput
-): { tier: string; free_scores: Record<string, unknown> } {
+): { tier: string; free_scores: Record<string, unknown>; email: string | null } {
   return ownedPaidAssessmentFields({
     tier: trusted.tier,
     overall: trusted.overall,
@@ -290,6 +298,7 @@ function ownedAssessmentFields(
     profile: trusted.profile,
     foundationType: trusted.foundation,
     selectedAddon: trusted.entitledAddon,
+    email: trusted.email,
   })
 }
 

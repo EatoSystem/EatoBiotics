@@ -96,9 +96,6 @@ export async function GET(req: NextRequest) {
       score:          (lead.overall_score as number) ?? 0,
       profileType:    (lead.profile_type as string | null) ?? "Emerging Balance",
       weakestPillar,
-      feedScore:      subScores.prebiotics  ?? subScores.feed  ?? 0,
-      seedScore:      subScores.probiotics  ?? subScores.seed  ?? 0,
-      healScore:      subScores.postbiotics ?? subScores.heal  ?? 0,
       dayOffset,
     }
 

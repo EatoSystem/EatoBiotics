@@ -102,7 +102,7 @@ export const GOALS: Record<string, GoalConfig> = {
     emoji: "🦠",
     headline: "Best foods for gut health",
     description:
-      "A healthy gut is a diverse one. The foods that build it span all three biotics — prebiotic fibres that feed your bacteria, probiotic foods that add living cultures, and the postbiotic-supporting polyphenols that help them thrive. Variety is the single most important principle.",
+      "A healthy gut is a diverse one. The foods that build it span all three biotics — the plant fibres your bacteria feed on, the foods transformed by fermentation, and the polyphenol-rich foods that support what your microbes make. Variety is the single most important principle.",
     types: ["prebiotic", "probiotic", "postbiotic"],
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",

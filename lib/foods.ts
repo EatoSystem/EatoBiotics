@@ -259,12 +259,12 @@ export const foods: Food[] = [
     description:
       "Kimchi is a traditional Korean fermented vegetable dish — typically cabbage and radish seasoned with chilli, garlic, ginger, and salt. The fermentation process produces billions of live Lactobacillus bacteria, making it one of the most potent probiotic foods on the planet. Its sharp, complex flavour is a sign of microbial life at work.",
     howToEat:
-      "Add two tablespoons alongside any meal — eggs, rice, soup, or simply on sourdough toast. No cooking needed. Heat destroys the live cultures, so serve it cold or at room temperature. Start with a tablespoon a day if your gut isn't used to fermented foods.",
+      "Add two tablespoons alongside any meal — eggs, rice, soup, or simply on sourdough toast. No cooking needed. Heat undoes the fermentation, so serve it cold or at room temperature. Start with a tablespoon a day if your gut isn't used to fermented foods.",
     science:
       "A 2021 Stanford study found that a high-fermented-food diet — including kimchi — significantly increased microbiome diversity and decreased markers of inflammation in healthy adults over 10 weeks.",
     scienceSource: "Wastyk et al., Cell, 2021",
     benefits: [
-      { title: "Adds Live Cultures", detail: "Introduces Lactobacillus and other beneficial bacteria directly into your gut." },
+      { title: "Lacto-fermented", detail: "Fermented by Lactobacillus rather than preserved in vinegar — the distinction worth reading on a label." },
       { title: "Reduces Inflammation", detail: "Fermented foods are consistently linked to lower inflammatory markers in clinical studies." },
       { title: "Supports Immunity", detail: "70% of your immune system lives in your gut — a diverse microbiome is your first line of defence." },
       { title: "Improves Digestion", detail: "The live enzymes in kimchi help break down food and ease bloating." },
@@ -283,7 +283,7 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     tagline: "The most potent fermented drink you can make at home.",
     description:
-      "Kefir is a fermented milk drink made with kefir grains — a symbiotic culture of bacteria and yeast. It contains significantly more live cultures than yogurt, with up to 61 strains of bacteria and yeast documented. Originally from the Caucasus mountains, it has been consumed for centuries as a medicine for digestion, immunity, and longevity.",
+      "Kefir is a fermented milk drink made with kefir grains — a symbiotic culture of bacteria and yeast. It is fermented by a wider mix of bacteria and yeasts than yogurt — up to 61 species have been documented in kefir grains. Originally from the Caucasus mountains, it has been consumed for centuries as a medicine for digestion, immunity, and longevity.",
     howToEat:
       "Drink 150-200ml daily, ideally in the morning. Use it as the base for overnight oats, blend into smoothies, or pour over fruit and seeds. Kefir made from oat milk or coconut milk works well if you avoid dairy. The slightly sour, effervescent taste is a sign the cultures are alive and active.",
     science:
@@ -309,14 +309,14 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     tagline: "Two ingredients. Billions of bacteria.",
     description:
-      "Sauerkraut is simply cabbage and salt — fermented for days or weeks until teeming with live Lactobacillus bacteria. It's one of the oldest fermented foods in human history, eaten across Europe for centuries as a preservation method and digestive medicine. Raw, unpasteurised sauerkraut is a living food. Pasteurised versions sold in jars have no live cultures.",
+      "Sauerkraut is simply cabbage and salt — fermented for days or weeks by the Lactobacillus already on the leaves. It's one of the oldest fermented foods in human history, eaten across Europe for centuries as a preservation method and digestive medicine. Raw and unpasteurised is not the same product as the shelf-stable jar: pasteurising after fermentation kills the microorganisms it produced.",
     howToEat:
-      "Two tablespoons alongside any meal. Always buy raw and refrigerated — not the shelf-stable pasteurised version which has no live cultures. Add to salads, grain bowls, or alongside eggs. You can make your own with nothing but a cabbage, salt, and a jar — it takes 5 days.",
+      "Two tablespoons alongside any meal. Always buy raw and refrigerated — not the shelf-stable pasteurised version, which is heated after fermenting. Add to salads, grain bowls, or alongside eggs. You can make your own with nothing but a cabbage, salt, and a jar — it takes 5 days.",
     science:
       "A single serving of homemade sauerkraut can contain more live bacteria than an entire bottle of probiotic supplements — with greater strain diversity.",
     scienceSource: "Parvez et al., Journal of Applied Microbiology, 2006",
     benefits: [
-      { title: "Dense in Live Cultures", detail: "Billions of CFU of Lactobacillus per serving — in a form your gut can absorb." },
+      { title: "Lacto-fermented", detail: "Fermented by Lactobacillus rather than preserved in acid. How much survives to be eaten depends on processing and storage." },
       { title: "Vitamin C Rich", detail: "Fermentation increases bioavailable Vitamin C — historically used to prevent scurvy at sea." },
       { title: "Digestive Enzyme Source", detail: "Contains natural digestive enzymes that help break down food more efficiently." },
       { title: "Mood Support", detail: "Lactobacillus strains in sauerkraut produce GABA — a neurotransmitter that reduces anxiety." },
@@ -334,17 +334,17 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))",
     tagline: "The everyday probiotic most people already eat.",
     description:
-      "Full-fat natural yogurt is one of the most accessible probiotic foods — containing Lactobacillus bulgaricus and Streptococcus thermophilus by law in most countries. Greek yogurt concentrates the protein and cultures by straining out the whey. Look for 'live cultures' on the label — and avoid sweetened varieties which feed harmful bacteria as readily as helpful ones.",
+      "Full-fat natural yogurt is one of the most accessible probiotic foods — containing Lactobacillus bulgaricus and Streptococcus thermophilus by law in most countries. Greek yogurt concentrates the protein and cultures by straining out the whey. Look for a live or active cultures statement on the label — and avoid sweetened varieties which feed harmful bacteria as readily as helpful ones.",
     howToEat:
       "Eat plain full-fat yogurt with berries, seeds, and a drizzle of honey. Use as a base for overnight oats or smoothies. Mix with garlic and cucumber for a quick tzatziki. Always choose unsweetened — you can add your own natural sweetness from fruit. Greek yogurt has twice the protein of regular yogurt, making it an ideal breakfast food.",
     science:
       "Regular yogurt consumption is associated with a 19% reduction in type 2 diabetes risk, improved lactose digestion, and modest increases in microbiome diversity compared to non-fermented dairy.",
     scienceSource: "Chen et al., BMC Medicine, 2014",
     benefits: [
-      { title: "Live Cultures", detail: "Contains Lactobacillus bulgaricus and Streptococcus thermophilus — beneficial probiotic strains." },
+      { title: "Defined by its cultures", detail: "Fermented with Lactobacillus bulgaricus and Streptococcus thermophilus, which in most countries is what legally makes it yogurt." },
       { title: "High Protein", detail: "Greek yogurt provides 15-20g protein per 200g — ideal for muscle maintenance." },
       { title: "Calcium Source", detail: "One of the most bioavailable sources of calcium for bone and food system health." },
-      { title: "Improves Lactose Digestion", detail: "The live cultures pre-digest lactose — making it tolerable for most sensitive individuals." },
+      { title: "Improves Lactose Digestion", detail: "Fermentation breaks down much of the lactose, and yogurt cultures improve its digestion — one of the few effects here with an approved health claim behind it." },
     ],
     pairsWith: ["Blueberries", "Oats", "Flaxseed", "Honey"],
     publishedDay: 17,
@@ -362,7 +362,7 @@ export const foods: Food[] = [
     description:
       "Miso is a fermented soybean paste that has been a cornerstone of Japanese cuisine and traditional medicine for over 1,000 years. The fermentation process — using Aspergillus oryzae mould — produces a rich array of live beneficial bacteria, digestive enzymes, B vitamins, and bioavailable amino acids. White miso is milder and fermented for weeks; red miso is aged for months and significantly more intense.",
     howToEat:
-      "Never boil miso — heat above 70°C destroys the live cultures. Stir into soups after removing from the heat, blend into dressings, or use as a marinade. A teaspoon dissolved in warm water is a simple, powerful daily gut tonic. One tablespoon of miso paste provides roughly a billion CFU of beneficial bacteria.",
+      "Never boil miso — heat above 70°C undoes the fermentation. Stir into soups after removing from the heat, blend into dressings, or use as a marinade. A teaspoon dissolved in warm water is a simple, powerful daily gut tonic. One tablespoon of miso paste provides roughly a billion CFU of beneficial bacteria.",
     science:
       "Regular miso consumption is associated with lower rates of gastric cancer in Japanese epidemiological studies, and miso's isoflavones have been shown to support oestrogen balance and reduce menopausal symptoms.",
     scienceSource: "Watanabe et al., Japanese Journal of Clinical Oncology, 1984",
@@ -708,7 +708,7 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
     tagline: "The highest inulin food on the planet.",
     description:
-      "Jerusalem artichoke — also called sunchoke — contains up to 76% of its dry weight as inulin, making it the single richest source of prebiotic fibre in the human diet. This knobbly tuber feeds Bifidobacteria and Lactobacillus with remarkable efficiency. Start slowly — the high inulin content can cause gas in those not accustomed to prebiotic-rich foods.",
+      "Jerusalem artichoke — also called sunchoke — contains up to 76% of its dry weight as inulin, making it the single richest source of prebiotic fibre in the human diet. This knobbly tuber feeds Bifidobacteria and Lactobacillus with remarkable efficiency. Start slowly — the high inulin content can cause gas in those not accustomed to it.",
     howToEat:
       "Roast like potatoes with olive oil, rosemary, and garlic. Slice thinly and add raw to salads for a nutty crunch. Make a silky soup blended with leeks. Sauté with butter and thyme as a side dish.",
     science:

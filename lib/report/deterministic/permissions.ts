@@ -273,9 +273,14 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
     basis: po("When the customer first eats. A clock fact about their morning."),
     allowedUses: ["descriptive-recap", "practical-timing"],
     allowedTargets: ["thirtyDayLoop"],
-    // The bank also lists foodSystemMap and foodTools. foodSystemMap is a
-    // biological diagram no self-report can populate; foodTools names foods.
-    withheldTargets: ["foodSystemMap"],
+    /*
+     * 0R-6R · this withheld `foodSystemMap` with the note "a biological
+     * diagram no self-report can populate". The field is now retired from
+     * `FoodSystemReport` entirely, so there is nothing left to withhold and the
+     * bank no longer lists it. The reasoning is kept because it was right
+     * first: foodTools names foods and stays gated.
+     */
+    withheldTargets: [],
     notes:
       "Timing only. A late first meal is not a metabolic finding. Its only granted target is thirtyDayLoop, which carries no food guidance; a named food would have to go through foodTools, which is gated.",
   },

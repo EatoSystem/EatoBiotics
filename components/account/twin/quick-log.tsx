@@ -18,15 +18,26 @@ import { X, Sparkles, Utensils, Camera } from "lucide-react"
 import { useCountUp } from "./use-count-up"
 import { MealImpactChips } from "./meal-impact"
 import { AFTER_MEAL_STEPS } from "@/lib/account/evolution"
-import type { BioticKey } from "@/lib/agent-loop/types"
 
-/** The slice of /api/analyse-meal's response QuickLog renders. */
+/**
+ * The slice of /api/analyse-meal's response QuickLog renders.
+ *
+ * ══ 0R-5 · THE THREE PER-BIOTIC FIELDS ARE GONE FROM THIS CONTRACT ══════════
+ *
+ * A SEVENTH live site of `P0-SCIENCE-01`'s class, and in no register entry.
+ * `BIOTIC_META` turned them into three rows on the QuickLog result — the Biotic
+ * NAME, the member's score as a NUMBER, a COLOUR and a BAR whose width is the
+ * score — and `mealImpact` turned them into a band word and a mechanism.
+ * Both are repaired, so nothing renders these; the fields go with the renderers
+ * for the reason this repository keeps writing down: a field the contract still
+ * accepted would be an invitation to render it again.
+ *
+ * The API still returns them. That is a historical response shape and is not
+ * rewritten — what changed is that no customer surface asks for them.
+ */
 export interface QuickLogResult {
   meal_name: string
   biotics_score: number
-  prebiotic_score: number
-  probiotic_score: number
-  postbiotic_score: number
   insight: string
   /** analyse-meal tags (Fermented Foods, High Fibre, …) — drive the impact chips. */
   tags?: string[]
@@ -37,21 +48,12 @@ export interface QuickLogResult {
 export const MOCK_QUICK_LOG_RESULT: QuickLogResult = {
   meal_name: "Salmon, quinoa & kimchi bowl",
   biotics_score: 79,
-  prebiotic_score: 68,
-  probiotic_score: 74,
-  postbiotic_score: 61,
-  insight: "Strong all-rounder — the kimchi brings live cultures while quinoa and vegetables feed your resident microbes.",
+  insight: "Strong all-rounder — the kimchi is fermented, while quinoa and vegetables feed the microbes already there.",
   tags: ["Fermented Foods", "Omega-3s", "Plant Diversity", "Protein Rich"],
   nutrition: { calories: 520, protein: 34, fibre: 9 },
 }
 
 const EXAMPLES = ["Porridge with berries & seeds", "Lentil soup and sourdough", "Chicken, greens & kefir"]
-
-const BIOTIC_META: { key: BioticKey; label: string; color: string; pick: (r: QuickLogResult) => number }[] = [
-  { key: "prebiotics", label: "Prebiotics", color: "#A8E063", pick: (r) => r.prebiotic_score },
-  { key: "probiotics", label: "Probiotics", color: "#2DAA6E", pick: (r) => r.probiotic_score },
-  { key: "postbiotics", label: "Postbiotics", color: "#F5C518", pick: (r) => r.postbiotic_score },
-]
 
 function ResultScore({ result }: { result: QuickLogResult }) {
   const score = useCountUp(result.biotics_score, 1100)
@@ -312,22 +314,16 @@ export function QuickLog({
               <div className="mt-3">
                 <ResultScore result={result} />
               </div>
-              <div className="mt-4 space-y-2.5 text-left">
-                {BIOTIC_META.map((b) => {
-                  const v = b.pick(result)
-                  return (
-                    <div key={b.key}>
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(253,251,247,0.7)" }}>{b.label}</span>
-                        <span className="text-xs font-bold" style={{ color: b.color }}>{v}</span>
-                      </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(253,251,247,0.1)" }}>
-                        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.max(4, Math.min(100, v))}%`, background: b.color }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              {/*
+                  0R-5 · three per-Biotic rows stood here: "PREBIOTICS 68" with
+                  a lime bar, "PROBIOTICS 74" with a green one, "POSTBIOTICS 61"
+                  with a yellow one, each bar's width the score. Real numbers
+                  from /api/analyse-meal, and a personal per-Biotic state in
+                  four forms at once — name, number, colour and extent.
+
+                  The meal's own score (above) and what the product can observe
+                  in the plate (the impact chips below) both stay.
+              */}
               {/* what this meal does to the Food System — visual-first impact */}
               <MealImpactChips input={result} />
 

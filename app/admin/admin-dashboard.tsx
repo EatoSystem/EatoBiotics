@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
-import { Users, CheckCircle2, FileText, TrendingUp, Share2, UserCheck, LogOut, ChefHat, Rocket } from "lucide-react"
+import { Users, CheckCircle2, FileText, TrendingUp, Share2, UserCheck, LogOut, ChefHat, Rocket, FileDown } from "lucide-react"
 import { StatCard, ScoreBadge, timeAgo } from "./admin-ui"
 
 type Lead = {
@@ -83,6 +83,15 @@ export function AdminDashboard({ stats }: { stats: AdminStats }) {
             >
               <ChefHat size={12} />
               Recipe studio
+            </Link>
+            {/* The publishing views moved off the public chapter pages in the
+                V1 scope freeze; this is how the author reaches them now. */}
+            <Link
+              href="/admin/book-exports"
+              className="flex items-center gap-1.5 rounded-full border border-[var(--icon-green)]/30 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-[var(--icon-green)]"
+            >
+              <FileDown size={12} />
+              Book exports
             </Link>
             <button
               onClick={handleSignOut}

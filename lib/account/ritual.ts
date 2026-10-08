@@ -19,35 +19,67 @@ export interface RitualDay {
   feeling: boolean
 }
 
+/*
+ * ══ 0R-5 · `P0-SCIENCE-05` — `node` AND `effect` ARE BOTH GONE ══════════════
+ *
+ * A `RitualCheck` carried two things it had not earned:
+ *
+ *   node: { x: 54, y: 56 }   a point on a picture of the member's BODY, lit
+ *                            when they ticked a checkbox
+ *   effect: "A fermented food lights up your probiotic network"
+ *                            the same claim in words, with a Biotic in it
+ *
+ * The register named this file for the coordinates; `biotic-claims.test.ts`'s
+ * derived ledger found it independently for the `effect` STRING beside them,
+ * and recorded both halves as one repair. They are one repair because they are
+ * one claim: the member reported eating something, and the product answered by
+ * asserting which part of them responded and what happened there.
+ *
+ * Nothing in that chain is measured. The tap is real; everything downstream of
+ * it was invented, and `daily-ritual.tsx` then said so out loud under the
+ * heading "Your body just felt that".
+ *
+ * ── WHAT THE ACKNOWLEDGEMENTS SAY NOW ─────────────────────────────────────
+ *
+ * They acknowledge the RECORD, not a bodily effect. "Movement — I can feel the
+ * energy flowing faster" and "Good rest — that's when I recover and rebuild"
+ * were the Twin reporting a sensation from a checkbox; they are now the Twin
+ * confirming what it has written down, which is the only thing it knows.
+ */
 export interface RitualCheck {
   key: keyof RitualDay
   label: string
-  /** First-person acknowledgement from the Twin when ticked. */
+  /** First-person acknowledgement OF THE RECORD from the Twin when ticked. */
   ack: string
   color: string
-  /** One-line biology lesson — what this does inside you (shown on the body pulse). */
-  effect: string
-  /** Where on the figure this signal lands (% of the mini-stage) so the body reacts. */
-  node: { x: number; y: number }
   /** Amber signals (poor sleep) buffer rather than glow. */
   strain?: boolean
 }
 
 export const RITUAL_CHECKS: RitualCheck[] = [
-  { key: "fermented", label: "Fermented food", ack: "Lovely — live cultures on their way to me.", color: "#2DAA6E", effect: "Live cultures light up your probiotic network", node: { x: 54, y: 56 } },
-  { key: "plants", label: "5+ plants", ack: "Variety noted — that's what I thrive on.", color: "#A8E063", effect: "Plant variety expands your fibre pathways", node: { x: 47, y: 62 } },
-  { key: "moved", label: "Moved today", ack: "Movement — I can feel the energy flowing faster.", color: "#4CB648", effect: "Movement helps energy flow and recovery brighten", node: { x: 48, y: 46 } },
-  { key: "slept", label: "Slept well", ack: "Good rest — that's when I recover and rebuild.", color: "#F5C518", effect: "Deep rest is when your system recovers and rebuilds", node: { x: 48, y: 30 } },
-  { key: "feeling", label: "Feeling good", ack: "Good to hear — I'll remember today's rhythm.", color: "#F5A623", effect: "How you feel is your system talking back to you", node: { x: 50, y: 20 } },
+  { key: "fermented", label: "Fermented food", ack: "Noted — that's today's fermented food logged.", color: "#2DAA6E" },
+  { key: "plants", label: "5+ plants", ack: "Noted — plant variety is one of the things I keep track of.", color: "#A8E063" },
+  { key: "moved", label: "Moved today", ack: "Noted — movement is part of the daily picture.", color: "#4CB648" },
+  { key: "slept", label: "Slept well", ack: "Noted — rest is part of the daily picture.", color: "#F5C518" },
+  { key: "feeling", label: "Feeling good", ack: "Noted — I'll remember today's rhythm.", color: "#F5A623" },
 ]
 
 export const EMPTY_RITUAL: RitualDay = { fermented: false, plants: false, moved: false, slept: false, feeling: false }
 
-/** Completed checks as lit-node signals for the stage figure (the body carrying
-    the day's habits). Shape matches TwinStage's `signals` prop. */
-export function ritualSignals(r: RitualDay): Array<{ key: string; node: { x: number; y: number }; color: string; strain?: boolean }> {
-  return RITUAL_CHECKS.filter((c) => r[c.key]).map((c) => ({ key: c.key, node: c.node, color: c.color, strain: c.strain }))
-}
+/*
+ * `ritualSignals` is DELETED at 0R-5.
+ *
+ * Its whole return shape was the body-coordinate contract —
+ * `Array<{ key; node: { x; y }; color }>` — and `twin-stage.tsx`'s matching
+ * `signals` prop is the site this file's form guard found that the register
+ * had not named. A function whose only output is a list of points on a person
+ * is not repairable by changing its callers.
+ *
+ * What the stage legitimately responds to is HOW MUCH the member logged today,
+ * which `ritualCount` below already answers, so `TwinStage` takes
+ * `ritualCount: number` instead. The overall glow still brightens with the
+ * day's activity; it no longer claims where.
+ */
 
 /** Minimal storage interface so the pure logic is testable without a browser. */
 export interface Store {

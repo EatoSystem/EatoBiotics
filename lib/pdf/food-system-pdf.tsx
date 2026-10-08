@@ -43,29 +43,23 @@ import type {
  * its own, so it cannot weaken the builder's non-diagnostic framing.
  */
 
-/* ── State presentation ──────────────────────────────────────────────────────
- * Print has no hover, no colour filters, and is often photocopied in mono. Every
- * state is written out, exactly as on the web. */
+/* ══ 0R-6R · THE STATE TABLES AND `StateBadge` ARE DELETED ══════════════════
+ *
+ * Same repair as `components/report/food-system-section.tsx`, and the old
+ * header here made the same argument: "print has no hover… every state is
+ * written out, exactly as on the web". Writing the state out legibly was never
+ * the problem. `FoodSystemNode` no longer carries one.
+ */
 
-const STATE_LABEL: Record<FoodSystemNode["state"], string> = {
-  strong: "Well supported",
-  building: "Building",
-  strained: "Room to grow",
-  unknown: "Not enough to say",
-}
-
-const STATE_ACCENT: Record<FoodSystemNode["state"], BrandAccent> = {
-  strong: "green",
-  building: "teal",
-  strained: "orange",
-  unknown: "yellow",
-}
-
-const PATHWAY_ACCENT: Record<BioticScoreKey, BrandAccent> = {
-  prebiotics: "lime",
-  probiotics: "teal",
-  postbiotics: "orange",
-}
+/*
+ * 0R-6R · `PATHWAY_ACCENT` is deleted with its only reader.
+ *
+ * Its three colours were the per-Biotic palette, and the single place they were
+ * used was the score row under the body figure — tinting each of the member's
+ * three numbers in its pathway's colour. Left in place it would be a colour map
+ * waiting for the next renderer that wants to tell three pathways apart by hue,
+ * which is how the construct came back in four different components before.
+ */
 
 const INSIDE_OUT_LEVELS = [
   "You",
@@ -359,32 +353,12 @@ function PdfFooter() {
   )
 }
 
-function StateBadge({ state }: { state: FoodSystemNode["state"] }) {
-  const accent = STATE_ACCENT[state]
-  return (
-    <Text
-      style={[
-        s.badge,
-        { color: accentText(accent), backgroundColor: withAlpha(accentFill(accent), 0.15) },
-      ]}
-    >
-      {STATE_LABEL[state]}
-    </Text>
-  )
-}
-
 function NodeCard({ node }: { node: FoodSystemNode }) {
   return (
     <View style={s.card} wrap={false}>
-      <View style={s.row}>
-        <Text style={[s.cardTitle, { marginBottom: 0, marginRight: 8, flex: 1 }]}>
-          {node.label}
-        </Text>
-        <StateBadge state={node.state} />
-      </View>
-      {typeof node.score === "number" && (
-        <Text style={[s.fieldLabel, { marginTop: 5 }]}>{node.score} / 100</Text>
-      )}
+      {/* 0R-6R · the state badge and the "NN / 100" under it are gone with the
+        * fields. See food-system-report-types.ts. */}
+      <Text style={[s.cardTitle, { marginBottom: 0 }]}>{node.label}</Text>
       <Text style={[s.body, { marginTop: 5 }]}>{node.explanation}</Text>
     </View>
   )
@@ -397,15 +371,29 @@ function NodeCard({ node }: { node: FoodSystemNode }) {
  * draws a second, smaller figure alongside — the same distinction
  * visualTheme.bodyAssetPath encodes on the web (couple-hero vs family-hero).
  */
-function BodyFigure({
-  scores,
-  states,
-  family,
-}: {
-  scores: Record<BioticScoreKey, number>
-  states: Partial<Record<BioticScoreKey, FoodSystemNode["state"]>>
-  family: boolean
-}) {
+/*
+ * ══ 0R-6R · `BodyFigure` NO LONGER CARRIES THE THREE SCORES ════════════════
+ *
+ * This was the most serious single site in the Report family, and it is the one
+ * that most exactly reconstructs what 0R-5 removed elsewhere.
+ *
+ * Under a drawn figure of the MEMBER'S BODY, inside three concentric rings, it
+ * printed a row of three cells: the member's score for each Biotic as a large
+ * numeral in that Biotic's colour, the pathway name, and the band word beneath
+ * it. In the PDF the customer downloads and keeps.
+ *
+ * `P0-SCIENCE-05` removed an aura and a pinging dot positioned on a figure of
+ * the member's body from the Twin, because "something happened in your body,
+ * and HERE" is three claims a checkbox cannot support. This put three numbers
+ * and three band words on the same kind of figure, on the money path, and the
+ * old comment beside it said "the rings are orientation, never the data" — true
+ * of the rings, and the data was the problem.
+ *
+ * The figure and the rings stay: they are the chapter's organising visual, and
+ * with no per-Biotic value on them they assert nothing about the reader. What
+ * leaves is the score row.
+ */
+function BodyFigure({ family }: { family: boolean }) {
   const W = 300
   const H = 190
   const cx = W / 2
@@ -442,26 +430,18 @@ function BodyFigure({
         )}
       </Svg>
 
-      {/* The scores and states as words and numbers, directly under the figure:
-       * the rings are orientation, never the data. */}
+      {/*
+        0R-6R · the three pathway NAMES stay under the figure; the score and the
+        band word that sat with each are gone. A name identifies which pathway a
+        cell is — taxonomy, symmetric across all three — and says nothing about
+        the reader.
+      */}
       <View style={[s.scoreRow, { width: W }]}>
-        {(["prebiotics", "probiotics", "postbiotics"] as BioticScoreKey[]).map((k) => {
-          const accent = PATHWAY_ACCENT[k]
-          const st = states[k]
-          return (
-            <View key={k} style={s.scoreCell}>
-              <Text style={[s.scoreNumber, { color: accentText(accent) }]}>
-                {scores[k]}
-              </Text>
-              <Text style={s.scoreLabel}>{PATHWAY_LABEL[k]}</Text>
-              {st && (
-                <Text style={[s.scoreState, { color: accentText(accent) }]}>
-                  {STATE_LABEL[st]}
-                </Text>
-              )}
-            </View>
-          )
-        })}
+        {(["prebiotics", "probiotics", "postbiotics"] as BioticScoreKey[]).map((k) => (
+          <View key={k} style={s.scoreCell}>
+            <Text style={s.scoreLabel}>{PATHWAY_LABEL[k]}</Text>
+          </View>
+        ))}
       </View>
     </View>
   )
@@ -474,12 +454,11 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
   const ch = () => String(++n).padStart(2, "0")
 
   const family = report.visualTheme.bodyAssetPath.includes("family")
-  const states: Partial<Record<BioticScoreKey, FoodSystemNode["state"]>> = {}
-  for (const node of report.foodSystemMap) {
-    if (node.id === "prebiotics" || node.id === "probiotics" || node.id === "postbiotics") {
-      states[node.id] = node.state
-    }
-  }
+  /*
+   * 0R-6R · the `states` map built here read every pathway node's band out of
+   * `foodSystemMap` so the figure could caption all three at once. There is no
+   * band on a node any more, and no pathway node in `foodSystemMap`.
+   */
 
   return (
     <>
@@ -491,7 +470,7 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
           title={report.title}
           subtitle={report.systemSnapshot.oneLine}
         />
-        <BodyFigure scores={report.bioticScores} states={states} family={family} />
+        <BodyFigure family={family} />
         <View style={s.divider} />
         <Text style={s.body}>{report.systemSnapshot.dominantPattern}</Text>
         <View style={[s.tint, { backgroundColor: withAlpha(BRAND.green, 0.08), marginTop: 12 }]}>
@@ -516,11 +495,9 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
               <View key={i} style={s.card} wrap={false}>
                 <Text style={s.cardTitle}>{mod.title}</Text>
                 <Field label="In plain English" value={mod.plainEnglish} />
+                {/* 0R-6R · "What your answers suggest" is gone — it carried
+                  * BAND_SUGGESTS[pathway][band(score)]. */}
                 <Field label="Why it matters" value={mod.whyItMatters} />
-                <Field
-                  label="What your answers suggest"
-                  value={mod.whatYourAnswersSuggest}
-                />
                 <View style={[s.tint, { backgroundColor: withAlpha(accentFill(accent), 0.08) }]}>
                   <Text style={[s.body, { color: accentText(accent) }]}>
                     Try this: {mod.actionBridge}
@@ -533,21 +510,13 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
         <PdfFooter />
       </Page>
 
-      {/* System map */}
-      <Page size="A4" style={s.page}>
-        <ChapterHeading
-          number={ch()}
-          eyebrow="The Map"
-          title="Your Food System, Part by Part"
-          subtitle="Where each pathway stands right now."
-        />
-        <View style={s.spacer}>
-          {report.foodSystemMap.map((node) => (
-            <NodeCard key={node.id} node={node} />
-          ))}
-        </View>
-        <PdfFooter />
-      </Page>
+      {/*
+        0R-6R · the "Part by Part" page is retired, exactly as on the web.
+        Its subtitle — "Where each pathway stands right now" — was the clearest
+        statement of the construct in the product, and its cards were a band
+        word, a score out of 100 and a possessive band sentence per Biotic.
+        See the block in components/report/food-system-section.tsx.
+      */}
 
       {/* Body signals */}
       <Page size="A4" style={s.page}>
@@ -731,9 +700,8 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
             ))}
 
             <View style={[s.card, { marginTop: 10, padding: 10, marginBottom: 0 }]} wrap={false}>
-              <Text style={s.cardTitle}>
-                Where it matters most: {PATHWAY_LABEL[report.lens.priorityConnection.pathway]}
-              </Text>
+              {/* 0R-6R · the nominated Biotic is gone; see lens-section.tsx. */}
+              <Text style={s.cardTitle}>Where it matters most</Text>
               <Text style={s.lensBody}>{report.lens.priorityConnection.why}</Text>
             </View>
 

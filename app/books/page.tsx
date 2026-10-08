@@ -357,7 +357,7 @@ export default function TrilogyPage() {
                   icon: "🦠",
                   label: "Probiotics",
                   color: "var(--icon-green)",
-                  text: "Live cultures from fermented foods. Consistent, realistic, and adaptable to any kitchen or life stage.",
+                  text: "Foods transformed by fermentation. Consistent, realistic, and adaptable to any kitchen or life stage.",
                 },
                 {
                   icon: "✨",
@@ -443,12 +443,6 @@ export default function TrilogyPage() {
                 Subscribe on Substack
                 <ArrowUpRight size={16} />
               </a>
-              <Link
-                href="/waitlist"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-background/20 px-8 py-4 text-base font-semibold text-background transition-colors hover:border-icon-lime hover:text-icon-lime"
-              >
-                See all launches
-              </Link>
             </div>
             <p className="mt-4 text-sm text-background/40">Free to subscribe. Unsubscribe anytime.</p>
           </ScrollReveal>

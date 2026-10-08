@@ -1,0 +1,101 @@
+---
+description: EatoBiotics product rule, hard constraints, and the verification gate. Read before any change.
+alwaysApply: true
+---
+
+# EatoBiotics — operative constraints
+
+EatoBiotics measures a person's **food system** from a questionnaire and meal
+photos, gives them a **Biotics Score™**, teaches microbiome science, and sells a
+€49 Report and a €24.99/month membership. It is mid-way through a nine-stage
+integrity programme (Experience 0R, six tranches done) that exists because the
+product repeatedly made claims its instrument could not support.
+
+**A great deal of this codebase is a deliberate absence, not a missing feature.**
+A function returning `null`, a Report with no per-pathway breakdown, a Today
+surface with no personalised verdict — these are repairs. Each carries a long
+comment saying so. **Read the comment before changing the code.**
+
+## The permanent product rule
+
+> **Measure the food system we can observe. Teach the biology accurately. Never
+> present the biology as personally measured when it isn't.**
+
+The third clause is the one that breaks. **No surface may state, imply or render
+a member's own Prebiotic, Probiotic or Postbiotic state** — not as a number, not
+as a bar, not as a band word, not as a superlative, not as a possessive, not as
+a mechanism ("this fed your Prebiotics"), and not as a colour, a position on a
+body, or any other visual encoding. A questionnaire and a meal photo reach none
+of the three.
+
+Educational Biotics content is **preserved and improved**, never deleted. A
+correction is not a deletion.
+
+Vocabulary: **Prebiotics · Probiotics · Postbiotics** is how a score is
+understood; **Feed · Seed · Rejuvenate** is how a person acts. Never equate them
+in a sentence. `"heal"` is a stored key, never customer-facing. Capital-R
+"Regenerate" is retired. One meal gets a **Meal** Biotics Score, never the
+person's Biotics Score™.
+
+## Hard constraints
+
+- **Production Supabase is READ-ONLY.** Schema and data changes are **drafted,
+  never applied** — commit SQL to `supabase/migrations.sql`, write the apply
+  steps into the PR, a human applies it. A past authorisation is never standing
+  authorisation for the next migration.
+- **Only project ref `ephmojiwlcebenholhpc`.** Never read, write or name
+  `hwuzbxsaxsifpdzqhqaq` or `ohwzmulsvbfgaxgziqeo` — a different product. There
+  is no EatoBiotics staging project.
+- **Do not modify** (`CLAUDE.md` § *What NOT to Modify*): `app/api/checkout`, `app/api/verify-payment`,
+  `app/api/generate-deep-questions`, `app/api/submit-deep-assessment`,
+  `app/assessment/`, `app/demo/assessment/`, `app/api/auth/`, the referral
+  system (`profiles.membership`), `app/api/cms/import/chapters`. Supabase
+  columns: **ADD only, never modify or drop.**
+- **Never weaken a failing guard to make a suite pass.** If a guard fails,
+  either the code is wrong or the guard needs a justified, measured
+  recalibration recorded in writing.
+- **Never delete a long explanatory comment as noise.** Several encode why a
+  repair has its shape.
+- **Do not DRY the three duplicated preview predicates**
+  (`lib/fss/preview/preview-policy.ts`,
+  `lib/report/presentation/preview-policy.ts`,
+  `app/api/fss/focus-today/route.ts`). They are independent gates on independent
+  unfinished features — *a shared helper is a shared switch*.
+- **Never `git add -A` after running Playwright.** `docs/experience/audit/` is
+  frozen before-evidence, gated on `EATOBIOTICS_AUDIT_WRITE_FROZEN=1`. Never set
+  that flag.
+- **Never push to `main`. No pull request unless explicitly asked.**
+- **Never re-literal a price.** €49 is `REPORT_PRICE_EUR` (`lib/report/offer.ts`);
+  €24.99 is `MEMBER_PRICE_EUR` (`lib/membership-tiers.ts`). Grow/Restore/Transform
+  are legacy entitlements — never presented as purchasable.
+- **`POST_V1_ROUTES` 404 on purpose.** Do not "fix" one by building the feature.
+
+## The gate
+
+Node 24 required. `next build` must precede Playwright.
+
+```bash
+npx tsc --noEmit                    # clean
+npx eslint .                        # 96 problems, 0 errors
+npx vitest run                      # 232 files, 6648 passed, 2 skipped
+node scripts/check-ai-guard.mjs && node scripts/check-schema-drift.mjs && node scripts/check-supabase-scoping.mjs
+npx next build
+PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npx playwright test   # 266
+python3 tools/sabotage/run_0r.py    # 87/87 — run_s3a.py reports 2/35 by design
+```
+
+**eslint's 96 warnings are the baseline, not a to-do list.** If your change takes
+it to 98, find both and fix or explain them. **Warning counts are not waivers** —
+measure per file against the base commit, never infer from the total.
+
+## Read these before non-trivial work
+
+| | |
+|---|---|
+| `docs/cursor/00_PROJECT_BRIEF.md` | what the product is, the programme state, where things live, how the guards work |
+| `docs/cursor/01_REVIEW_AND_WORKFLOWS.md` | what to review, the anti-goals, nine workflows and who owns each |
+| `docs/cursor/02_MOBILE_APP_BRIEF.md` | the iOS/Android daily companion |
+| `CLAUDE.md` | the authoritative architecture reference |
+| `docs/experience/DOCUMENTATION_MAP.md` | which documents are canonical, and three that are traps |
+
+`lib/v1-surface.ts` is the **canonical** route inventory — not any document.

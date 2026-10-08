@@ -38,7 +38,11 @@ export type Biotic = (typeof BIOTICS)[number]
  */
 export const BIOTIC_INTRO: Record<Biotic, string> = {
   Prebiotics: "What feeds your Food System.",
-  Probiotics: "The live and fermented foods you introduce.",
+  // "The live and fermented foods you introduce." until Phase 1. "Live foods"
+  // is a product category the strict ISAPP definition does not support, and
+  // "introduce" asserted that eating them establishes organisms in the gut.
+  // What the questions observe is the fermented-food habit.
+  Probiotics: "The fermented foods you bring into the week.",
   Postbiotics: "How your Food System appears to respond, from the patterns you report.",
 }
 

@@ -11,28 +11,43 @@ export const revalidate = 3600
 
 type ChangeFreq = MetadataRoute.Sitemap[number]["changeFrequency"]
 
-/** Curated public, indexable pages with crawl priority. */
-const STATIC_PATHS: Array<{ path: string; priority: number; changeFrequency: ChangeFreq }> = [
+/**
+ * Curated public, indexable pages with crawl priority.
+ *
+ * ══ THE PRODUCT SURFACE AND THE CONTENT SURFACE ARE DIFFERENT THINGS ════════
+ *
+ * The V1 launch product is sixteen pages. The public website is not, and this
+ * file is deliberately longer than sixteen entries: the book, the food
+ * library, the gut-brain and condition explainers are intentional content and
+ * stay indexed.
+ *
+ * What left this list are the routes lib/v1-surface.ts now classifies POST_V1
+ * — /food-systems, /you, /family, /mind, /performance, /glucose and the two
+ * GLP-1 pages, /assessment/family, /assessment-mind, and /gut-brain (which is
+ * nothing but a redirect to /mind). Every one of them refuses
+ * at runtime, and a sitemap that keeps advertising them is asking search
+ * engines to send people to a 404 and then to tell us we are broken. Indexing
+ * is moot once a route refuses; the entry is not.
+ *
+ * `tests/unit/v1-surface.test.ts` asserts no path here classifies POST_V1, so
+ * the two cannot drift apart.
+ *
+ * /assessment/you, /method and /help were added: the V1 funnel's own pages,
+ * missing from the sitemap while nine unsellable products were in it.
+ */
+export const STATIC_PATHS: Array<{ path: string; priority: number; changeFrequency: ChangeFreq }> = [
   { path: "",                   priority: 1.0, changeFrequency: "weekly"  },
-  { path: "/food-systems",      priority: 0.9, changeFrequency: "monthly" },
-  { path: "/you",               priority: 0.8, changeFrequency: "monthly" },
   { path: "/assessment",        priority: 0.9, changeFrequency: "monthly" },
+  { path: "/assessment/you",    priority: 0.9, changeFrequency: "monthly" },
   { path: "/pricing",           priority: 0.9, changeFrequency: "monthly" },
+  { path: "/method",            priority: 0.8, changeFrequency: "monthly" },
   { path: "/book",              priority: 0.8, changeFrequency: "weekly"  },
   { path: "/books",             priority: 0.6, changeFrequency: "monthly" },
   { path: "/about",             priority: 0.6, changeFrequency: "monthly" },
+  { path: "/help",              priority: 0.5, changeFrequency: "monthly" },
   { path: "/eatosystem",        priority: 0.6, changeFrequency: "monthly" },
   { path: "/biotics",           priority: 0.6, changeFrequency: "monthly" },
-  { path: "/glucose",           priority: 0.7, changeFrequency: "monthly" },
-  { path: "/glucose/glp1",      priority: 0.7, changeFrequency: "monthly" },
-  { path: "/glucose/glp1/check", priority: 0.6, changeFrequency: "monthly" },
   { path: "/food",              priority: 0.6, changeFrequency: "monthly" },
-  { path: "/gut-brain",         priority: 0.6, changeFrequency: "monthly" },
-  { path: "/assessment/family", priority: 0.6, changeFrequency: "monthly" },
-  { path: "/assessment-mind",   priority: 0.6, changeFrequency: "monthly" },
-  { path: "/family",            priority: 0.5, changeFrequency: "monthly" },
-  { path: "/mind",              priority: 0.5, changeFrequency: "monthly" },
-  { path: "/performance",       priority: 0.5, changeFrequency: "monthly" },
   { path: "/anxiety",           priority: 0.5, changeFrequency: "monthly" },
   { path: "/adhd",              priority: 0.5, changeFrequency: "monthly" },
   { path: "/depression",        priority: 0.5, changeFrequency: "monthly" },

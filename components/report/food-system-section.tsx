@@ -13,7 +13,6 @@ import {
   accentTextOnTint,
   bioticAccent,
   coerceBiotic,
-  type VisualAccent,
 } from "@/lib/report/visual-token"
 import { PATHWAY_LABEL, type BioticScoreKey } from "@/lib/report/subscores"
 import type {
@@ -54,24 +53,23 @@ import type {
  * builder is careful about.
  */
 
-/* ── State presentation ──────────────────────────────────────────────────────
- * Node state must never be conveyed by colour alone — a colour-only badge is
- * both an accessibility failure and unreadable in a printed report. Each state
- * carries its own words. */
-
-const STATE_LABEL: Record<FoodSystemNode["state"], string> = {
-  strong: "Well supported",
-  building: "Building",
-  strained: "Room to grow",
-  unknown: "Not enough to say",
-}
-
-const STATE_ACCENT: Record<FoodSystemNode["state"], VisualAccent> = {
-  strong: "green",
-  building: "teal",
-  strained: "orange",
-  unknown: "yellow",
-}
+/* ══ 0R-6R · THE STATE TABLES AND `StateBadge` ARE DELETED ══════════════════
+ *
+ * `STATE_LABEL` turned a per-Biotic band into the words a reader saw — "Well
+ * supported", "Building", "Room to grow" — and `STATE_ACCENT` gave each a
+ * colour. Together they rendered a personal Prebiotic/Probiotic/Postbiotic
+ * STATE in three forms at once: a band word, a colour, and (beside it in
+ * `NodeCard`) the number.
+ *
+ * The old header here argued the right thing for the wrong invariant: "node
+ * state must never be conveyed by colour alone — each state carries its own
+ * words". That is an accessibility rule, and it was satisfied. The state itself
+ * was never ours to show.
+ *
+ * `FoodSystemNode` no longer carries `state` or `score`, so this file cannot
+ * render either — and `foodSystemMap` is now the body signals only, which have
+ * a label, a reviewed explanation and a zone token.
+ */
 
 const ZONE_ICON: Record<BodyZone, string> = {
   gut: "Donut",
@@ -104,21 +102,6 @@ function NodeIcon({ node, size = 18 }: { node: FoodSystemNode; size?: number }) 
   )
 }
 
-function StateBadge({ state }: { state: FoodSystemNode["state"] }) {
-  const accent = STATE_ACCENT[state]
-  return (
-    <span
-      className="inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
-      style={{
-        background: `color-mix(in srgb, ${accentFill(accent)} 15%, transparent)`,
-        color: accentTextOnTint(accent),
-      }}
-    >
-      {STATE_LABEL[state]}
-    </span>
-  )
-}
-
 function NodeCard({ node }: { node: FoodSystemNode }) {
   return (
     <div
@@ -128,15 +111,10 @@ function NodeCard({ node }: { node: FoodSystemNode }) {
       <div className="flex items-start gap-3">
         <NodeIcon node={node} />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <p className="text-sm font-bold text-foreground">{node.label}</p>
-            <StateBadge state={node.state} />
-            {typeof node.score === "number" && (
-              <span className="text-xs font-semibold text-muted-foreground">
-                {node.score}/100
-              </span>
-            )}
-          </div>
+          {/* 0R-6R · the state badge and the "{node.score}/100" beside it are
+            * gone with the fields. What a signal card says now is what it is
+            * and what to notice — which is all it ever measured. */}
+          <p className="text-sm font-bold text-foreground">{node.label}</p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {node.explanation}
           </p>
@@ -146,44 +124,20 @@ function NodeCard({ node }: { node: FoodSystemNode }) {
   )
 }
 
-/** The three pathway scores, as capsules rather than another ring. */
-function PathwayScores({ scores }: { scores: Record<BioticScoreKey, number> }) {
-  const keys: BioticScoreKey[] = ["prebiotics", "probiotics", "postbiotics"]
-  return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {keys.map((key) => {
-        const accent = bioticAccent(key)
-        return (
-          <div
-            key={key}
-            className="rounded-2xl border border-border bg-background p-4 text-center"
-            style={{ boxShadow: CARD_SHADOW }}
-          >
-            <span
-              className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl"
-              style={{
-                background: `color-mix(in srgb, ${accentFill(accent)} 16%, transparent)`,
-                color: accentText(accent),
-              }}
-            >
-              <PathwayIcon biotic={key} size={18} />
-            </span>
-            <p
-              className="font-serif text-2xl font-semibold"
-              style={{ color: accentText(accent) }}
-            >
-              {scores[key]}
-              <span className="text-sm font-normal text-muted-foreground">/100</span>
-            </p>
-            <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {PATHWAY_LABEL[key]}
-            </p>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+/* ══ 0R-6R · `PathwayScores` IS DELETED ═════════════════════════════════════
+ *
+ * Three capsules, each with the member's score for one Biotic as a large serif
+ * numeral — "71" — a "/100" beside it, the pathway name beneath, and all of it
+ * in `bioticAccent(key)`. On the opening chapter of the €49 Report, above the
+ * fold.
+ *
+ * This is the construct Tranche 1 removed from the pre-launch reveal, 2A from
+ * `/assessment/results` and the share card, 2C from `sequence-email.ts`, Gate
+ * 3.6 from fifteen account sites and 0R-5 from six more. It survived here
+ * because the Report family was in no claims corpus until 0R-1 and in no
+ * form-track module until 0R-6 — and because `bioticScores` was on the product
+ * model, so a renderer only had to ask.
+ */
 
 /* ── The body as the spine ───────────────────────────────────────────────────
  *
@@ -202,14 +156,27 @@ function PathwayScores({ scores }: { scores: Record<BioticScoreKey, number> }) {
  *    second copy would read every label twice to a screen reader.
  */
 
+/*
+ * 0R-6R · `RingNode` no longer takes a `state`.
+ *
+ * Each node carried `STATE_LABEL[state]` under the pathway name, in
+ * `accentText(bioticAccent(pathway))` — so the ring around a figure of the
+ * member's BODY captioned all three of their Biotic states at once. The old
+ * comment on that caption argued it was "not a caption for a colour: remove it
+ * and the state is simply gone", which was true and is now the point: the state
+ * is gone.
+ *
+ * The pathway NAME and its colour stay. Those identify which pathway a node is
+ * — taxonomy, symmetric across all three, which `visual-token.ts` serves for
+ * exactly this purpose — and the ring position is orientation. What left is the
+ * only thing on the node that was a claim about the reader.
+ */
 function RingNode({
   pathway,
-  state,
   x,
   y,
 }: {
   pathway: BioticScoreKey
-  state: FoodSystemNode["state"]
   x: string
   y: string
 }) {
@@ -239,27 +206,14 @@ function RingNode({
         <span className="block text-sm font-bold text-foreground">
           {PATHWAY_LABEL[pathway]}
         </span>
-        {/* State reaches the reader here as words, and only as words. The
-         * accent on this node is bioticAccent(pathway) — it marks which pathway
-         * the node is, not how that pathway is doing, and its position on the
-         * ring is orientation rather than meaning. (StateBadge, further up, is
-         * the one that colours by state.) So this text is not a caption for a
-         * colour: remove it and the state is simply gone. */}
-        <span
-          className="block text-xs font-semibold"
-          style={{ color: accentText(accent) }}
-        >
-          {STATE_LABEL[state]}
-        </span>
       </span>
     </li>
   )
 }
 
+const RING_PATHWAYS: readonly BioticScoreKey[] = ["prebiotics", "probiotics", "postbiotics"]
+
 function FoodSystemHero({ report }: { report: FoodSystemReport }) {
-  const nodes = report.foodSystemMap.filter((n): n is FoodSystemNode & { id: BioticScoreKey } =>
-    n.id === "prebiotics" || n.id === "probiotics" || n.id === "postbiotics",
-  )
   // Evenly spaced from the top: 12 o'clock, 4 o'clock, 8 o'clock.
   //
   // The outer two sit at 84/16 rather than 90/10 because each node is w-28
@@ -310,12 +264,18 @@ function FoodSystemHero({ report }: { report: FoodSystemReport }) {
           />
         </div>
 
+        {/*
+          * 0R-6R · the ring is built from the three pathway KEYS, not from the
+          * report. It used to filter `report.foodSystemMap` for the three
+          * Biotic nodes and read each one's `state`; `foodSystemMap` is now the
+          * body signals, and a pathway node carries no state to read. The three
+          * pathways are a constant of the product, so they are written as one.
+          */}
         <ul className="mt-6 space-y-3 sm:mt-0 sm:space-y-0">
-          {nodes.map((node, i) => (
+          {RING_PATHWAYS.map((pathway, i) => (
             <RingNode
-              key={node.id}
-              pathway={node.id}
-              state={node.state}
+              key={pathway}
+              pathway={pathway}
               x={positions[i]?.x ?? "50%"}
               y={positions[i]?.y ?? "50%"}
             />
@@ -389,7 +349,6 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
           />
           <div className="space-y-8">
             <FoodSystemHero report={report} />
-            <PathwayScores scores={report.bioticScores} />
             <div
               className="rounded-3xl border border-border bg-background p-6 space-y-4"
               style={{ boxShadow: CARD_SHADOW }}
@@ -445,11 +404,15 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
                   </div>
                   <dl className="space-y-3">
                     <Field label="In plain English" value={mod.plainEnglish} />
+                    {/*
+                      * 0R-6R · the third field is gone. It was labelled "What
+                      * your answers suggest" and carried
+                      * `BAND_SUGGESTS[pathway][band(score)]` — a possessive
+                      * sentence about this reader's state in one Biotic. The
+                      * two that remain explain the pathway and why it matters,
+                      * which is what this teaching card is for.
+                      */}
                     <Field label="Why it matters" value={mod.whyItMatters} />
-                    <Field
-                      label="What your answers suggest"
-                      value={mod.whatYourAnswersSuggest}
-                    />
                   </dl>
                   <div
                     className="mt-4 rounded-xl px-4 py-3"
@@ -474,22 +437,25 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
         </ScrollReveal>
       </section>
 
-      {/* Chapter 2 (map) — the system, part by part */}
-      <section>
-        <ScrollReveal>
-          <ChapterHeader
-            number={ch()}
-            eyebrow="The Map"
-            title="Your Food System, Part by Part"
-            subtitle="Where each pathway stands right now."
-          />
-          <div className="space-y-3">
-            {report.foodSystemMap.map((node) => (
-              <NodeCard key={node.id} node={node} />
-            ))}
-          </div>
-        </ScrollReveal>
-      </section>
+      {/*
+        ══ 0R-6R · CHAPTER 2 IS RETIRED ════════════════════════════════════════
+
+        "Your Food System, Part by Part — WHERE EACH PATHWAY STANDS RIGHT NOW",
+        then a card per Biotic with a coloured band word, a score out of 100 and
+        a possessive sentence from `BAND_SUGGESTS[pathway][band]`.
+
+        The subtitle is the clearest statement of the construct anywhere in the
+        product: the chapter existed to tell a reader where their three Biotics
+        stand. Nothing a questionnaire collects reaches any of the three.
+
+        It is retired rather than emptied. With the band, the number and the
+        band sentence gone, each card would have been a pathway name and a
+        general explanation — which the education chapter above already does, at
+        length and without claiming to describe the reader. An emptied chapter
+        would have left that heading making a promise its contents no longer
+        kept, which is the mistake the "greatest opportunity" subtitle made at
+        0R-6 when the sort under it was removed.
+      */}
 
       {/* Chapter 5 — body signals, as clues rather than findings */}
       <section>

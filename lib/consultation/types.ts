@@ -191,7 +191,19 @@ export const CONSULTATION_SENSITIVITIES: readonly ConsultationSensitivity[] = ["
  */
 export type ConsultationReportTarget =
   | "systemSnapshot"
-  | "foodSystemMap"
+  /*
+   * 0R-6R · `"foodSystemMap"` is gone from this union, and the type system is
+   * what found it: `tests/unit/consultation-question-bank.test.ts` asserts
+   * `ConsultationReportTarget extends keyof FoodSystemReport`, so retiring the
+   * field made the contract refuse to compile. That assertion exists to stop
+   * `reportTargets` inventing future deliverables, and it caught a target
+   * pointing at a deliverable that had just been retired.
+   *
+   * `lib/report/deterministic/permissions.ts` already withheld this target from
+   * every question with the note "foodSystemMap is a biological diagram no
+   * self-report can populate" — which is the same conclusion, reached from the
+   * other end, before the field was removed.
+   */
   | "educationModules"
   | "bodySignalMap"
   | "priorityLever"
@@ -202,7 +214,6 @@ export type ConsultationReportTarget =
 
 export const CONSULTATION_REPORT_TARGETS: readonly ConsultationReportTarget[] = [
   "systemSnapshot",
-  "foodSystemMap",
   "educationModules",
   "bodySignalMap",
   "priorityLever",

@@ -99,10 +99,34 @@ export interface FoodSystemScore {
 
 /* ── Baseline (the permanent parent of every interaction) ─────────────────── */
 
+/**
+ * Where a baseline's three sub-scores came from.
+ *
+ * ── GATE 3.6: THE SENTENCE CANNOT BE TRUE WITHOUT THIS ────────────────
+ *
+ * `buildBaseline` is called with two completely different kinds of input, and
+ * the provider was writing one sentence for both:
+ *
+ *   account-twin.ts   averaged MEAL sub-scores        → /account, V1_CORE, live
+ *   readFoundationBaseline   ASSESSMENT sub-scores    → POST_V1 surfaces
+ *
+ * Those do not measure the same things. The assessment's third dimension is
+ * q10–q15 — rhythm — while a meal's third bucket is polyphenol-rich and
+ * resistant-starch foods (lib/biotics-prompt.ts:35). So "your answers
+ * described your eating rhythm" was simply false on the only live path, where
+ * the numbers came from meals and the dimension was food categories.
+ *
+ * A provider that cannot tell the two apart has to guess, and a guess here is
+ * an unsupported claim about where a finding came from. So the baseline says.
+ */
+export type BioticsSource = "meals" | "assessment"
+
 export interface FoodSystemBaseline {
   foundationKey: FoundationKey
   foodSystemScore: FoodSystemScore
   biotics: BioticsScore
+  /** What the three sub-scores were measured from — see `BioticsSource`. */
+  bioticsSource: BioticsSource
   strengths: string[]
   gaps: string[]
   priorities: string[]

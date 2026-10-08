@@ -17,7 +17,7 @@
  * genuinely belong to it, so all 25 stay in play:
  *
  *   feed  (prebiotics)  <- diversity + feeding      (plant variety, fibre)
- *   seed  (probiotics)  <- adding                   (live foods)
+ *   seed  (probiotics)  <- adding                   (fermented foods)
  *   heal  (postbiotics) <- consistency + feeling    (rhythm, recovery)
  *
  * This is the same root cause as the /api/generate-report "undefined/100" bug
@@ -58,11 +58,11 @@ const FOOD_SWAPS: Record<LegacySwapSet, FoodSwap[]> = {
     { out: "Skipping the side vegetable", in: "Frozen veg added to every main meal", reason: "Frozen veg is nutritionally equivalent to fresh. Removing the prep barrier is the single biggest fibre lever." },
   ],
   adding: [
-    { out: "Flavoured yoghurt", in: "Plain live yoghurt + fresh fruit", reason: "Flavoured yoghurts typically have added sugar and lower live bacteria counts. Plain, full-fat live yoghurt delivers the cultures." },
-    { out: "Standard table salt on food", in: "Miso paste in soups and dressings", reason: "Miso adds umami and live cultures. Replacing salt with miso is the simplest daily fermented food upgrade." },
-    { out: "Vinegar-based pickles (pasteurised)", in: "Lacto-fermented pickles or sauerkraut", reason: "Vinegar pickles have no live cultures. Lacto-fermented versions provide hundreds of millions of bacteria per serving." },
-    { out: "Fizzy soft drink with meals", in: "Kombucha (low sugar, <5g/100ml)", reason: "Kombucha provides organic acids and live cultures. Choose unflavoured or low-sugar varieties." },
-    { out: "Cheese spread or processed cheese", in: "Kefir-based dressings or dips", reason: "Kefir contains 30+ live strains. Blending with herbs makes a creamy, probiotic-rich alternative." },
+    { out: "Flavoured yoghurt", in: "Plain live yoghurt + fresh fruit", reason: "Flavoured yoghurts typically carry added sugar, and heat treatment after fermentation is more common in them. A plain, full-fat yoghurt labelled live is the more reliable choice." },
+    { out: "Standard table salt on food", in: "Miso paste in soups and dressings", reason: "Miso is fermented, and adds umami as well as salt. Replacing table salt with it is the simplest daily fermented-food upgrade — add it off the heat, since boiling undoes the fermentation." },
+    { out: "Vinegar-based pickles (pasteurised)", in: "Lacto-fermented pickles or sauerkraut", reason: "Vinegar pickles are not fermented at all — they are preserved in acid. Lacto-fermented versions are, which is the distinction worth learning to read on a label." },
+    { out: "Fizzy soft drink with meals", in: "Kombucha (low sugar, <5g/100ml)", reason: "Kombucha is a fermented tea, which is where its organic acids come from. Choose unflavoured or low-sugar varieties." },
+    { out: "Cheese spread or processed cheese", in: "Kefir-based dressings or dips", reason: "Kefir is fermented with a wider mix of microorganisms than most yoghurt. Blending with herbs makes a creamy alternative." },
   ],
   consistency: [
     { out: "Skipping breakfast when busy", in: "Overnight oats prepared the night before", reason: "Overnight oats take 2 minutes to prepare. Removing the morning decision barrier protects your gut's feeding rhythm." },

@@ -14,6 +14,7 @@ import { detectPatterns } from "@/lib/account/patterns"
 import { buildBaseline } from "./baseline"
 import { createAgentLoopSession, makeObservation, runLoop } from "./engine"
 import { deterministicProvider } from "./providers/deterministic"
+import { mealBehaviour, type MealBioticKey } from "./behaviour"
 import { buildFoodSystemTwin } from "./twin/twin-builder"
 import type { FoodSystemDigitalTwin } from "./twin/twin-types"
 
@@ -50,11 +51,22 @@ export interface AccountTwinResult {
   feed: TwinFeedEntry[]
 }
 
-const BIOTIC_NAME = { prebiotic: "Prebiotics", probiotic: "Probiotics", postbiotic: "Postbiotics" } as const
-
-/** Which biotic a meal most supported (for the "what your Food System learned" feed). */
-function topBiotic(m: AccountTwinMeal): keyof typeof BIOTIC_NAME {
-  const entries: [keyof typeof BIOTIC_NAME, number][] = [
+/**
+ * Which of the meal's three sub-scores led (for the learning feed).
+ *
+ * ── GATE 3.6: THE KEY IS DATA, THE SENTENCE NAMES A PATTERN ──────────
+ *
+ * The feed line built from this read "This fed your Prebiotics · meal score
+ * 72", on /account, which is V1_CORE. Two claims in eight words: a quantity of
+ * Prebiotics belonging to the person, and a meal having fed it. A meal scored
+ * well on plant variety and fibre; nothing measured anybody's Prebiotics, and
+ * no food fed them.
+ *
+ * `BIOTIC_NAME` is gone — it existed only to print those three words. The key
+ * itself stays, because it is how the feed picks which pattern to name.
+ */
+function topBiotic(m: AccountTwinMeal): MealBioticKey {
+  const entries: [MealBioticKey, number][] = [
     ["prebiotic", m.prebiotic],
     ["probiotic", m.probiotic],
     ["postbiotic", m.postbiotic],
@@ -88,6 +100,9 @@ export async function buildAccountTwin(input: AccountTwinInput): Promise<Account
     score: baselineScore,
     scoreLabel: input.profileType ?? getScoreBand(baselineScore).label,
     biotics: bioticsInput,
+    // Averaged MEAL sub-scores, or a triple derived from the overall score —
+    // never assessment answers. The provider's wording depends on knowing it.
+    bioticsSource: "meals",
     strengths: [],
     priorities: [],
   })
@@ -165,7 +180,7 @@ function buildFeed(input: AccountTwinInput, twin: FoodSystemDigitalTwin): TwinFe
       id: `meal-${m.createdAt}-${m.name}`,
       icon: "biotic",
       title: m.name,
-      detail: `This fed your ${BIOTIC_NAME[tb]} · meal score ${m.score}`,
+      detail: `This meal brought ${mealBehaviour(tb)} · meal score ${m.score}`,
       at: m.createdAt,
     })
   }

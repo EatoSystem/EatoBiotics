@@ -110,11 +110,21 @@ export const TIER_META: Record<MembershipTier, { label: string; price: string; p
 /* ── Server-side tier lookup ────────────────────────────────────────────── */
 
 /**
+ * How long past the paid-through date an `active` membership still counts.
+ *
+ * Covers a late renewal webhook. Deliberately generous: locking out a paying
+ * member is a worse error than a cancelled one keeping access a few more days.
+ */
+const RENEWAL_GRACE_MS = 3 * 24 * 60 * 60 * 1000
+
+/**
  * Fetches the effective membership tier for a user.
  *
  * Handles:
- * - 'active' status → return stored tier
  * - 'trial' tier   → return 'trial' only if trial_expires_at is in the future
+ * - 'active' status → return the stored tier only while it is still inside the
+ *                     paid-through date (+ a renewal grace). This is what makes
+ *                     a cancellation converge without any further Stripe event.
  * - 'past_due'     → grace period while membership_expires_at is in the future
  * - everything else → 'free'
  */
@@ -142,7 +152,39 @@ export async function getUserMembershipTier(userId: string): Promise<MembershipT
     return "free"
   }
 
-  if (status === "active") return tier
+  /* ══ AN ACTIVE MEMBERSHIP IS BOUNDED BY WHAT WAS PAID FOR ════════════════
+   *
+   * This used to be a bare `if (status === "active") return tier`, so
+   * `membership_expires_at` was consulted only in the `past_due` branch below.
+   *
+   * That made cancellation non-recoverable. `customer.subscription.deleted` is
+   * TERMINAL — Stripe sends nothing further about a deleted subscription — so
+   * if that event's handler does not complete, nothing else ever downgrades
+   * the profile, and `active` + a long-past paid-through date returned the
+   * paid tier for ever. The webhook's atomic claim made that permanent rather
+   * than merely likely: a crash after the claim means the retry is deduped.
+   *
+   * So access is bounded by the date the customer actually paid through, which
+   * `created`, `updated` and `invoice.payment_succeeded` all keep current. A
+   * cancellation then converges with no further event required: access ends at
+   * the period end, and an immediate cancellation over-grants at most the
+   * remainder of a period that was already paid for.
+   *
+   * The grace exists because the errors are not symmetric. A renewal's webhook
+   * arriving late would otherwise lock out a PAYING member, which is far worse
+   * than a cancelled one keeping access a few more days. Stripe retries for
+   * days, so this is generous in the direction that matters.
+   *
+   * A null expiry cannot be bounded, so it returns the tier — fail open. That
+   * is a deliberate residual, not an oversight: revoking access from a member
+   * whose period end was never recorded would be the worse error.
+   */
+  if (status === "active") {
+    if (!data.membership_expires_at) return tier
+    const paidThrough = new Date(data.membership_expires_at as string)
+    if (Number.isNaN(paidThrough.getTime())) return tier
+    return paidThrough.getTime() + RENEWAL_GRACE_MS > Date.now() ? tier : "free"
+  }
 
   // Grace period: past_due but not yet expired
   if (status === "past_due" && data.membership_expires_at) {

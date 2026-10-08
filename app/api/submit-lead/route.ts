@@ -6,6 +6,7 @@ import {
   recordHealthConsent,
 } from "@/lib/health-consent"
 import { getSupabase } from "@/lib/supabase"
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { stripe } from "@/lib/stripe-server"
 
 /* ── Unique code generator (same charset as /api/promo/generate) ───────── */
@@ -43,6 +44,23 @@ async function createLotteryPromoCode(email: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
+  /*
+   * Before the Stripe promotion code, the `leads` row and the consent record —
+   * a limit after any of those would be a log line, not a limit.
+   *
+   * 5 per ten minutes, matching this route's siblings exactly: `waitlist`,
+   * `contribute` and `feedback` are all 5/10m anonymous write paths. Checkout
+   * is deliberately 20 because it is the money path and a false positive there
+   * costs a sale; this one is not, and it should not borrow that allowance.
+   *
+   * Per serverless instance (lib/rate-limit.ts).
+   */
+  const limit = rateLimit(`submit-lead:${getClientIp(req)}`, 5, 10 * 60_000)
+  if (!limit.allowed) {
+    const { body, init } = rateLimitResponse(limit)
+    return NextResponse.json(body, init)
+  }
+
   try {
     const body = await req.json()
     const { name, ageBracket, referralCode, assessmentType, healthDataConsent } = body as {

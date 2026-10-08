@@ -6,11 +6,34 @@ import type { RetestState } from "@/lib/account/retest"
 import { RETEST_DAY } from "@/lib/account/retest"
 
 /* ── Day-75 Retest Card ──────────────────────────────────────────────────
-   The before/after moment for the foundation Food System Score. Three
-   states driven by lib/account/retest.ts:
+   The before/after moment for the foundation Biotics Score™. Three states
+   driven by lib/account/retest.ts:
      countdown → progress toward the Day-75 retest,
      due       → invitation to retake the assessment,
-     compare   → baseline vs latest score with delta + share.
+     compare   → baseline vs latest, with what changed in the answers.
+
+   ══ WHAT THIS CARD MAY NOT SAY, AND WHY ═════════════════════════════════
+
+   `ScorePoint` is `{ score, at }`. THERE IS NO PROVENANCE ON IT — no method
+   version, no question-set version, nothing recording which instrument
+   produced either number. `leads.score_history` stores bare numbers.
+
+   In practice the two points almost certainly came from the same instrument:
+   one route writes the column, keyed on (email, assessment_type), and the
+   fifteen questions are inside the methodology freeze. But "almost certainly,
+   because the methodology happened not to change" is not the same as
+   "recorded as comparable" — and the day the instrument does change, every
+   historical pair silently becomes a comparison between two different things
+   and nothing here would notice.
+
+   So the two numbers stay: each is true, and each is what the person was told
+   at the time. What goes is the ACHIEVEMENT framing — the claim that the
+   difference between them is an improvement the person earned. A delta
+   between two unversioned numbers describes a change in reported answers, and
+   that is all this card may say about it.
+
+   The honest version of this card needs provenance stored alongside each
+   point. That is a schema change, so it is recorded rather than written.
 ────────────────────────────────────────────────────────────────────── */
 
 const GRADIENT = "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))"
@@ -28,6 +51,7 @@ export function RetestCard({ state }: { state: RetestState }) {
           {state.kind === "countdown" && <Countdown state={state} />}
           {state.kind === "due" && <Due state={state} />}
           {state.kind === "compare" && <Compare state={state} />}
+          {state.kind === "compare-refused" && <CompareRefused state={state} />}
         </div>
       </div>
     </div>
@@ -69,7 +93,7 @@ function Due({ state }: { state: Extract<RetestState, { kind: "due" }> }) {
           {state.day} days since your baseline of {state.baseline.score}.
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Retake the assessment and see what all those meals actually changed.
+          Retake the assessment and see what your answers say now.
         </p>
       </div>
       <Link
@@ -82,20 +106,60 @@ function Due({ state }: { state: Extract<RetestState, { kind: "due" }> }) {
   )
 }
 
+/**
+ * Two scores, shown separately, with the reason.
+ *
+ * Gate 5 step 2c. `retestState` now asks `canCompare` before subtracting, so
+ * the day the foundation instrument moves this is what a person sees instead of
+ * a delta between two different things — the state the card's own header asked
+ * for in Gate 3.5b ("the day the instrument does change… nothing here would
+ * notice").
+ *
+ * Dormant while one instrument writes both points, and present on purpose: a
+ * refusal path added at the moment it is needed is a refusal path nobody has
+ * ever seen rendered.
+ */
+function CompareRefused({ state }: { state: Extract<RetestState, { kind: "compare-refused" }> }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        Shown separately
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-6">
+        <div className="text-center">
+          <p className="font-serif text-4xl font-bold text-muted-foreground">{state.baseline.score}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{fmtDate(state.baseline.at)}</p>
+        </div>
+        <div className="text-center">
+          <p className="font-serif text-4xl font-bold text-foreground">{state.latest.score}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{fmtDate(state.latest.at)}</p>
+        </div>
+      </div>
+      <p className="mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
+        {state.because}
+      </p>
+    </div>
+  )
+}
+
 function Compare({ state }: { state: Extract<RetestState, { kind: "compare" }> }) {
   const up = state.delta > 0
   const flat = state.delta === 0
   const DeltaIcon = flat ? Minus : up ? TrendingUp : TrendingDown
   const deltaColor = flat ? "var(--icon-teal)" : up ? "var(--icon-green)" : "var(--icon-orange)"
-  const shareText = up
-    ? `My Food System Score went from ${state.baseline.score} to ${state.latest.score} in ${state.days} days with EatoBiotics.`
-    : `I'm tracking my Food System Score with EatoBiotics — currently ${state.latest.score}/100.`
+  /*
+   * No before/after claim. "Went from X to Y" presents the difference between
+   * two unversioned numbers as a result the person achieved; neither the
+   * stored points nor any approved comparison rule supports that. What is
+   * true, and shareable, is the current score.
+   */
+  const shareText = `I'm tracking my Biotics Score™ with EatoBiotics — currently ${state.latest.score}/100.`
 
   async function share() {
     const url = "https://eatobiotics.com/assessment"
     try {
       if (navigator.share) {
-        await navigator.share({ title: "My Food System Score", text: shareText, url })
+        await navigator.share({ title: "My Biotics Score™", text: shareText, url })
         return
       }
       await navigator.clipboard.writeText(`${shareText} ${url}`)
@@ -122,15 +186,26 @@ function Compare({ state }: { state: Extract<RetestState, { kind: "compare" }> }
           style={{ background: deltaColor }}
         >
           <DeltaIcon size={14} />
-          {flat ? "held steady" : `${up ? "+" : ""}${state.delta} in ${state.days} days`}
+          {flat
+            ? "about the same"
+            : `${up ? "+" : ""}${state.delta} in ${state.days} days`}
         </span>
       </div>
+      {/*
+        Says what the two numbers are, so the pill above reads as a change in
+        answers rather than a verdict. "Your reported X increased" is the
+        permitted form; "you improved" is not.
+      */}
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        Both numbers came from the same assessment, taken {state.days} days apart. The difference
+        describes what your answers said — not a measurement of your health.
+      </p>
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           onClick={share}
           className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-icon-green hover:text-icon-green"
         >
-          <Share2 size={14} /> Share my progress
+          <Share2 size={14} /> Share my score
         </button>
         <Link href="/assessment/you" className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">
           Retest again

@@ -25,6 +25,7 @@
  */
 import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs"
+import { execSync } from "node:child_process"
 import { join } from "node:path"
 import { copyOf } from "./helpers/marketing-language"
 import {
@@ -32,6 +33,12 @@ import {
   AI_PROMPT_SURFACES,
   manifestProblems,
 } from "./customer-surfaces"
+import {
+  productionReachableSourceFiles,
+  productionPageCount,
+  reachableSourceFiles,
+  servablePageCount,
+} from "./reachable-surfaces"
 
 /**
  * The customer-facing journey. Demo and preview routes are excluded on purpose:
@@ -90,11 +97,25 @@ function journeySurfaces(): string[] {
  * sentence, which is the half more likely to be written casually.
  */
 const RETIRED: Array<[string, RegExp]> = [
-  // Feed · Seed · Regenerate is the action vocabulary. It never labels a score,
-  // and Regenerate is never Postbiotics renamed. `Heal` stays case-sensitive:
+  // Feed · Seed · Rejuvenate is the action vocabulary. It never labels a score,
+  // and Rejuvenate is never Postbiotics renamed. `Heal` stays case-sensitive:
   // lowercase "heal" is an ordinary English verb that appears in legitimate
   // educational prose, whereas capital-H Heal is the retired pathway name.
-  ["Heal or Regenerate as a pathway name", /\bHeal\b|\bRegenerates\b/],
+  //
+  // `Regenerate` joined `Heal` in retirement when EatoSystem became The
+  // Rejuvenative Food System. Same case-sensitivity logic, and the same
+  // reason: lowercase "regenerate" is ordinary English for a biological
+  // process the copy is still allowed to describe.
+  ["Heal or a retired pathway plural", /\bHeal\b|\bRegenerates\b|\bRejuvenates\b/],
+  // `Regenerate` as the THIRD ACTION — which is what "beside Feed or Seed"
+  // means. Deliberately not a blanket \bRegenerate\b: "Regenerate plan" and
+  // "Regenerate report" are UI verbs meaning run-it-again, they live in the
+  // account dashboard which IS in this corpus, and banning them outright would
+  // have meant weakening this rule until it passed.
+  [
+    "Regenerate still used as the third action",
+    /\b(Feed|Seed)\b[^.]{0,60}\bRegenerate\b|\bRegenerate\b[^.]{0,60}\b(Feed|Seed)\b/,
+  ],
   ["five-pillar model", /\b(five|5) pillars\b/i],
   // "Your Three Pillars" shipped as the heading above the three-biotic
   // breakdown and no rule caught it: the five-pillar rule is about the RETIRED
@@ -168,10 +189,11 @@ const RETIRED: Array<[string, RegExp]> = [
   ["the included 30 days called a free trial", /\bfree trial\b|\bstart your trial\b|\btrial starts\b/i],
   // Phase 6 activation semantics, promised before they exist.
   ["future 30-day activation semantics", /\b30 days start (after|when)\b|\bpractice[- ]ready\b|\breport[- ]ready\b|\bactivation window\b/i],
-  // Feed/Seed/Regenerate are actions. A score is not an action.
-  ["actions used as score names", /\b(feed|seed|regenerate)\s+score\b|\bscores? across feed\b|\bfeed\s*[·/]\s*seed\s*[·/]\s*regenerate\b(?=[^.]{0,40}\bscore)/i],
-  // Regenerate is not Postbiotics renamed, in either direction.
-  ["Regenerate equated with Postbiotics", /\bregenerate\s*(=|\u2014|-|:)\s*postbiotics\b|\bpostbiotics,?\s+(also |now )?(called|known as|renamed)\s+regenerate\b/i],
+  // Feed/Seed/Rejuvenate are actions. A score is not an action. Both spellings
+  // of the third action, because the rule is about the shape, not the word.
+  ["actions used as score names", /\b(feed|seed|regenerate|rejuvenate)\s+score\b|\bscores? across feed\b|\bfeed\s*[·/]\s*seed\s*[·/]\s*(regenerate|rejuvenate)\b(?=[^.]{0,40}\bscore)/i],
+  // The third action is not Postbiotics renamed, in either direction.
+  ["the third action equated with Postbiotics", /\b(regenerate|rejuvenate)\s*(=|\u2014|-|:)\s*postbiotics\b|\bpostbiotics,?\s+(also |now )?(called|known as|renamed)\s+(regenerate|rejuvenate)\b/i],
   // ── Phase 1 completion pass ────────────────────────────────────────────
   // Every rule below exists because a live surface carried the shape and no
   // guard was reading that file. Independent review found them, not CI.
@@ -190,7 +212,7 @@ const RETIRED: Array<[string, RegExp]> = [
   // number or an interpolation is the shape a CUSTOMER sees; lowercase plus a
   // value is code. Matching both would have meant weakening the rule until it
   // passed, which is how a guard becomes decoration.
-  ["an action used as a score label", /\b(Feed|Seed|Regenerate):\s*[{\d]/],
+  ["an action used as a score label", /\b(Feed|Seed|Regenerate|Rejuvenate):\s*[{\d]/],
   // The 30 days are INCLUDED in a €49 purchase. Calling them free makes the
   // paid thing sound free and the included thing sound conditional.
   //
@@ -491,7 +513,9 @@ describe("the live journey uses only current vocabulary", () => {
     expect(surfaces).toContain("lib/email/paid-report-email.ts")
 
     const probes: Array<[string, string]> = [
-      ["Regenerates your gut", "Heal or Regenerate as a pathway name"],
+      ["Regenerates your gut", "Heal or a retired pathway plural"],
+      ["Rejuvenates your gut", "Heal or a retired pathway plural"],
+      ["Feed, Seed and Regenerate", "Regenerate still used as the third action"],
       ["Your 5 Pillars at a Glance", "five-pillar model"],
       ["Your Full Report is ready", "retired report titles"],
       ["Start Restore today", "Grow/Restore/Transform as a current offer"],
@@ -558,5 +582,681 @@ describe("the live journey uses only current vocabulary", () => {
         expect(copy, `${name} fired on internal value: ${internal}`).not.toMatch(rule)
       }
     }
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   The one surface allowed to say "Food System Score" — and what makes it so.
+
+   ── The finding this block exists to record ─────────────────────────────────
+
+   `components/fss/candidate-result.tsx` renders, at the time of writing:
+
+       Your Food System Score™
+       Your Food System Score is {score.score} out of 100.
+
+   RETIRED bans that by name — "a competing branded score", /\bfood system
+   score\b/i — and this file's own non-vacuity probe uses "Your Food System
+   Score is 72" as its example of the violation. So the candidate renders,
+   almost character for character, the exact string the guard holds up as what
+   must never ship.
+
+   It was green for one reason: `journeySurfaces()` skips any directory named
+   `preview` and never walks `lib/fss` or `components/fss`. A rule and the code
+   that breaks it coexisted because the corpus did not reach it.
+
+   ── Why the right answer is an exemption and not a repair ───────────────────
+
+   Because the name is SUPPOSED to be there. The whole purpose of
+   /preview/food-system-v1 is that the candidate methodology can be walked and
+   judged before it ships, and a reviewer cannot judge a name they are not
+   shown. The architecture review's conclusion is that the name ships LAST,
+   gated on scientific sign-off — not that it may never be written down.
+
+   The ban's real subject is therefore CUSTOMERS, and the exemption's real
+   condition is the gate on the route. So this block states both, and makes the
+   condition the thing that is tested:
+
+     · the withheld name appears in NO production-reachable file;
+     · the candidate files are outside the production closure — so the day one
+       is imported from a servable page, the exemption lapses by itself;
+     · every OTHER retired rule still applies to the candidate in full.
+
+   That last clause is why this is a strengthening rather than a hole. Before,
+   no retired rule reached the candidate at all. Now exactly one is lifted, for
+   a stated reason, on a tested condition.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("the withheld score name is confined to the gated candidate preview", () => {
+  const WITHHELD = "a competing branded score"
+
+  /** Derived, so a new Gate 3 file is covered the moment it exists. */
+  const candidateFiles = () =>
+    execSync("git ls-files --cached --others --exclude-standard lib/fss components/fss app/preview/food-system-v1", {
+      encoding: "utf-8",
+    })
+      .trim()
+      .split("\n")
+      .filter((f) => /\.(ts|tsx)$/.test(f))
+      .sort()
+
+  it("the rule and the exemption both still refer to something real", () => {
+    expect(RETIRED.find(([n]) => n === WITHHELD), `the "${WITHHELD}" rule must exist`).toBeDefined()
+    expect(candidateFiles().length).toBeGreaterThanOrEqual(16)
+
+    // The exemption is pointless if nothing in the candidate actually uses the
+    // name — and an exemption nobody needs is an exemption nobody notices has
+    // stopped being justified.
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    const users = candidateFiles().filter((f) => rule.test(copyOf(readFileSync(f, "utf8"))))
+    expect(users, "no candidate file uses the withheld name — is this exemption still needed?").not
+      .toEqual([])
+  })
+
+  /*
+   * ── THE LEDGER, CLEARED IN GATE 3.5 ──────────────────────────────────────
+   *
+   * This block found THIRTEEN customer-reachable files carrying the withheld
+   * name — the surfaces the Food System Score architecture review named in its
+   * opening finding: *"the retired name is shipping right now, in about thirty
+   * places."* Eleven are now corrected: the live product's person-level score
+   * is the Biotics Score™, and that is what they say.
+   *
+   * Two remain, each for a reason that is not "we did not get to it".
+   *
+   * ── Why an exception is not the same as a backlog entry ──────────────────
+   *
+   * `lib/cms/taxonomy.ts` holds a STORED tag value. CMS rows are tagged with
+   * the literal string, so renaming it orphans every row already carrying it —
+   * which makes this a data question, not a copy question. The file's own
+   * neighbours already carry the deprecated "Heal" for exactly this reason,
+   * and this file's header warns against demanding a data migration to satisfy
+   * a naming rule.
+   *
+   * `lib/assessment/registry.ts` keeps "Family Food System Score" — only that
+   * one label; the You/foundation label was corrected. Family product naming
+   * is explicitly deferred out of Phase 1, the whole Family funnel
+   * (`components/start-family/*`, eight files) is POST_V1-refused and so is
+   * not in this closure at all, and inventing a "Family Biotics Score" HERE
+   * would be taking a product-naming decision inside a vocabulary pass. The
+   * refused funnel and this label should be renamed together, by someone
+   * naming the Family product deliberately.
+   *
+   * Pinned in BOTH directions, as before: a third file turns this red, and a
+   * file that gets fixed must leave the list rather than sit here looking like
+   * coverage.
+   */
+  const WITHHELD_NAME_UNCORRECTED = [
+    "lib/assessment/registry.ts",
+    "lib/cms/taxonomy.ts",
+  ]
+
+  const withheldOffenders = () => {
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    return productionReachableSourceFiles().filter((f) =>
+      rule.test(copyOf(readFileSync(f, "utf8"))),
+    )
+  }
+
+  it("the production closure is real, so this is not passing vacuously", () => {
+    // An empty or tiny closure would satisfy every assertion below by finding
+    // nothing, which is how a derived corpus fails without saying so.
+    expect(productionReachableSourceFiles().length).toBeGreaterThan(50)
+    expect(productionPageCount()).toBeGreaterThan(10)
+  })
+
+  it("no customer-reachable file carries the withheld name except the counted ledger", () => {
+    expect(
+      withheldOffenders().filter((f) => !WITHHELD_NAME_UNCORRECTED.includes(f)),
+      "a NEW customer-reachable surface carries the withheld score name",
+    ).toEqual([])
+  })
+
+  it("the ledger has no entry that is already clean", () => {
+    const hits = new Set(withheldOffenders())
+    expect(
+      WITHHELD_NAME_UNCORRECTED.filter((f) => !hits.has(f)),
+      "ledger entries that no longer match — remove them so the count stays honest",
+    ).toEqual([])
+  })
+
+  it("and the candidate is not in that ledger — its use of the name is gated, not debt", () => {
+    for (const f of candidateFiles()) {
+      expect(
+        WITHHELD_NAME_UNCORRECTED,
+        `${f} is a gated candidate surface and must not be counted as uncorrected debt`,
+      ).not.toContain(f)
+    }
+  })
+
+  /*
+   * ── THE CONDITION, MADE PRECISE IN GATE 5 STEP 2C ───────────────────────
+   *
+   * This asserted that NO candidate file is production-reachable. That was a
+   * PROXY for the property the exemption actually rests on:
+   *
+   *     no production-reachable file renders the withheld name.
+   *
+   * The proxy was exact while nothing crossed. Step 2c made something cross,
+   * for a reason the gate required: `lib/account/patterns.ts` must ask the
+   * SAME comparability authority the candidate product asks, because "there
+   * should not be canonical comparison logic and separately agent-loop
+   * comparison logic." That pulls `lib/fss/engine/compare.ts` and its one
+   * import, `provenance.ts`, into the production closure.
+   *
+   * Neither carries the withheld name, or any product naming at all — they are
+   * version primitives. So the property held and only the proxy broke.
+   *
+   * ── WHY THIS IS NOT A WEAKENING ─────────────────────────────────────────
+   *
+   * The blanket rule never had to check the NAME on a reachable candidate
+   * file, because no such file existed. This checks it. A candidate file that
+   * crosses into production AND renders the name now fails on the real ground
+   * rather than on a proxy, and the crossing set itself is pinned BY VALUE —
+   * so a third file crossing is a visible decision, not a quiet one.
+   *
+   * What is no longer refused is a clean primitive being shared. That was
+   * never the thing the exemption protected.
+   */
+  const CANDIDATE_FILES_IN_PRODUCTION_CLOSURE = [
+    "lib/fss/engine/compare.ts",
+    "lib/fss/engine/provenance.ts",
+  ]
+
+  it("no production-reachable candidate file renders the withheld name", () => {
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    const reachable = new Set(productionReachableSourceFiles())
+    const crossing = candidateFiles().filter((f) => reachable.has(f))
+
+    expect(
+      crossing.filter((f) => rule.test(copyOf(readFileSync(f, "utf8")))),
+      "a candidate file reachable from a servable page renders the withheld score name",
+    ).toEqual([])
+  })
+
+  it("and the set of candidate files crossing into production is pinned", () => {
+    const reachable = new Set(productionReachableSourceFiles())
+    expect(
+      candidateFiles().filter((f) => reachable.has(f)).sort(),
+      "a candidate file started or stopped being reachable from a servable page",
+    ).toEqual(CANDIDATE_FILES_IN_PRODUCTION_CLOSURE)
+  })
+
+  it("NON-VACUITY: the crossing files really are in the closure, and really are clean", () => {
+    // Both halves matter. An empty crossing set would satisfy the name check
+    // above by finding nothing, and a pin listing files that are NOT reachable
+    // would look like coverage while asserting nothing.
+    const reachable = new Set(productionReachableSourceFiles())
+    for (const f of CANDIDATE_FILES_IN_PRODUCTION_CLOSURE) {
+      expect(reachable.has(f), `${f} is pinned as crossing but is not reachable`).toBe(true)
+    }
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    expect(rule.test(copyOf("Your Food System Score is 72"))).toBe(true)
+  })
+
+  it("every OTHER retired rule still applies to the candidate in full", () => {
+    const offenders: string[] = []
+    for (const file of candidateFiles()) {
+      const copy = copyOf(readFileSync(file, "utf8"))
+      for (const [name, rule] of RETIRED) {
+        if (name === WITHHELD) continue
+        const hit = copy.match(rule)
+        if (hit) offenders.push(`${file} → ${name}: "${hit[0]}"`)
+      }
+    }
+    expect(offenders, "retired vocabulary in the FSS-v1 candidate").toEqual([])
+  })
+
+  it("NON-VACUITY: the production closure is strictly smaller, and the rule bites", () => {
+    // If the two closures were equal the exemption would be meaningless, and
+    // the "candidate is unreachable" assertion above would be trivially true.
+    expect(productionPageCount()).toBeLessThan(servablePageCount())
+    expect(productionReachableSourceFiles().length).toBeLessThan(reachableSourceFiles().length)
+
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    expect(copyOf('<h1>Your Food System Score™</h1>')).toMatch(rule)
+    expect(copyOf('<h1>Your Biotics Score™</h1>')).not.toMatch(rule)
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Longitudinal claims on scores that carry no provenance — Gate 3.5.
+
+   ── What this guards, and why the vocabulary rules above cannot ─────────────
+
+   The rules above police the NAME. They say nothing about what a surface
+   claims the difference between two scores MEANS, and that is the other half
+   of the problem the ledger exposed.
+
+   `lib/account/retest.ts` stores `ScorePoint` as `{ score, at }`. There is no
+   method version on it, and `leads.score_history` holds bare numbers. In
+   practice both points come from the same instrument — one route writes the
+   column, keyed on (email, assessment_type), and the fifteen questions sit
+   inside the methodology freeze — but that is a property of what happened to
+   be true, not something recorded. The day the instrument changes, every
+   historical pair becomes a comparison between two different things and
+   nothing would notice.
+
+   So the two numbers may be shown: each is true, and each is what the person
+   was told at the time. What may not be shown is the ACHIEVEMENT framing — the
+   difference presented as a result the person earned, or as something their
+   meals caused.
+
+   Gate 3.5 corrected exactly that on two surfaces, and sabotage cases
+   1063, 1064 and 1067 then walked straight through, because the corrections
+   were copy and nothing asserted copy. These are the assertions that were
+   missing.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("no surface claims an improvement from scores that cannot be compared", () => {
+  const LONGITUDINAL_SURFACES = [
+    "components/account/retest-card.tsx",
+    "lib/account/week-story.ts",
+  ]
+
+  const CLAIMS: [string, RegExp][] = [
+    [
+      "a before/after score claim",
+      /went from \S+ to \S+|from \$\{[^}]*baseline[^}]*\} to \$\{[^}]*latest[^}]*\}/i,
+    ],
+    [
+      "the difference credited to the person's food",
+      /\b(your )?meals are moving\b|\bmeals actually changed\b|\byour food moved\b/i,
+    ],
+    [
+      "the difference framed as progress earned",
+      /\bshare my progress\b|\byour progress so far\b|\byou improved\b|\bimprovement of \d/i,
+    ],
+    [
+      "a biological improvement claim",
+      /\byour (gut|microbiome|biology|health) (has )?improved\b/i,
+    ],
+  ]
+
+  it.each(LONGITUDINAL_SURFACES)("%s makes no improvement claim", (file) => {
+    const copy = copyOf(readFileSync(file, "utf8"))
+    for (const [why, rule] of CLAIMS) {
+      const hit = copy.match(rule)
+      expect(hit?.[0] ?? null, `${file} — ${why}: "${hit?.[0]}"`).toBeNull()
+    }
+  })
+
+  it("NON-VACUITY: each rule catches the sentence it exists for", () => {
+    const probes: [string, string][] = [
+      ["a before/after score claim", "My Biotics Score went from 61 to 72 in 90 days."],
+      ["the difference credited to the person's food", "Your meals are moving the number."],
+      ["the difference framed as progress earned", "Share my progress"],
+      ["a biological improvement claim", "Your gut has improved."],
+    ]
+    for (const [name, probe] of probes) {
+      const rule = CLAIMS.find(([n]) => n === name)
+      expect(rule, `no rule named "${name}"`).toBeDefined()
+      expect(probe, `"${probe}" must be refused by ${name}`).toMatch(rule![1])
+    }
+  })
+
+  it("NON-VACUITY: the shipped copy is not caught", () => {
+    // The rules must leave the honest version alone, or the next person to
+    // find them inconvenient will weaken them rather than the copy.
+    for (const honest of [
+      "I'm tracking my Biotics Score with EatoBiotics — currently 72/100.",
+      "Both numbers came from the same assessment, taken 90 days apart.",
+      "That is what your answers said this time.",
+      "Share my score",
+    ]) {
+      for (const [why, rule] of CLAIMS) {
+        expect(honest, `${why} fired on honest copy: "${honest}"`).not.toMatch(rule)
+      }
+    }
+  })
+
+  /*
+   * The positive half. Showing two numbers and a delta without saying what
+   * they are leaves the reader to supply the meaning, and the meaning they
+   * will supply is "I got better" — which is the claim being avoided.
+   */
+  it("the retest card says what the two numbers are", () => {
+    const copy = copyOf(readFileSync("components/account/retest-card.tsx", "utf8"))
+    expect(
+      copy,
+      "the card shows a delta; it must also say the difference describes the answers",
+    ).toMatch(/describes what your answers said/i)
+    expect(
+      copy,
+      "and must say plainly that it is not a health measurement",
+    ).toMatch(/not a measurement of your health/i)
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   0R-6 · `P1-VOCAB-01` — A RETIRED NAME PRODUCED BY CSS, NOT BY SOURCE
+
+   ══ THE SPEC ASKED FOR A WIDENING THAT WOULD NOT HAVE WORKED ════════════════
+
+   `EXPERIENCE_0R_REMEDIATION_SPEC.md` says `P1-VOCAB-01`'s guard is
+   "`retired-vocabulary.test.ts` extended over the report corpus". Measured, the
+   corpus already covers it and the rule already exists:
+
+     RETIRED  ["Heal or a retired pathway plural", /\bHeal\b|…/]
+     journeySurfaces()  walks components/assessment with pageOnly: false,
+                        so full-report-client.tsx IS scanned
+
+   …and the suite is GREEN, correctly. `full-report-client.tsx:275-281` renders
+
+     {food.pillars.map((p) => <span className="… capitalize">{p}</span>)}
+
+   so the SOURCE contains only the lowercase stored key `"heal"`, which the rule
+   deliberately permits — lowercase "heal" is an ordinary English verb in
+   legitimate educational prose, and the rule is case-sensitive for that reason.
+   The capital-H **Heal** a customer reads is produced by `text-transform:
+   capitalize` at render time.
+
+   ══ SO THIS IS A NEW FORM, AND IT IS WORTH NAMING ═══════════════════════════
+
+   A retired name that exists in NO source string. It is the presentation-layer
+   analogue of the interpolation blindness this repository has documented
+   eleven times: there, the word lived in a lookup table; here, it is
+   manufactured by a stylesheet.
+
+   The existing instrument cannot express it, which is reported rather than
+   worked around. What CAN be expressed, and is the real invariant, is
+   structural: a STORED KEY must not be rendered directly. CLAUDE.md already
+   rules it — "'Heal' is a stored key, never a customer-facing pathway name" —
+   and `lib/product-vocabulary.ts` is where the customer-facing name lives.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+const STORED_PATHWAY_KEYS = ["feed", "seed", "heal"] as const
+
+/** Files that render a food's pathway tags to a customer. */
+const PATHWAY_TAG_SURFACES = ["components/assessment/full-report-client.tsx"] as const
+
+/*
+ * Pinned as a LITERAL, for the sabotage-1461 reason. `it.each` only looks at
+ * what its list names, so deleting the one entry deletes the instrument and
+ * leaves zero failing tests behind — which is how 0R-1 lost `VISUAL_MODULES`
+ * coverage to a one-line edit. Writing the case that attacks this list is what
+ * found the omission in my own guard, one tranche after the lesson was
+ * written down.
+ */
+const PINNED_PATHWAY_TAG_SURFACES = 1
+
+describe("0R-6 · no stored pathway key is rendered as a customer-facing name", () => {
+  it.each(PATHWAY_TAG_SURFACES)("%s renders a name, not the key", (file) => {
+    const src = readFileSync(file, "utf8")
+
+    /*
+     * Non-vacuity: the surface must still render pathway tags at all, or a
+     * repair that simply deleted them would read as a pass.
+     */
+    expect(
+      /food\.pillars/.test(src),
+      `${file} no longer reads food.pillars — if the tags were removed ` +
+        `deliberately, delete this pin; if not, the assertion is vacuous`,
+    ).toBe(true)
+
+    /*
+     * The defect: the mapped key interpolated straight into the element. The
+     * rule is deliberately about the SHAPE rather than the word, because the
+     * word is never in the source.
+     */
+    /*
+     * `\{\s*p\b[^}]*\}`, not `\{p\}`. Widened by sabotage 1516, which rendered
+     * `{p.toLowerCase()}` — still the stored key, printed lowercase with the
+     * `capitalize` class gone — and slipped straight through a rule that
+     * matched only the bare identifier. The invariant is "the key, or anything
+     * derived from it, rendered DIRECTLY"; `{ACTION_FOR_PATHWAY_KEY[p] ?? p}`
+     * does not match because it does not begin with `p`.
+     *
+     * `>\s*\{…\}\s*<`, not `>\{…\}<`. Written adjacent on the first run and it
+     * passed against the live defect, because the element spans five lines:
+     * the `>` closing the opening tag, a newline, indentation, `{p}`, a
+     * newline. A rule about rendered output has to tolerate the formatting the
+     * renderer is actually written in.
+     */
+    expect(
+      /food\.pillars\.map\(\(p\) =>[\s\S]{0,400}>\s*\{\s*p\b[^}]*\}\s*</.test(src),
+      `${file} renders the raw stored pathway key. Under ` +
+        `class "capitalize" that prints "Heal", which CLAUDE.md names as a ` +
+        `stored key and never a customer-facing pathway name — the third ` +
+        `action is Rejuvenate. Map the key through the product vocabulary.`,
+    ).toBe(false)
+  })
+
+  it("the surface list cannot be emptied to silence the rule", () => {
+    expect(
+      PATHWAY_TAG_SURFACES.length,
+      `PINNED_PATHWAY_TAG_SURFACES is ${PINNED_PATHWAY_TAG_SURFACES} while the ` +
+        `list holds ${PATHWAY_TAG_SURFACES.length}. A surface that renders ` +
+        `pathway tags joins the list; one that stops rendering them leaves it ` +
+        `together with the literal, in the same edit.`,
+    ).toBe(PINNED_PATHWAY_TAG_SURFACES)
+    for (const file of PATHWAY_TAG_SURFACES) {
+      expect(existsSync(file), `${file} is pinned but does not exist`).toBe(true)
+    }
+  })
+
+  it("NON-VACUITY: the case-sensitive Heal rule is why source cannot see this", () => {
+    /*
+     * Proves the diagnosis rather than asserting it. The shape that shipped
+     * carries no capital-H Heal for `RETIRED` to find, while the rendered
+     * string it produces would be caught immediately.
+     */
+    const shipped = '{food.pillars.map((p) => (<span className="capitalize">{p}</span>))}'
+    const healRule = RETIRED.find(([name]) => name.startsWith("Heal"))![1]
+    expect(healRule.test(shipped), "the source shape does carry capital-H Heal").toBe(false)
+    expect(healRule.test("Heal"), "the rule cannot see the rendered word either").toBe(true)
+    for (const key of STORED_PATHWAY_KEYS) {
+      expect(healRule.test(key), `the rule fires on the lowercase key "${key}"`).toBe(false)
+    }
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   0R-6 · `P0-SCIENCE-07` — the dev-flow pillar breakdown, and its reachability
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("0R-6 · P0-SCIENCE-07 · no per-Biotic score out of 100 in the Report", () => {
+  const FULL_REPORT = "components/assessment/full-report-client.tsx"
+
+  it("the pillar breakdown renders no score and no denominator", () => {
+    const src = copyOf(readFileSync(FULL_REPORT, "utf8"))
+    for (const [why, rule] of [
+      ["a per-Biotic score with a denominator", /\{dive\.score\}\s*\/\s*100/],
+      ["a possessive per-Biotic room-to-grow claim", /room to grow/i],
+      ["a per-Biotic score read at all", /dive\.score/],
+    ] as const) {
+      expect(
+        rule.test(src),
+        `${FULL_REPORT} — ${why}. The permanent product rule names this in three ` +
+          `of its forms at once: a number, a denominator and a possessive. The ` +
+          `deep-dive guidance survives without a score, as BioticsProgressPanel ` +
+          `already does.`,
+      ).toBe(false)
+    }
+  })
+
+  /*
+   * ── THE SELECTION HALF, ADDED BECAUSE SABOTAGE 1512 SLIPPED ──────────────
+   *
+   * The repair removed `score: number` from `PillarDeepDive`, which closes the
+   * ranking BY CONSTRUCTION: the sort had nothing left to sort by. But the only
+   * thing holding the field out was the TYPE, and the sabotage driver runs
+   * vitest, not `tsc`. Restoring the field broke no assertion, so the selection
+   * half of `-07` was guarded by a tool outside the loop that is supposed to
+   * guard it.
+   *
+   * Type-level absence is not enforcement when the enforcing tool is not run.
+   * This reads the source instead, and refuses the field AND the sort over it —
+   * the construct and its only consumer, in one place.
+   */
+  it("PillarDeepDive carries no per-Biotic score, and nothing sorts by one", () => {
+    /*
+     * RAW source, not `copyOf`. `copyOf` joins every line with a space so
+     * prose rules read a sentence that spans lines — which is exactly wrong
+     * for a STRUCTURAL rule, because the `\n}` that ends a declaration no
+     * longer exists. Comments are stripped by hand instead, so the long
+     * `P0-SCIENCE-07` note inside this very interface (which names `score`
+     * repeatedly, in the course of recording its removal) cannot be mistaken
+     * for the field: a comment recording a defect is not the defect, for the
+     * third time in this tranche.
+     */
+    const src = readFileSync("lib/assessment-report.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    const deepDiveType = src.match(/export interface PillarDeepDive \{[\s\S]*?\n\}/)
+    expect(deepDiveType, "PillarDeepDive is gone — if deliberately, delete this pin").toBeTruthy()
+    expect(
+      /\bscore\s*[?:]/.test(deepDiveType![0]),
+      "PillarDeepDive carries a per-Biotic score again. 0R-6 removed the field " +
+        "rather than the sentence, because a field with no reader is one edit " +
+        "away from a ranking — which is how the weakest-first sort existed.",
+    ).toBe(false)
+
+    expect(
+      /deepDives\s*\.\s*sort\s*\(/.test(src),
+      "the deep dives are sorted again. Any ordering of the three pillars by a " +
+        "per-Biotic score is a personal Biotic ranking, printed or not.",
+    ).toBe(false)
+  })
+
+  /*
+   * ══ 0R-6R · THE CANONICAL TYPE IS THE BOUNDARY ════════════════════════════
+   *
+   * 0R-6 closed `-07` in `components/assessment/full-report-client.tsx`, the
+   * LATENT dev-flow renderer, and left the identical construct live on the paid
+   * path in two other renderers because the register classified `-07` as "not
+   * currently customer-reachable". The register was describing one file.
+   *
+   * The ruling that moved the boundary:
+   *
+   *     IF A PRODUCT TYPE SAYS A PERSONAL CONSTRUCT EXISTS, EVERY DOWNSTREAM
+   *     CONSUMER IS INVITED TO TREAT IT AS TRUTH.
+   *
+   * So the test is no longer "does this renderer print it" but "can the
+   * canonical Report type REPRESENT it". `FoodSystemReport` is the product
+   * model the web section, the PDF, the fallback report, the add-on lens and
+   * the AI merge all read; while it carries three per-Biotic numbers and three
+   * band states, removing them from two renderers is a decision not to show
+   * today what the model still asserts exists.
+   *
+   * The test for a field, from the ruling: WOULD THIS FIELD ALLOW A DOWNSTREAM
+   * CONSUMER TO RECONSTRUCT OR ASSERT A PERSONAL BIOTIC STATE? `bodySignalMap`
+   * is the one that needed it rather than being obvious — its `state` was
+   * `BAND_STATE[band(biotics[driver])]`, so four body signals each exposed the
+   * band of a driver Biotic, and the set reconstructs the triple.
+   */
+  it("the canonical Report type cannot represent a personal per-Biotic score or state", () => {
+    const types = readFileSync("lib/report/food-system-report-types.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    // NON-VACUITY: the module and both declarations must still be there.
+    expect(/export interface FoodSystemReport \{/.test(types), "FoodSystemReport is gone").toBe(true)
+    expect(/export interface FoodSystemNode \{/.test(types), "FoodSystemNode is gone").toBe(true)
+
+    for (const [why, rule] of [
+      ["FoodSystemReport.bioticScores — three per-Biotic numbers on the product model", /\bbioticScores\b/],
+      ["a per-Biotic band state on a node", /\bstate\s*:\s*"strong"/],
+      ["a per-Biotic score on a node", /^\s*score\??\s*:\s*number/m],
+      ["EducationModule.whatYourAnswersSuggest — BAND_SUGGESTS keyed per Biotic", /\bwhatYourAnswersSuggest\b/],
+    ] as const) {
+      expect(
+        rule.test(types),
+        `lib/report/food-system-report-types.ts still declares ${why}. A type ` +
+          `that says the construct exists invites every consumer to render it, ` +
+          `which is why 0R-6R closed this at the model rather than at two of ` +
+          `its five readers.`,
+      ).toBe(false)
+    }
+  })
+
+  it("Report construction reads no per-Biotic score, and cannot rank one", () => {
+    const builder = readFileSync("lib/report/build-food-system-report.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    expect(/export function buildFoodSystemReport/.test(builder), "the builder is gone").toBe(true)
+
+    for (const [why, rule] of [
+      ["orderedByNeed — the argmin/argmax over three unmeasured scores", /\borderedByNeed\b/],
+      ["normalizeToBiotics — the three scores entering the builder at all", /\bnormalizeToBiotics\b/],
+      ["a priorityPathway", /\bpriorityPathway\b/],
+      ["a strongestPathway", /\bstrongestPathway\b/],
+      ["BAND_SUGGESTS — per-Biotic possessive prose keyed by band", /\bBAND_SUGGESTS\b/],
+    ] as const) {
+      expect(
+        rule.test(builder),
+        `lib/report/build-food-system-report.ts still carries ${why}. No ` +
+          `authorised selector means no personalised selection — not a safer ` +
+          `label on the same selector.`,
+      ).toBe(false)
+    }
+  })
+
+  it("orderedByNeed no longer exists for any Report surface to call", () => {
+    /*
+     * COMMENTS STRIPPED, and this rule is why the habit is now a reflex.
+     *
+     * `subscores.ts` carries a long block recording the deletion, and that
+     * block names `orderedByNeed` six times. On its first run this assertion
+     * read the raw file and failed against the record of its own repair.
+     *
+     * That is the FOURTH time in two tranches: the `-07` reachability pin read
+     * `paid-flow-policy.ts`'s doc comment at 0R-6, the `PillarDeepDive`
+     * structural rule needed the same treatment, and the form track's
+     * `BioticKey` rule was firing on two comments in `system-map.ts` and
+     * `twin-visual.ts` — which is part of why it was retired.
+     *
+     *     A COMMENT RECORDING A DEFECT IS NOT THE DEFECT.
+     *
+     * A structural rule reads code. Only a prose rule reads prose.
+     */
+    const sub = readFileSync("lib/report/subscores.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    expect(/export function normalizeToBiotics/.test(sub), "subscores.ts is gone").toBe(true)
+    expect(
+      /\borderedByNeed\b/.test(sub),
+      "lib/report/subscores.ts still exports orderedByNeed. Deleting the " +
+        "function is what makes 'Report construction cannot recreate the " +
+        "ranking' structural rather than asserted.",
+    ).toBe(false)
+  })
+
+  it("the dev flow cannot serve the Report in production, under any environment", () => {
+    /*
+     * The spec's close condition for `-07` is two-part: the construct gone AND
+     * the route unable to serve it under any environment. This is the second
+     * part, and it is GREEN on arrival — `isUnverifiedPaidFlowAllowed` already
+     * fails closed after the S7R repair. A pin that is green when written
+     * proves nothing unless it is shown to refuse the shape that preceded it,
+     * which is what the non-vacuity assertions below do.
+     */
+    /*
+     * COMMENTS STRIPPED, and that mattered on the first run. The file's own
+     * doc comment records the shape it replaced — "Was `if
+     * (!process.env.STRIPE_SECRET_KEY)`, which rendered the paid report…" —
+     * so a raw-source rule for that shape matched the HISTORY and reported a
+     * regression that was not there. A comment recording a defect is not the
+     * defect, which this repository has now had to write down twice.
+     */
+    const policy = readFileSync("lib/paid-flow-policy.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+
+    // The one variable, and it must be an exact-string opt-in.
+    expect(policy).toMatch(/!==\s*"true"\)\s*return false/)
+    // Production is refused unconditionally, and the flag cannot override it.
+    expect(policy).toMatch(/vercelEnv === "production"\)\s*return false/)
+    // Anything unproven is denied, rather than defaulting open.
+    expect(policy).toMatch(/return false\s*\n\}/)
+
+    // NON-VACUITY: the shape that preceded it would have opened the bypass
+    // wherever STRIPE_SECRET_KEY happened to be unset.
+    expect(
+      /!process\.env\.STRIPE_SECRET_KEY/.test(policy),
+      "the pre-S7R bypass condition is back: an unset Stripe key must not " +
+        "render a paid report",
+    ).toBe(false)
   })
 })

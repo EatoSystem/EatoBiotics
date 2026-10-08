@@ -30,15 +30,12 @@ import {
   SAFETY_FOOTER,
   type EducationModule,
   type EvidenceNote,
-  type FoodSystemNode,
   type FoodSystemReport,
   type ReportFoodTool,
   type ReportMode,
   type ReportVisualToken,
 } from "./food-system-report-types"
 import {
-  normalizeToBiotics,
-  orderedByNeed,
   PATHWAY_LABEL,
   PATHWAY_MEANING,
   type BioticScoreKey,
@@ -134,7 +131,7 @@ const PATHWAY_PLAIN: Record<BioticScoreKey, string> = {
   prebiotics:
     "Prebiotics are the plant fibres your gut microbes feed on — vegetables, fruit, wholegrains, beans, nuts and seeds. They are the raw material the system runs on.",
   probiotics:
-    "Probiotics are the live cultures in fermented foods — yoghurt, kefir, kimchi, sauerkraut, miso. They add microbial exposure rather than only feeding what is already there.",
+    "Probiotics are live microorganisms that, in adequate amounts, have a demonstrated benefit. Foods transformed by fermentation — yoghurt, kefir, kimchi, sauerkraut, miso — are the everyday route to them, though whether live microorganisms survive to be eaten depends on the food and how it is made.",
   postbiotics:
     "Postbiotics are what the system produces once it is fed and supported: the compounds your microbes make from fibre, and the rhythm, rest and recovery that let them do it.",
 }
@@ -143,43 +140,29 @@ const PATHWAY_WHY: Record<BioticScoreKey, string> = {
   prebiotics:
     "Variety matters as much as volume here. A wider range of plants is associated with a wider range of microbes, and diversity is one of the more consistent markers in microbiome research.",
   probiotics:
-    "Live foods are one of the few ways to introduce new microbes rather than just feeding existing ones. Small, regular amounts are associated with more benefit than occasional large ones.",
+    "Fermented foods are the one pathway that brings microbial material in from outside rather than only feeding what is already there. Small, regular amounts are associated with more benefit than occasional large ones.",
   postbiotics:
     "Outputs depend on inputs plus conditions. Meal rhythm, eating pace, sleep and stress all shape what your system can do with the food you give it.",
 }
 
-const BAND_SUGGESTS: Record<BioticScoreKey, Record<Band, string>> = {
-  prebiotics: {
-    strong:
-      "Your answers suggest a solid and varied plant base — this pathway is a strength to protect rather than rebuild.",
-    building:
-      "Your answers suggest plant fibre is present but not yet consistent across the week. There is room to widen the range rather than increase the amount.",
-    strained:
-      "Your answers suggest plant fibre is currently the thinnest part of your food system, which makes it the most direct place to start.",
-  },
-  probiotics: {
-    strong:
-      "Your answers suggest live foods already appear regularly — a habit worth keeping steady rather than intensifying.",
-    building:
-      "Your answers suggest live foods appear sometimes but not reliably. A predictable weekly rhythm may do more here than a larger portion.",
-    strained:
-      "Your answers suggest live foods are rare at the moment. This is often the easiest pathway to change, because a small daily serving is enough to shift it.",
-  },
-  postbiotics: {
-    strong:
-      "Your answers suggest your meal rhythm and recovery support the system well, which helps everything else you feed it.",
-    building:
-      "Your answers suggest rhythm and recovery are workable but uneven — the kind of pattern that tends to wobble on busy weeks.",
-    strained:
-      "Your answers suggest rhythm, rest or meal timing are under pressure. Food changes tend to land better once this steadies.",
-  },
-}
-
-const BAND_STATE: Record<Band, FoodSystemNode["state"]> = {
-  strong: "strong",
-  building: "building",
-  strained: "strained",
-}
+/* ══ 0R-6R · `BAND_SUGGESTS` AND `BAND_STATE` ARE DELETED ═══════════════════
+ *
+ * `BAND_SUGGESTS` was a 3 x 3 table of possessive sentences about this member's
+ * state in one Biotic — "Your answers suggest plant fibre is currently the
+ * thinnest part of your food system" — indexed by `[pathway][band(score)]`. It
+ * fed four customer-facing fields: the node explanations, the education
+ * modules' "What your answers suggest", `systemSnapshot.mainLever` and
+ * `priorityLever.whyThisFirst`.
+ *
+ * `BAND_STATE` turned a per-Biotic score into the band word a reader saw as a
+ * coloured badge, and `bodySignalMap` used it to band a BODY SIGNAL from its
+ * driver Biotic's score.
+ *
+ * Both are gone with the construct rather than reworded, because a band of an
+ * unmeasured per-Biotic score is the claim, not the sentence that carries it.
+ * The reviewed general education in `PATHWAY_PLAIN` and `PATHWAY_WHY` above is
+ * untouched: it describes the biology, not the reader.
+ */
 
 /* ── Body signals ───────────────────────────────────────────────────────────
  * Framed as things the reader may want to watch, never as findings. The brief
@@ -319,11 +302,11 @@ export const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
       biotic: "probiotics",
       visualToken: { type: "food-group", accent: "teal", iconName: foodIcon("kefir") },
       mechanism:
-        "Carries live cultures, so it adds microbial exposure rather than only feeding the microbes already present.",
+        "Made by fermentation. Whether microorganisms are still present by the time you eat it depends on how it was processed, which is why the label matters.",
       whyForThisCustomer:
-        "The most repeatable live food for most households, and easy to attach to an existing breakfast.",
+        "The most repeatable fermented food for most households, and easy to attach to an existing breakfast.",
       howToUse: "A small serving daily. Check the label says live or active cultures.",
-      swap: "Unsweetened plant-based versions with live cultures if dairy does not suit you.",
+      swap: "Unsweetened plant-based versions labelled live or active if dairy does not suit you.",
       familyAdaptation: "Plain yoghurt with fruit avoids the sugar in flavoured pots.",
     },
     {
@@ -331,7 +314,7 @@ export const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
       biotic: "probiotics",
       visualToken: { type: "food-group", accent: "teal", iconName: foodIcon("kimchi") },
       mechanism:
-        "Fermented vegetables deliver live cultures alongside the fibre of the vegetable itself.",
+        "Vegetables transformed by fermentation, carrying the fibre of the vegetable itself. Whether live microorganisms reach you depends on how the jar was made and stored.",
       whyForThisCustomer:
         "A forkful beside a meal you already eat is enough — this does not need to become a dish.",
       howToUse:
@@ -369,25 +352,35 @@ export const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
 
 /* ── The builder ─────────────────────────────────────────────────────────── */
 
-function nodeFor(pathway: BioticScoreKey, score: number): FoodSystemNode {
-  const b = band(score)
-  return {
-    id: pathway,
-    label: `${PATHWAY_LABEL[pathway]} — ${PATHWAY_MEANING[pathway]}`,
-    state: BAND_STATE[b],
-    score,
-    explanation: BAND_SUGGESTS[pathway][b],
-    visualToken: pathwayToken(pathway),
-  }
-}
+/*
+ * ══ 0R-6R · `nodeFor` IS GONE, AND CHAPTER 2 WENT WITH IT ══════════════════
+ *
+ * A pathway node was `{ label, state, score, explanation }` where `state` and
+ * `score` were the per-Biotic band and number, and `explanation` was
+ * `BAND_SUGGESTS[pathway][band]`. Strip the three prohibited fields and a
+ * pathway node is a label and a token — which says nothing `moduleFor` below
+ * does not already teach, generally and at more length.
+ *
+ * So `foodSystemMap` is now the body signals only, and the web/PDF chapter that
+ * rendered the three pathways "part by part, where each pathway stands right
+ * now" is retired. Keeping an emptied version of it would have left the chapter
+ * heading making a claim its contents no longer supported — the same mistake
+ * the "Starting with your areas of greatest opportunity" subtitle made when
+ * 0R-6 removed the sort underneath it.
+ */
 
-function moduleFor(pathway: BioticScoreKey, score: number): EducationModule {
+function moduleFor(pathway: BioticScoreKey): EducationModule {
   return {
     title: `${PATHWAY_LABEL[pathway]}: ${PATHWAY_MEANING[pathway]}`,
     visualToken: pathwayToken(pathway),
     plainEnglish: PATHWAY_PLAIN[pathway],
     whyItMatters: PATHWAY_WHY[pathway],
-    whatYourAnswersSuggest: BAND_SUGGESTS[pathway][band(score)],
+    /*
+     * 0R-6R · `whatYourAnswersSuggest` is gone from the contract. The three
+     * fields that remain are reviewed general education — what the pathway is,
+     * why it matters, and one non-ranked action — and none of them reads a
+     * score. The module no longer takes one.
+     */
     actionBridge:
       pathway === "postbiotics"
         ? "The lever here is rhythm rather than a food: pick one meal to keep predictable this week."
@@ -395,25 +388,38 @@ function moduleFor(pathway: BioticScoreKey, score: number): EducationModule {
   }
 }
 
-function thirtyDayLoop(priority: BioticScoreKey): FoodSystemReport["thirtyDayLoop"] {
-  const label = PATHWAY_LABEL[priority].toLowerCase()
+/*
+ * ══ 0R-6R · THE 30-DAY LOOP IS NO LONGER CHOSEN FOR THE READER ═════════════
+ *
+ * Every week interpolated `PATHWAY_LABEL[priority].toLowerCase()` — the argmin
+ * over three unmeasured scores — so the loop a paying customer followed for a
+ * month was selected by a ranking the product is not entitled to make.
+ *
+ * Weeks 3 and 4 were already pathway-free and are unchanged. Weeks 1 and 2 are
+ * the same reviewed sentences with the ranked variable replaced by the
+ * fibre-plus-fermented pair the product already teaches everywhere — Feed and
+ * Seed, which week 3 names in exactly those words. That is DE-PERSONALISING
+ * REVIEWED COPY, not new copy, and no week now claims one of the three is this
+ * member's priority.
+ */
+function thirtyDayLoop(): FoodSystemReport["thirtyDayLoop"] {
   return [
     {
       week: 1,
       focus: "Install the smallest habit",
-      action: `Add one ${label} food to a single meal you already eat every day.`,
+      action: "Add one fibre-rich food and one fermented food to meals you already eat every day.",
       why: "Starting small is what makes a change survive an ordinary week. One habit beats five intentions.",
     },
     {
       week: 2,
       focus: "Widen the range",
-      action: `Rotate a second and third ${label} food in across the week rather than increasing the amount.`,
+      action: "Rotate a second and third of each in across the week rather than increasing the amount.",
       why: "Variety is associated with a wider microbial range, so rotating does more than repeating.",
     },
     {
       week: 3,
       focus: "Combine feeding and seeding",
-      action: "Pair a fibre-rich food with a live food in the same meal — oats with yoghurt, or beans with kimchi.",
+      action: "Pair a fibre-rich food with a fermented food in the same meal — oats with yoghurt, or beans with kimchi.",
       why: "Feeding microbes and adding them work together; pairing them is a simple way to do both without a new meal.",
     },
     {
@@ -426,63 +432,83 @@ function thirtyDayLoop(priority: BioticScoreKey): FoodSystemReport["thirtyDayLoo
 }
 
 export function buildFoodSystemReport(input: BuildReportInput): FoodSystemReport {
-  const biotics = normalizeToBiotics(input.subScores) ?? {
-    // Only reachable if a caller passes a shape with no resolvable pathway at
-    // all. Zeroes are honest here: the report says "we could not read this"
-    // through its band copy rather than inventing a middling score.
-    prebiotics: 0,
-    probiotics: 0,
-    postbiotics: 0,
-  }
-
-  const ranked = orderedByNeed(biotics)
-  const priorityPathway = ranked[0][0]
-  const strongestPathway = ranked[ranked.length - 1][0]
-  const priorityScore = ranked[0][1]
-
+  /*
+   * ══ 0R-6R · THE BUILDER READS NO PER-BIOTIC SCORE ═════════════════════════
+   *
+   * `normalizeToBiotics(input.subScores)` and `orderedByNeed` are both gone
+   * from this function, and `orderedByNeed` is deleted from
+   * `lib/report/subscores.ts` entirely. That is what makes "Report construction
+   * cannot recreate the ranking" structural rather than asserted: the three
+   * numbers never enter, so no field downstream can be keyed on which of them
+   * is highest or lowest.
+   *
+   * What entered, and what it chose:
+   *
+   *   const ranked = orderedByNeed(biotics)
+   *   priorityPathway  = ranked[0][0]              the argmin
+   *   strongestPathway = ranked[ranked.length-1][0] the argmax
+   *
+   *   → systemSnapshot.oneLine        "Prebiotics is your strongest pathway,
+   *                                    and Probiotics is where your answers
+   *                                    point to the clearest first step"
+   *   → systemSnapshot.dominantPattern the uneven branch, naming both
+   *   → systemSnapshot.mainLever       BAND_SUGGESTS[priority][band]
+   *   → visualTheme.primaryAccent      bioticAccent(priorityPathway)
+   *   → foodTools                      toolOrder = [priority, strongest, …],
+   *                                    which chose the FIVE FOODS a paying
+   *                                    customer sees
+   *   → priorityLever.title            "Start with <Biotic>"
+   *   → thirtyDayLoop(priorityPathway) all four weeks
+   *
+   * Eight customer-facing outputs from one argmin over three numbers a
+   * questionnaire cannot measure.
+   *
+   * ── WHY NOTHING REPLACED IT ───────────────────────────────────────────────
+   *
+   * No authorised selector exists. `lib/fss/action/priority.ts` is the right
+   * shape but its weights refuse to score outside a DEV_ONLY fixture context;
+   * `lib/report/deterministic/priority.ts` is pre-activation. And the obvious
+   * move — keep the argmin, relabel its output through `PILLAR_BEHAVIOUR` so it
+   * reads "fermented foods" instead of "Probiotics" — was refused:
+   *
+   *     A SAFER LABEL DOES NOT LEGITIMISE AN UNSUPPORTED SELECTOR.
+   *
+   * So the Report is non-ranked. `overallScore` — the Biotics Score™, the thing
+   * EatoBiotics sells — still reaches every surface, and the three sub-scores
+   * reach none.
+   */
   const isFamily = input.mode === "family"
   const who = isFamily ? "your family's" : "your"
 
-  // dominantPattern is derived rather than taken from profile.description.
-  // Those descriptions are older copy and several open "You have solid food
-  // habits…" or promise change "within weeks" — phrasing the brief rules out.
-  // They still drive the existing results page, so rewriting them belongs to
-  // the evidence/safety pass, not here; the educational report simply does not
-  // inherit them. The banned-phrase test in tests/unit/food-system-report.test.ts
-  // is what caught this.
-  const bands = (Object.keys(biotics) as BioticScoreKey[]).map((p) => band(biotics[p]))
-  const strongCount = bands.filter((b) => b === "strong").length
-  const strainedCount = bands.filter((b) => b === "strained").length
-
+  /*
+   * `dominantPattern` keeps the reviewed sentence it already had for the case
+   * where nothing is uneven, generalised so it holds for every reader. The
+   * uneven branch — "Prebiotics is well supported while Probiotics is thinner"
+   * — is the one that named the ranking, and sabotage 1521 proved that removing
+   * exactly this sentence is what flips the permutation assertion green.
+   */
   const dominantPattern =
-    strongCount === 3
-      ? "Your answers describe a food system that is well supported across all three pathways — varied plants, regular live foods, and a rhythm that holds. From here the work is protecting what already works rather than rebuilding."
-      : strainedCount === 3
-      ? "Your answers describe a food system that is early in its development across all three pathways. That is a useful starting point rather than a problem: one repeatable habit tends to move several scores at once."
-      : strongCount >= 1 && strainedCount >= 1
-      ? `Your answers describe an uneven system — ${PATHWAY_LABEL[strongestPathway]} is well supported while ${PATHWAY_LABEL[priorityPathway]} is thinner. Uneven is easier to improve than uniformly low, because the strong pathway is already doing work the weaker one can build on.`
-      : "Your answers describe a food system that is coming together but not yet consistent. The pattern suggests the pieces are present and the gap is repetition rather than knowledge."
+    "Your answers describe a food system with its stronger and thinner parts, which is the ordinary shape. Uneven is easier to improve than uniformly low, because the parts that are working are already doing work the thinner ones can build on."
 
-  const snapshotOneLine =
-    band(priorityScore) === "strong"
-      ? `Your answers suggest ${who} food system is working well across all three pathways, with ${PATHWAY_LABEL[priorityPathway]} the one with most room left.`
-      : `Your answers suggest ${PATHWAY_LABEL[strongestPathway]} is ${who} strongest pathway, and that ${PATHWAY_LABEL[priorityPathway]} is where your answers point to the clearest first step.`
+  const snapshotOneLine = `Your answers give ${who} food system a Biotics Score, and the chapters below explain what the three pathways are and what feeds each one.`
 
-  // Five unique tools, priority pathway first.
-  //
-  // This used to be `[...TOOLS[priority], ...TOOLS[strongest]].slice(0, 5)`,
-  // which silently returned FOUR whenever priority and strongest were the two
-  // 2-item pathways (probiotics + postbiotics) — i.e. whenever prebiotics was
-  // the MIDDLE score, roughly a third of real orderings. The legacy report
-  // renders that list under a hard-coded "5 Foods" heading, so those customers
-  // saw a five-food promise with four cards. Topping up from the remaining
-  // pathway keeps the priority-first ordering and makes the count total:
-  // the catalogue holds 3 + 2 + 2 = 7 unique tools, so five is always reachable.
-  const toolOrder: BioticScoreKey[] = [
-    priorityPathway,
-    strongestPathway,
-    ...(Object.keys(TOOLS) as BioticScoreKey[]),
-  ]
+  /*
+   * Five unique tools, in CATALOGUE order.
+   *
+   * 0R-6R · `toolOrder` was `[priorityPathway, strongestPathway, …]`, so the
+   * five foods a paying customer is shown — and which five of the seven they
+   * never see — were chosen by the argmin and argmax over three unmeasured
+   * scores. That is the clearest case in the Report of a hidden ranking making
+   * a personal recommendation, and it was found by tracing the selector rather
+   * than by reading any sentence.
+   *
+   * The historical note is kept because the count bug it records is still a
+   * live hazard: the legacy report renders this list under a hard-coded
+   * "5 Foods" heading, and `[...TOOLS[a], ...TOOLS[b]].slice(0, 5)` returned
+   * FOUR whenever `a` and `b` were the two 2-item pathways. The catalogue holds
+   * 3 + 2 + 2 = 7, so iterating all three in a fixed order always reaches five.
+   */
+  const toolOrder = Object.keys(TOOLS) as BioticScoreKey[]
   const foodTools: ReportFoodTool[] = []
   const seenFood = new Set<string>()
   for (const pathway of toolOrder) {
@@ -504,43 +530,79 @@ export function buildFoodSystemReport(input: BuildReportInput): FoodSystemReport
     // single questionnaire can see.
     confidence: input.confidence ?? "snapshot",
     overallScore: Math.max(0, Math.min(100, Math.round(input.overall))),
-    bioticScores: biotics,
 
     systemSnapshot: {
       oneLine: snapshotOneLine,
-      strongestPathway,
-      priorityPathway,
       dominantPattern,
-      mainLever: BAND_SUGGESTS[priorityPathway][band(priorityScore)],
+      /*
+       * 0R-6R · `mainLever` was `BAND_SUGGESTS[priorityPathway][band]` — the
+       * ranked pathway's band sentence. It is now the one non-ranked lever the
+       * product teaches for every reader, and the same sentence week 3 of the
+       * loop already carries.
+       */
+      mainLever:
+        "The lever that applies to every food system is repetition: pair a fibre-rich food with a fermented food in a meal you already eat, and keep it there.",
     },
 
     visualTheme: {
-      primaryAccent: bioticAccent(priorityPathway),
+      /*
+       * 0R-6R · `bioticAccent(priorityPathway)` encoded the ranking as the
+       * Report's accent COLOUR — the Report analogue of `P0-SCIENCE-04`, which
+       * 0R-5 closed on the Twin. A claim is still a claim when it is encoded
+       * visually, so the accent is now the brand's, identical for every reader.
+       */
+      primaryAccent: GRADIENT[0],
       bodyAssetPath: isFamily ? "/images/family-hero.png" : "/images/couple-hero.png",
       gradient: GRADIENT,
     },
 
-    foodSystemMap: (Object.keys(biotics) as BioticScoreKey[]).map((p) => nodeFor(p, biotics[p])),
-    educationModules: (Object.keys(biotics) as BioticScoreKey[]).map((p) => moduleFor(p, biotics[p])),
+    /*
+     * 0R-6R · `foodSystemMap` is gone from the contract, not emptied here.
+     * See `food-system-report-types.ts`. `bodySignalMap` below is unaffected —
+     * it was always a separate list, and it keeps its reviewed explanations.
+     */
+    educationModules: (Object.keys(TOOLS) as BioticScoreKey[]).map((p) => moduleFor(p)),
 
-    bodySignalMap: SIGNALS.map((s) => ({
-      id: s.id,
-      label: s.label,
-      state: BAND_STATE[band(biotics[s.driver])],
-      explanation: s.explanation,
-      visualToken: { type: "body-zone", accent: s.accent, bodyZone: s.zone },
+    /*
+     * 0R-6R · a body signal no longer carries a `state`, and its `driver` no
+     * longer reaches anything.
+     *
+     * `state` was `BAND_STATE[band(biotics[s.driver])]`, so "Energy steadiness:
+     * Room to grow" was a BODY STATE asserted from an unmeasured Biotic score
+     * — and four signals exposing four driver bands let a reader reconstruct
+     * the triple. The reviewed `explanation` is a static literal and is
+     * unchanged: it says what to notice and why, and explicitly "not as a
+     * measure of health".
+     */
+    bodySignalMap: SIGNALS.map((sig) => ({
+      id: sig.id,
+      label: sig.label,
+      explanation: sig.explanation,
+      visualToken: { type: "body-zone", accent: sig.accent, bodyZone: sig.zone },
     })),
 
+    /*
+     * 0R-6R · `priorityLever` is a NEXT STEP, not a nomination.
+     *
+     * `title` was literally `Start with ${PATHWAY_LABEL[priorityPathway]}` —
+     * "Start with Probiotics" — which is the ranking printed as a chapter
+     * heading, and `whyThisFirst` was that pathway's band sentence. The
+     * chapter stays, because "here is where to begin" is a legitimate thing a
+     * report does; what it may not do is claim one of the three is personally
+     * primary. So the title is general and the first step is the loop's own
+     * week 1, which no longer names a pathway either.
+     */
     priorityLever: {
-      title: `Start with ${PATHWAY_LABEL[priorityPathway]}`,
-      whyThisFirst: BAND_SUGGESTS[priorityPathway][band(priorityScore)],
-      firstStep: thirtyDayLoop(priorityPathway)[0].action,
+      title: "Start Here",
+      whyThisFirst:
+        "One repeated change does more than several intended ones, and the two that apply to every food system are fibre variety and regular fermented food.",
+      firstStep: thirtyDayLoop()[0].action,
       whatToNotice:
         "Over two to three weeks you may notice changes in digestion, comfort or energy steadiness. Treat those as feedback on the change, not as a measure of health.",
     },
 
     foodTools,
-    thirtyDayLoop: thirtyDayLoop(priorityPathway),
+    thirtyDayLoop: thirtyDayLoop(),
     familyContext: input.familyContext,
 
     closingMissionPage: {
@@ -612,7 +674,13 @@ export function mergeGeneratedNarrative(
         ...mod,
         plainEnglish: str(gen.plainEnglish) ?? mod.plainEnglish,
         whyItMatters: str(gen.whyItMatters) ?? mod.whyItMatters,
-        whatYourAnswersSuggest: str(gen.whatYourAnswersSuggest) ?? mod.whatYourAnswersSuggest,
+        /*
+         * 0R-6R · `whatYourAnswersSuggest` is gone from `EducationModule`, so
+         * the model cannot write one either. This is the AI-merge half of the
+         * close: a generated report could previously supply a possessive
+         * per-Biotic sentence for a field the deterministic builder had stopped
+         * filling, which is exactly how a removed construct comes back.
+         */
         actionBridge: str(gen.actionBridge) ?? mod.actionBridge,
       }
     })
@@ -717,7 +785,6 @@ export function foodSystemNarrativeProjection(report: FoodSystemReport): string[
     out.push(
       `educationModules[${mod.title}].plainEnglish=${mod.plainEnglish}`,
       `educationModules[${mod.title}].whyItMatters=${mod.whyItMatters}`,
-      `educationModules[${mod.title}].whatYourAnswersSuggest=${mod.whatYourAnswersSuggest}`,
       `educationModules[${mod.title}].actionBridge=${mod.actionBridge}`,
     )
   }

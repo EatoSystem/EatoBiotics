@@ -9,7 +9,7 @@ export function ConditionCta({ condition }: { condition: ConditionDef }) {
       <div className="mx-auto max-w-[720px] text-center">
         <ScrollReveal>
           <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-4">
-            The Mind Assessment
+            The Food System Assessment
           </p>
           <h2 className="font-serif text-4xl font-semibold text-white sm:text-5xl text-balance leading-tight">
             <span
@@ -36,10 +36,10 @@ export function ConditionCta({ condition }: { condition: ConditionDef }) {
         <ScrollReveal delay={180}>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
-              href="/assessment-mind"
+              href="/assessment/you"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/30 transition-all hover:opacity-90"
             >
-              Start the Mind Assessment
+              Start the Food System Assessment
               <ArrowRight size={16} />
             </Link>
             <Link

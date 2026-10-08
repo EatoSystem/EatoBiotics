@@ -4,7 +4,6 @@ import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
 import { computeStreak } from "@/lib/streak"
-import { dailyNudge } from "@/lib/habit"
 import type { DailyLoopData } from "@/components/account/daily-loop-card"
 import { TodayClient } from "@/components/account/today-client"
 
@@ -23,7 +22,12 @@ export default async function TodayPage() {
   const today = todayKey()
 
   let name: string | null = null
-  let bioticsProfile: { prebiotic: number; probiotic: number; postbiotic: number } | null = null
+  /*
+   * 0R-5 · `bioticsProfile` is gone from this route. Its ONLY consumer was the
+   * `dailyNudge` weakest-Biotic focus, and the query that fed it goes with it:
+   * a route that still averaged the member's per-Biotic columns for no reader
+   * would be collecting exactly what the construct needed to come back.
+   */
   let score: number | null = null
   let todayMealCount = 0
   let streakRows: string[] = []
@@ -33,11 +37,10 @@ export default async function TodayPage() {
   if (sb) {
     const startOfTodayIso = `${today}T00:00:00.000Z`
     const [
-      profileRes, bioticsRes, leadRes, todayCountRes, streakRes,
+      profileRes, leadRes, todayCountRes, streakRes,
       glp1ProfRes, glp1TodayRes, stabAssessRes, stabTodayRes, stabCountRes,
     ] = await Promise.all([
       sb.from("profiles").select("name").eq("id", user.id).single(),
-      sb.from("analyses").select("prebiotic_score, probiotic_score, postbiotic_score").eq("user_id", user.id).not("biotics_score", "is", null).order("created_at", { ascending: false }).limit(5),
       sb.from("leads").select("overall_score").or(ownerOrFilter(user.id, user.email)).not("overall_score", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       sb.from("analyses").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", startOfTodayIso),
       sb.from("analyses").select("created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
@@ -49,12 +52,6 @@ export default async function TodayPage() {
     ])
 
     name = (profileRes.data?.name as string | null) ?? null
-
-    const rows = (bioticsRes.data ?? []).filter((a) => a.prebiotic_score != null && a.probiotic_score != null && a.postbiotic_score != null)
-    if (rows.length) {
-      const avg = (k: string) => Math.round(rows.reduce((s: number, a: Record<string, unknown>) => s + ((a[k] as number) ?? 0), 0) / rows.length)
-      bioticsProfile = { prebiotic: avg("prebiotic_score"), probiotic: avg("probiotic_score"), postbiotic: avg("postbiotic_score") }
-    }
 
     score = (leadRes.data?.overall_score as number | null) ?? null
     todayMealCount = todayCountRes.count ?? 0
@@ -77,15 +74,10 @@ export default async function TodayPage() {
   }
 
   const streakInfo = computeStreak(streakRows)
-  const dailyLoop: DailyLoopData = {
-    streak: streakInfo,
-    focus: bioticsProfile
-      ? (() => {
-          const n = dailyNudge({ prebiotics: bioticsProfile.prebiotic, probiotics: bioticsProfile.probiotic, postbiotics: bioticsProfile.postbiotic })
-          return { key: n.pillar.key, color: n.pillar.color, score: n.score }
-        })()
-      : null,
-  }
+  // 0R-5 · the weakest-Biotic `focus` nudge is gone from `DailyLoopData`.
+  // This route is POST_V1-refused, but it is the second producer of the same
+  // construct and repairing only the live one would leave it waiting here.
+  const dailyLoop: DailyLoopData = { streak: streakInfo }
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">

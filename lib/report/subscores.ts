@@ -58,7 +58,7 @@ export const PATHWAY_LABEL: Record<BioticScoreKey, string> = {
 /** What each pathway actually means, for surfaces with room to say so. */
 export const PATHWAY_MEANING: Record<BioticScoreKey, string> = {
   prebiotics: "what feeds your microbes",
-  probiotics: "live-culture exposure",
+  probiotics: "fermented foods in your week",
   postbiotics: "recovery, rhythm, resilience",
 }
 
@@ -85,7 +85,38 @@ export function normalizeToBiotics(sub: IncomingSubScores | null | undefined): B
   return { prebiotics, probiotics, postbiotics }
 }
 
-/** Weakest first — the pathway a report should lead its advice with. */
-export function orderedByNeed(sub: BioticScores): Array<[BioticScoreKey, number]> {
-  return (Object.entries(sub) as Array<[BioticScoreKey, number]>).sort((a, b) => a[1] - b[1])
-}
+/* ══ 0R-6R · `orderedByNeed` IS DELETED ═════════════════════════════════════
+ *
+ *     // Weakest first — the pathway a report should lead its advice with.
+ *     export function orderedByNeed(sub: BioticScores) {
+ *       return Object.entries(sub).sort((a, b) => a[1] - b[1])
+ *     }
+ *
+ * Four lines, and the single source of the personal Biotic ranking across the
+ * whole Report family. Its six callers between them derived: the snapshot
+ * sentence, the dominant-pattern sentence, the main lever, the accent colour,
+ * the five foods shown, the priority chapter, all four weeks of the 30-day
+ * loop, the lens's priority connection, the membership CTA's "your plan starts
+ * with X", the hero tagline, the whole spine of the fallback paid report, and
+ * two lines of the generation prompt.
+ *
+ * ── WHY IT IS DELETED RATHER THAN LEFT UNCALLED ───────────────────────────
+ *
+ * Because deleting it is what makes "Report construction cannot recreate the
+ * ranking" a property of the code rather than a claim in a document. An
+ * exported sort over three per-Biotic scores, sitting in the module every
+ * report surface already imports, is one line away from being called again —
+ * and this repository has watched the same construct return in four separate
+ * components after each previous removal.
+ *
+ * ── AND WHY NOTHING TOOK ITS PLACE ────────────────────────────────────────
+ *
+ *     No authorised selector means NO PERSONALISED SELECTION — not continued
+ *     use of an invalid one, and not a safer label on the same selector.
+ *
+ * Personalised priority may return when there is an explicitly reviewed
+ * decision rule over a construct the product is entitled to rank, such as an
+ * authorised FSS-domain priority once its methodology and its cross-domain
+ * comparison are approved. `normalizeToBiotics` below stays: reading the three
+ * scores is not the defect. Ranking them against each other was.
+ */

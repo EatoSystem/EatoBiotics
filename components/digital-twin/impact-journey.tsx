@@ -24,7 +24,7 @@ const STEPS: Step[] = [
   { Icon: Home, label: "Your community", line: "Local food, shared habits.", size: 70, from: "#2DAA6E", to: "#7DBE4E" },
   { Icon: MapPin, label: "Your county", line: "One of 32 county food networks.", size: 78, from: "#7DBE4E", to: "#F5C518" },
   { Icon: Flag, label: "Your country", line: "One national transformation.", size: 88, from: "#F5C518", to: "#F5A623" },
-  { Icon: Globe, label: "The Food System", line: "Regenerative — from the inside out.", size: 100, from: "#F5C518", to: "#F5A623" },
+  { Icon: Globe, label: "The Food System", line: "Rejuvenative — from the inside out.", size: 100, from: "#F5C518", to: "#F5A623" },
 ]
 
 function Orb({ s }: { s: Step }) {

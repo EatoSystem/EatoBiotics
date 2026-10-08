@@ -10,6 +10,18 @@
 import { detectPatterns } from "@/lib/account/patterns"
 import type { AccountTwinMeal } from "@/lib/agent-loop/account-twin"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
+import { behaviourFor } from "@/lib/agent-loop/behaviour"
+import type { BioticKey } from "@/lib/agent-loop/types"
+
+/**
+ * The food category behind a key, for the week story.
+ *
+ * `"meals"` because `buildAccountTwin` — the only path that reaches this on
+ * /account — builds the twin's biotics from averaged MEAL sub-scores, never
+ * from assessment answers. Naming the assessment's dimensions here would
+ * describe something the week story never looked at.
+ */
+const weekBehaviour = (key: BioticKey): string => behaviourFor(key, "meals")
 
 export interface WeekStorySlide {
   key: string
@@ -40,7 +52,13 @@ function weekMeals(twin: FoodSystemDigitalTwin): WeekMeal[] {
     }))
 }
 
-const BIOTIC_LABEL = { prebiotics: "Prebiotics", probiotics: "Probiotics", postbiotics: "Postbiotics" } as const
+/*
+ * GATE 3.6: this map existed to print the three Biotic names into the week
+ * story — "Prebiotics led your week." / "Postbiotics is where I'd love more
+ * help." Both are personal Biotic states, on /account. The week story is built
+ * from averaged MEAL sub-scores, so the honest subject is the food category
+ * those meals were scored on, and `mealBehaviour` is where that lives.
+ */
 
 export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
   const meals = weekMeals(twin)
@@ -91,9 +109,19 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
 
   slides.push({
     key: "biotics",
-    eyebrow: "Your three biotics",
-    title: `${BIOTIC_LABEL[strongest]} led your week.`,
-    detail: `${BIOTIC_LABEL[weakest]} is where I'd love more help — that's your biggest opportunity.`,
+    /*
+     * The eyebrow said "Your three biotics" while the slide reported a
+     * personal Biotic state. It now reports food patterns, so it says so.
+     *
+     * Both sentences were restructured after READING them: the phrase as a
+     * sentence subject gave "fibre-rich plants led your week." with a
+     * lowercase opening, and "fermented foods IS where I'd love more help"
+     * — the agreement trap `lib/agent-loop/behaviour.ts` warns about, walked
+     * into one file away from the warning.
+     */
+    eyebrow: "Your food patterns",
+    title: `Your week leaned on ${weekBehaviour(strongest)}.`,
+    detail: `Where I'd love more help: ${weekBehaviour(weakest)} — that's your biggest opportunity.`,
     accent: "#2DAA6E",
   })
 
@@ -124,7 +152,7 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
 
   slides.push({
     key: "score",
-    eyebrow: "Food System Score",
+    eyebrow: "Biotics Score™",
     stat: String(score),
     title:
       delta > 0
@@ -134,7 +162,10 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
           : "Holding steady.",
     detail:
       delta > 0
-        ? "Your meals are moving the number — I can feel the momentum."
+        // "your answers" until Gate 3.6: buildAccountTwin assembles this from
+        // MEALS, so the answers had nothing to do with it — the same
+        // misattribution the provider's rationale carried.
+        ? "That is what your meals said this time. Let us see whether it holds."
         : "Rhythm beats perfection. Next week we build again.",
     accent: "#A8E063",
   })

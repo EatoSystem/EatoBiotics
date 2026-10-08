@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""
+Differential sabotage — does the suite actually catch the thing it claims to?
+
+A guard that passes proves nothing on its own: it may be asserting something
+trivially true, matching its own explanatory comment, or scanning an empty file
+list. So each case breaks exactly one property in the source, asserts the
+mutation LANDED (by sha256, not by hope), runs the named tests, and requires
+them to FAIL. Then it restores the file and verifies the restore is
+byte-identical.
+
+A case that does not make the suite red is a case whose guard is decorative —
+and the standing rule is that when a case slips, the TEST gets stronger, never
+the case, unless the case was aimed at the wrong thing.
+
+Usage:  python3 run.py [first] [last]
+"""
+import hashlib
+import subprocess
+import sys
+from pathlib import Path
+
+# The repository root, derived from this file's location: tools/sabotage/run.py.
+# This was a hardcoded absolute container path while the harness lived in a
+# session scratchpad. It is in the repository now, so it has to work from any
+# checkout.
+REPO = Path(__file__).resolve().parent.parent.parent
+
+
+def sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def collectable(tests) -> bool:
+    """
+    Can vitest actually collect these files?
+
+    vitest.config.ts includes only `tests/**/*.test.ts`. Pointed at anything
+    else — a Playwright `.spec.ts`, a renamed file, a typo — vitest reports "no
+    test files found" and exits NON-ZERO, which this harness reads as "caught".
+    Such a case reports caught for every mutation and for no mutation, which is
+    the precise failure the harness exists to detect, occurring inside the
+    harness itself. Case 945 did this for its entire life.
+
+    A rendered property cannot be covered here at all: Playwright serves a
+    prebuilt .next that a source mutation never reaches. Those belong in the
+    Playwright suite, and this check makes trying to smuggle one in loud.
+    """
+    return all(str(t).startswith("tests/") and str(t).endswith(".test.ts") for t in tests)
+
+
+def run(case):
+    number, name, rel, find, repl, tests = case
+    path = REPO / rel
+
+    if not tests or not collectable(tests):
+        print(f"  {number}  UNRUNNABLE  tests vitest cannot collect: {tests}")
+        return "unrunnable"
+
+    # ── A MISSING FILE REPORTS, IT DOES NOT CRASH ────────────────────────────
+    #
+    # `read_bytes` on an absent path raises, and the raise happens BEFORE the
+    # anchor report below — so one case whose target file does not exist in this
+    # checkout took down the whole suite with a traceback, and the suite printed
+    # no verdict at all. `cases_s3a` was in exactly that state: 33 of its cases
+    # target files that live on unmerged PR #274, which is documented, and the
+    # documented consequence should be 33 lines saying so, not a crash that
+    # hides the other 25 cases' results.
+    #
+    # It returns "anchor" because that is what it is: no mutation happened, so
+    # nothing was proved. A missing file can never make a case appear caught.
+    if not path.exists():
+        print(f"  {number}  FILE MISSING: {rel}")
+        return "anchor"
+
+    original = path.read_bytes()
+    before = sha(path)
+
+    source = original.decode("utf8")
+    matches = source.count(find)
+    if matches == 0:
+        print(f"  {number}  ANCHOR MISSING in {rel}: {find[:70]!r}")
+        return "anchor"
+
+    # ── AN AMBIGUOUS ANCHOR IS A BROKEN CASE, NOT A WORKING ONE ──────────────
+    #
+    # The `count=1` below already stops a two-site anchor mutating both places,
+    # and its history is why: case 287 passed while testing nothing because the
+    # mutation landed on whichever site came first in the file.
+    #
+    # But capping the replacement only fixes the symptom. An anchor that matches
+    # twice does not SAY which site it means, so reordering the file silently
+    # repoints the case at a different one and nobody is told — a case that
+    # still reports "caught" while proving something other than its own
+    # description. Five cases were in that state when this was added (933, 968,
+    # 976, 977 and 708); all five reported caught, and all five have been made
+    # unique rather than left to drift.
+    #
+    # A missing anchor keeps its existing verdict deliberately: the 33
+    # unresolvable anchors in cases_s3a target files that live on unmerged
+    # PR #274, which is documented, and they must keep reading exactly as they
+    # do today rather than appearing newly broken.
+    if matches > 1:
+        print(f"  {number}  ANCHOR AMBIGUOUS in {rel} ({matches} matches): {find[:60]!r}")
+        return "ambiguous"
+
+    path.write_text(source.replace(find, repl, 1), encoding="utf8")
+    if sha(path) == before:
+        path.write_bytes(original)
+        print(f"  {number}  MUTATION DID NOT LAND in {rel}")
+        return "no-op"
+
+    try:
+        result = subprocess.run(
+            ["npx", "vitest", "run", *tests],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+            timeout=900,
+        )
+        caught = result.returncode != 0
+    finally:
+        path.write_bytes(original)
+        assert sha(path) == before, f"restore of {rel} was not byte-identical"
+
+    print(f"  {number}  {'caught ' if caught else 'SLIPPED'}  {name}")
+    return "caught" if caught else "slipped"
+
+
+def main():
+    from cases import CASES
+
+    first = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    last = int(sys.argv[2]) if len(sys.argv) > 2 else 10**9
+    selected = [c for c in CASES if first <= c[0] <= last]
+
+    outcomes = [run(c) for c in selected]
+    slipped = [c[0] for c, o in zip(selected, outcomes) if o != "caught"]
+    print(f"\n{len(selected) - len(slipped)}/{len(selected)} caught")
+    if slipped:
+        print(f"SLIPPED/BROKEN: {slipped}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

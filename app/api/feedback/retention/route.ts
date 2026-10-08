@@ -6,12 +6,29 @@ import { verifyCronRequest } from "@/lib/cron-auth"
    Deletes rows whose server-set `expires_at` has passed, across every table
    in this repository that carries a retention promise.
 
-   Three tables today: `feedback` and `reviews` (90 days, #229) and
-   `paid_report_intents` (30 days, #244). The path still says "feedback"
-   because that is where the job started and renaming it would mean changing
-   the cron entry in vercel.json for no behavioural gain; it has swept two
-   unrelated tables since it was written, so a third is what it already is
-   rather than a change of purpose.
+   ONE table today: `paid_report_intents` (30 days, #244). The path still
+   says "feedback" because that is where the job started and renaming it would
+   mean a new URL and a vercel.json edit for no behavioural gain.
+
+   ── What the V1 scope freeze found here (step 5) ──────────────────────────
+
+   This list used to read feedback → reviews → paid_report_intents, and the
+   loop below returns 500 on the first read error. `feedback` (Migration 46)
+   and `reviews` (Migration 45) are DRAFTED AND UNAPPLIED — verified absent
+   from production — so every nightly run failed on table one and
+   `paid_report_intents` WAS NEVER SWEPT. The 30-day promise on purchase
+   intents was a sentence with nothing behind it, which is exactly the failure
+   this route was written to end, reproduced by the order of a list.
+
+   Production held zero intents when this was found, which bounds the harm to
+   date. It stops bounding anything the moment V1 takes a payment.
+
+   Two changes, because either alone leaves a hole. The list is narrowed to
+   what V1 actually has, AND a missing table is now a recorded skip rather
+   than a fatal error — so re-adding a table above this one can never again
+   starve it. `feedback` and `reviews` come back when their migrations are
+   deliberately applied; that is part of reinstating feedback capture, not a
+   separate cleanup.
 
    `paid_report_intents` holds the buyer's score summary between checkout and
    report generation. An intent whose checkout was abandoned is health-derived
@@ -78,6 +95,27 @@ import { verifyCronRequest } from "@/lib/cron-auth"
 
 export const dynamic = "force-dynamic"
 
+/** One table to sweep, and the column whose values name its rows. */
+export interface RetainedTable {
+  table: string
+  keyColumn: string
+}
+
+/**
+ * Is this the database saying the table does not exist?
+ *
+ * PostgREST answers `PGRST205` when a relation is not in its schema cache;
+ * Postgres answers `42P01` (undefined_table) when the statement reaches it.
+ * Nothing else is treated as absence — a permission error, a timeout, a
+ * connection failure and a malformed filter are all REAL failures, and a
+ * retention job that quietly reported "skipped" for those would be worse than
+ * one that stops, because the operator would read a green log while expired
+ * customer data sat in the table.
+ */
+function isMissingTable(error: { code?: string }): boolean {
+  return error.code === "PGRST205" || error.code === "42P01"
+}
+
 /**
  * Tables swept here, each with the column its rows are named by.
  *
@@ -93,11 +131,9 @@ export const dynamic = "force-dynamic"
  * guard cannot resolve by reading the source — so it is declared here instead.
  * Keep this list and the marker in step.
  *
- * schema-drift-tables: feedback, reviews, paid_report_intents
+ * schema-drift-tables: paid_report_intents
  */
-const RETAINED_TABLES = [
-  { table: "feedback", keyColumn: "id" },
-  { table: "reviews", keyColumn: "id" },
+export const RETAINED_TABLES: readonly RetainedTable[] = [
   { table: "paid_report_intents", keyColumn: "token" },
 ] as const
 
@@ -135,7 +171,21 @@ const RETENTION_MAX_PASSES = 40
  */
 const RETENTION_MAX_ROWS_PER_TABLE = RETENTION_BATCH * RETENTION_MAX_PASSES
 
-async function sweep(): Promise<NextResponse> {
+/**
+ * Sweep the given tables.
+ *
+ * Takes the list rather than reading RETAINED_TABLES directly, for one
+ * reason: the bug this route shipped was a property of the ORDER of that
+ * list, and with a single table configured there is no way to test ordering
+ * at all. A test can pass `[absentTable, paid_report_intents]` here and prove
+ * the expired intent is still deleted — the exact production failure, pinned.
+ *
+ * The seam is narrow on purpose. `GET`/`POST` pass RETAINED_TABLES and
+ * nothing else, and tests/unit/feedback-retention.test.ts parses this file to
+ * prove it — so this cannot become a place where production and the tests
+ * quietly sweep different things.
+ */
+export async function sweepTables(tables: readonly RetainedTable[]): Promise<NextResponse> {
   const supabase = getSupabase()
   if (!supabase) {
     console.error("[feedback/retention] Supabase not configured")
@@ -144,8 +194,13 @@ async function sweep(): Promise<NextResponse> {
 
   const cutoff = new Date().toISOString()
   const deleted: Record<string, number> = {}
+  /** Tables that do not exist in this database. Reported, never fatal. */
+  const skipped: string[] = []
 
-  for (const { table, keyColumn } of RETAINED_TABLES) {
+  // Labelled so a missing table can leave the TABLE, not merely the pass
+  // loop — an unlabelled break would fall through to the convergence check
+  // below and report the skip as an incomplete sweep.
+  tableLoop: for (const { table, keyColumn } of tables) {
     let removed = 0
     let complete = false
 
@@ -160,6 +215,15 @@ async function sweep(): Promise<NextResponse> {
         .limit(RETENTION_BATCH)
 
       if (readError) {
+        // A table that is not in this database cannot have expired rows in
+        // it, and it must not stop the tables that DO. This is the whole
+        // repair: the old code returned here, so an absent table at the front
+        // of the list starved every table behind it.
+        if (isMissingTable(readError)) {
+          console.warn(`[feedback/retention] ${table} is absent from this database — skipped`)
+          skipped.push(table)
+          continue tableLoop
+        }
         console.error(
           `[feedback/retention] ${table} read failed:`,
           readError.message,
@@ -167,12 +231,15 @@ async function sweep(): Promise<NextResponse> {
           JSON.stringify({ ...deleted, [table]: removed }),
         )
         return NextResponse.json(
-          { error: "Retention sweep failed", failedTable: table, deleted },
+          { error: "Retention sweep failed", failedTable: table, deleted, skipped },
           { status: 500 },
         )
       }
 
-      const ids = (expired ?? []).map((r) => (r as Record<string, string>)[keyColumn])
+      // `as unknown as` because `keyColumn` is now a plain string rather than a
+      // literal union — the table list is typed for a caller that may pass its
+      // own (see sweepTables), so postgrest-js can no longer infer the row shape.
+      const ids = (expired ?? []).map((r) => (r as unknown as Record<string, string>)[keyColumn])
       if (ids.length === 0) {
         // Nothing expired remains: this table is genuinely finished.
         complete = true
@@ -198,7 +265,7 @@ async function sweep(): Promise<NextResponse> {
           JSON.stringify({ ...deleted, [table]: removed }),
         )
         return NextResponse.json(
-          { error: "Retention sweep failed", failedTable: table, deleted },
+          { error: "Retention sweep failed", failedTable: table, deleted, skipped },
           { status: 500 },
         )
       }
@@ -212,7 +279,7 @@ async function sweep(): Promise<NextResponse> {
           `[feedback/retention] ${table} returned no exact count — cannot verify the sweep`,
         )
         return NextResponse.json(
-          { error: "Retention sweep could not be verified", failedTable: table, deleted },
+          { error: "Retention sweep could not be verified", failedTable: table, deleted, skipped },
           { status: 500 },
         )
       }
@@ -233,24 +300,27 @@ async function sweep(): Promise<NextResponse> {
         `${removed} row(s) removed, expired rows may remain`,
       )
       return NextResponse.json(
-        { error: "Retention sweep incomplete", failedTable: table, deleted },
+        { error: "Retention sweep incomplete", failedTable: table, deleted, skipped },
         { status: 500 },
       )
     }
   }
 
-  console.log("[feedback/retention] swept:", JSON.stringify(deleted))
-  return NextResponse.json({ ok: true, cutoff, deleted })
+  // `skipped` is reported alongside `deleted` so "swept nothing because the
+  // table is gone" is legible in a log, rather than indistinguishable from
+  // "swept nothing because nothing had expired".
+  console.log("[feedback/retention] swept:", JSON.stringify({ deleted, skipped }))
+  return NextResponse.json({ ok: true, cutoff, deleted, skipped })
 }
 
 export async function GET(req: NextRequest) {
   const unauthorised = verifyCronRequest(req)
   if (unauthorised) return unauthorised
-  return sweep()
+  return sweepTables(RETAINED_TABLES)
 }
 
 export async function POST(req: NextRequest) {
   const unauthorised = verifyCronRequest(req)
   if (unauthorised) return unauthorised
-  return sweep()
+  return sweepTables(RETAINED_TABLES)
 }

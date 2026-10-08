@@ -82,3 +82,5 @@ here.
 ---
 
 *Motion has its own constitution: [MOTION_CONSTITUTION.md](./MOTION_CONSTITUTION.md).*
+
+*Product experience has its own constitution: [EXPERIENCE_CONSTITUTION.md](../experience/EXPERIENCE_CONSTITUTION.md).*

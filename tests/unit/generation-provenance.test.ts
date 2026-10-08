@@ -268,7 +268,8 @@ describe("the server is the only writer of _meta", () => {
       return JSON.stringify(rest)
     }
     expect(strip(after)).toBe(strip(before))
-    expect(after.foodSystem!.bioticScores).toEqual(before.foodSystem!.bioticScores)
+    // 0R-6R · `bioticScores` left the contract; the snapshot stands in for it.
+    expect(after.foodSystem!.systemSnapshot).toEqual(before.foodSystem!.systemSnapshot)
     expect(after.foodSystem!.systemSnapshot).toEqual(before.foodSystem!.systemSnapshot)
   })
 
@@ -319,10 +320,13 @@ describe("detecting whether model prose survived the food-system merge", () => {
     ["closingMissionPage.nextAction", { closingMissionPage: { nextAction: "Model next." } }],
     ["educationModules[].plainEnglish", { educationModules: [{ plainEnglish: "Model plain." }] }],
     ["educationModules[].whyItMatters", { educationModules: [{ whyItMatters: "Model why." }] }],
-    [
-      "educationModules[].whatYourAnswersSuggest",
-      { educationModules: [{ whatYourAnswersSuggest: "Model suggests." }] },
-    ],
+    /*
+     * 0R-6R · `educationModules[].whatYourAnswersSuggest` was the fourth probe
+     * here. It is gone from `EducationModule` — it carried
+     * `BAND_SUGGESTS[pathway][band(score)]`, a possessive sentence about this
+     * member's state in one Biotic — so the merge has no such field to detect a
+     * model value in. The three remaining module probes cover the same path.
+     */
     ["educationModules[].actionBridge", { educationModules: [{ actionBridge: "Model bridge." }] }],
   ])("a single model value in %s is detected", (_label, generated) => {
     expect(contributed(generated)).toBe(true)

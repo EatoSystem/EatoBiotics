@@ -9,7 +9,7 @@ const FOOD_SLUGS_WITH_BENEFIT: { slug: string; benefit: string }[] = [
   { slug: "yogurt", benefit: "A simple probiotic food that may support gut balance" },
   { slug: "wild-salmon", benefit: "Omega-3 fats that support brain and inflammation pathways" },
   { slug: "blueberries", benefit: "Polyphenol-rich fruit that supports the gut-brain connection" },
-  { slug: "kefir", benefit: "Live cultures that nourish microbial diversity" },
+  { slug: "kefir", benefit: "Fermented with a wider mix of microorganisms than most yoghurt" },
 ]
 
 export function BipolarFoods() {

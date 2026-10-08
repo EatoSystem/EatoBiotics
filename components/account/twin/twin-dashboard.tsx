@@ -167,7 +167,7 @@ export function TwinDashboard({
         <div className="mt-8 grid gap-5 lg:grid-cols-2">
           <div>
             <SectionLabel>Your three biotics</SectionLabel>
-            <BioticsProgressPanel biotics={twin.biotics} />
+            <BioticsProgressPanel />
           </div>
           <div>
             <SectionLabel>Your Food System Memory</SectionLabel>

@@ -28,7 +28,7 @@ export type PaidReportSummary = {
 }
 
 /**
- * The two columns a paid `deep_assessments` row owns, from the settled session.
+ * The columns a paid `deep_assessments` row owns, from the settled session.
  *
  * `tier` and `free_scores` are NOT NULL with no default, so any writer creating
  * the row has to supply them — and there are now two such writers, the legacy
@@ -38,10 +38,32 @@ export type PaidReportSummary = {
  *
  * From the settled checkout, never a request body: a paid row built from the
  * caller's claim would describe whatever they said they bought.
+ *
+ * ══ WHY `email` IS PART OF THE PROJECTION (Step 7) ══════════════════════════
+ *
+ * Because it is the only thing that lets a buyer's purchase be found again.
+ *
+ * `reconcileAccountAfterAuth` links paid rows to an account BY EMAIL, and that
+ * link is what grants the 30 days of access sold with the Report. Until this
+ * change the Stripe webhook was the only writer that set the column, so if the
+ * webhook body never ran — a delayed payment, a misconfigured endpoint, a
+ * handler failure — the row created by the questionnaire carried a null email,
+ * the account could never be linked to it, and the buyer silently received the
+ * Report but never the access. The Report still worked, because it is
+ * addressed by session id, which is precisely what made the failure invisible.
+ *
+ * It belongs here rather than at each call site for the same reason `tier` and
+ * `free_scores` do: one description of the purchase, so the writers cannot
+ * disagree about a row whose content depends on which one won the race.
+ *
+ * Nullable by nature — a legacy session may carry no address — so every caller
+ * must write it with an INSERT, or guard an UPSERT against replacing a good
+ * value with null.
  */
 export function ownedPaidAssessmentFields(summary: PaidReportSummary): {
   tier: PaidReportTier
   free_scores: Record<string, unknown>
+  email: string | null
 } {
   return {
     tier: summary.tier,
@@ -52,7 +74,15 @@ export function ownedPaidAssessmentFields(summary: PaidReportSummary): {
       foundationType: summary.foundationType ?? null,
       selectedAddon: summary.selectedAddon ?? null,
     },
+    email: normalisePaidEmail(summary.email),
   }
+}
+
+/** The one spelling of a buyer's address used on paid rows. */
+export function normalisePaidEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null
+  const trimmed = value.toLowerCase().trim()
+  return trimmed.length > 0 ? trimmed : null
 }
 
 const VALID_FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]

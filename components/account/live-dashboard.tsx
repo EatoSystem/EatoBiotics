@@ -11,16 +11,14 @@ import {
   Calendar, Target, Activity, User, Trash2, AlertTriangle, Plus,
 } from "lucide-react"
 import {
-  Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
+  AssessmentJourneyCard, ReferralCard, ScoreRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
 import { PlantsThisWeek } from "@/components/account/plants-this-week"
 import { GutTrend } from "@/components/account/gut-trend"
 import { mealMemory } from "@/lib/account/meal-memory"
-import { ExperienceNav } from "@/components/account/experience-nav"
 import { RetestCard } from "@/components/account/retest-card"
-import { FeedbackPrompt } from "@/components/account/feedback-prompt"
 import type { RetestState } from "@/lib/account/retest"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
@@ -32,7 +30,7 @@ import { SystemsExplorer } from "@/components/account/systems-explorer"
 import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
 import { MeetBodyHero } from "@/components/account/twin/meet-body-hero"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
-import { browserStore, dayKey as ritualDayKey, loadRitual, ritualSignals, type RitualDay } from "@/lib/account/ritual"
+import { browserStore, dayKey as ritualDayKey, loadRitual, ritualCount as countRitual, type RitualDay } from "@/lib/account/ritual"
 import { pushTwinState } from "@/lib/account/twin-state-sync"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
@@ -41,7 +39,17 @@ import type { TwinVideo } from "@/lib/account/twin-figure"
 import { AGE_BRACKETS } from "@/lib/age-brackets"
 
 
-function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
+/*
+ * 0R-5 · `P0-SCIENCE-01`, site 1 of 3.
+ *
+ * The card rendered three per-Biotic `ScoreBar`s from `meal.biotics`, and
+ * `biotics` is gone from the PROP TYPE rather than merely unrendered — the same
+ * reasoning as `sequence-email.ts` and `share-card.ts`: a field the card still
+ * accepted would be an invitation to render it again. What stays is what the
+ * product can legitimately observe about a plate: its Meal Biotics Score, the
+ * meal-quality signals, the nutrition context, the insight and the tags.
+ */
+function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
   const circ = 2 * Math.PI * 36
   const [rc0, rc1, rc2] = ringColors(meal.score)
   const ringId = `mc-ring-${meal.name.replace(/\s+/g, "").slice(0, 8)}`
@@ -91,18 +99,6 @@ function MealCard({ meal }: { meal: { image: string; name: string; time: string;
           </svg>
         </div>
       </div>
-
-      {/* Biotics */}
-      <div className="px-4 pb-3 pt-3">
-        <p className="mb-2 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Biotics</p>
-        <div className="space-y-2">
-          <ScoreBar label="Prebiotic"  score={meal.biotics.prebiotic} />
-          <ScoreBar label="Probiotic"  score={meal.biotics.probiotic} />
-          <ScoreBar label="Postbiotic" score={meal.biotics.postbiotic} />
-        </div>
-      </div>
-
-      <div className="mx-4 h-px" style={{ background: "var(--border)" }} />
 
       {/* Meal Quality */}
       <div className="px-4 pb-3 pt-3">
@@ -217,7 +213,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
     meals: [
       {
         image: "/food-5.webp", name: "Greek yoghurt, berries & oats", time: "9:00am", type: "Breakfast", score: 69,
-        insight: "Yoghurt delivers live cultures and the berries add polyphenol diversity that feeds beneficial bacteria. Oats are a strong prebiotic source. Your best breakfast pattern — the berry variety is key.",
+        insight: "Yoghurt is fermented, and the berries add polyphenol diversity that feeds beneficial bacteria. Oats are a strong fibre source. Your best breakfast pattern — the berry variety is key.",
         biotics:   { prebiotic: 55, probiotic: 58, postbiotic: 44 },
         quality:   { diversity: 60, antiInflammatory: 70 },
         nutrition: { calories: 295, protein: 14, carbs: 44, fat: 8, fibre: 6 },
@@ -233,7 +229,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
       },
       {
         image: "/food-7.webp", name: "Chicken, roasted veg & kefir", time: "7:45pm", type: "Dinner", score: 81,
-        insight: "Best meal this week. Kefir delivers live cultures across multiple strains, the diverse roasted veg builds your prebiotic base, and the chicken provides the protein your gut lining needs for repair. This is the gold standard pattern.",
+        insight: "Best meal this week. Kefir is fermented with a wide mix of microorganisms, the diverse roasted veg builds your fibre base, and the chicken provides protein. This is the gold standard pattern.",
         biotics:   { prebiotic: 75, probiotic: 65, postbiotic: 58 },
         quality:   { diversity: 78, antiInflammatory: 72 },
         nutrition: { calories: 445, protein: 38, carbs: 28, fat: 14, fibre: 7 },
@@ -243,32 +239,20 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
   },
 ]
 
-const MOCK_CONSULTATIONS = [
-  {
-    id: 1, date: "Sunday, 11 May 2025", week: "Week 8 of 30", avgScore: 73, delta: 5,
-    weekSummaryTitle: "Your Best Week for Plant Diversity",
-    pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 },
-    pullQuote: "Your food system showed real momentum this week. Plant diversity was your strongest area — 9 different plants, your best showing in a month.",
-    focusAction: "Add a fermented food to 4 out of 7 dinners this week — kefir, kimchi, or live yoghurt all count.",
-    mealCount: 9,
-  },
-  {
-    id: 2, date: "Sunday, 4 May 2025", week: "Week 7 of 30", avgScore: 68, delta: 4,
-    weekSummaryTitle: "Consistency Building — Momentum Is Growing",
-    pillars: { prebiotic: 65, probiotic: 28, postbiotic: 42 },
-    pullQuote: "Your prebiotic score held steady and your fermented food frequency improved to 4 out of 7 days. The habit is forming — keep the weekend routine tighter.",
-    focusAction: "Tighten your weekend routine — aim for the same meal quality Saturday and Sunday as you do during the week.",
-    mealCount: 11,
-  },
-  {
-    id: 3, date: "Sunday, 27 Apr 2025", week: "Week 6 of 30", avgScore: 64, delta: 2,
-    weekSummaryTitle: "Mid-Week Strong — Weekends Need Attention",
-    pillars: { prebiotic: 60, probiotic: 19, postbiotic: 38 },
-    pullQuote: "Monday–Friday averaged 71 but Saturday dropped to 48. You have the pattern — now extend it to the full week.",
-    focusAction: "Plan two gut-friendly meals for the weekend before Saturday arrives — preparation is the key lever here.",
-    mealCount: 8,
-  },
-]
+/*
+ * 0R-4 · `MOCK_CONSULTATIONS` DELETED.
+ *
+ * Three fabricated weekly consultations — dates, week labels, average scores,
+ * deltas, meal counts, invented `pillars` and quotations attributed to the
+ * member's own reports. Its last two consumers were the fabricated report
+ * count and the fabricated card list, both removed above, so the constant had
+ * zero readers. A superseded construct is removed, not left in place for
+ * somebody to re-wire.
+ *
+ * `MOCK_MEALS` still has ONE reader — the unreachable `DEBT-CODE-01` branch —
+ * so it survives until 0R-9, inventoried in
+ * `tests/unit/live-dashboard-fabrication.test.ts`.
+ */
 
 /* ─────────────────────────────────────────────────────────────────────────
    Real-data types
@@ -329,7 +313,19 @@ export interface LiveDashboardProps {
   score?:            number | null
   previousScore?:    number | null
   profileType?:      string | null
-  biotics?:          { prebiotic: number; probiotic: number; postbiotic: number }
+  /*
+   * 0R-5 · `biotics?` is removed from the props.
+   *
+   * 0R-4 deleted `propBiotics` from the destructure when it retired the
+   * fabricated `displayBiotics` fallback, leaving the prop declared, still
+   * passed by `app/account/page.tsx`, and read by nobody. `app/account/page.tsx`
+   * no longer passes it either: the live dashboard is not handed a personal
+   * per-Biotic profile at all.
+   *
+   * Note the props interface carries `[key: string]: unknown` for the sandbox,
+   * so deleting the declaration alone would have been cosmetic — the pass had
+   * to go with it.
+   */
   recentAnalyses?:   RealAnalysis[]
   scoreHistory?:     { score: number; date: string }[]  // 90-day biotics history → Gut Trend
   paidReports?:      LivePaidReport[]            // purchased one-time reports
@@ -413,13 +409,13 @@ function FirstMealCelebration({ result, firstName, onLogAnother }: {
         </div>
         <p className="mt-1 text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>{result.meal_name}</p>
 
-        {/* Biotic bars */}
-        <div className="mx-auto mt-6 max-w-sm space-y-2.5 text-left">
-          <ScoreBar label="Prebiotic"  score={result.prebiotic_score} />
-          <ScoreBar label="Probiotic"  score={result.probiotic_score} />
-          <ScoreBar label="Postbiotic" score={result.postbiotic_score} />
-        </div>
-
+        {/*
+          * 0R-5 · `P0-SCIENCE-01`, site 2 of 3. Three per-Biotic `ScoreBar`s
+          * rendered `result.prebiotic_score` and its two siblings straight from
+          * `/api/analyse-meal` — genuine numbers, and a personal per-Biotic
+          * state regardless. The activation moment keeps the meal's own score
+          * ring above and the insight below.
+          */}
         {result.insight && (
           <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
             {result.insight}
@@ -454,11 +450,6 @@ function realToMealEntry(a: RealAnalysis): Parameters<typeof MealCard>[0]["meal"
     type:    a.meal_type ?? "Meal",
     score:   a.biotics_score ?? 0,
     insight: a.insight ?? "No insight available.",
-    biotics: {
-      prebiotic:  a.prebiotic_score  ?? 0,
-      probiotic:  a.probiotic_score  ?? 0,
-      postbiotic: a.postbiotic_score ?? 0,
-    },
     quality: {
       diversity:        a.quality_diversity         ?? 0,
       antiInflammatory: a.quality_anti_inflammatory ?? 0,
@@ -478,7 +469,16 @@ interface ReportCardData {
   avgScore: number | null
   delta: number | null
   weekSummaryTitle: string | null
-  pillars: { prebiotic: number; probiotic: number; postbiotic: number } | null
+  /*
+   * 0R-5 · `pillars` is GONE from the contract.
+   *
+   * 0R-4 removed the "Biotics this week" block that rendered it, leaving the
+   * field declared, assigned from `rj?.pillars` and read by nobody. A card type
+   * that still carries three per-Biotic numbers is one JSX block away from
+   * showing them again, which is the whole argument this file already makes
+   * about `MOCK_CONSULTATIONS`: a superseded construct is removed, not left for
+   * somebody to re-wire.
+   */
   pullQuote: string | null
   focusAction: string | null
   mealCount: number | null
@@ -529,19 +529,24 @@ function ReportCard({ card }: { card: ReportCardData }) {
         </div>
       </div>
 
-      {/* Biotics pillars */}
-      {card.pillars && (
-        <div className="border-b px-5 py-4" style={{ borderColor: "var(--border)" }}>
-          <p className="mb-2.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-            Biotics this week
-          </p>
-          <div className="space-y-2">
-            <ScoreBar label="Prebiotic"  score={card.pillars.prebiotic} />
-            <ScoreBar label="Probiotic"  score={card.pillars.probiotic} />
-            <ScoreBar label="Postbiotic" score={card.pillars.postbiotic} />
-          </div>
-        </div>
-      )}
+      {/*
+        * 0R-4 · the science construct FUSED to `P0-TRUST-02` site 3 — removed
+        * here rather than in 0R-5, and only this one.
+        *
+        * "Biotics this week" rendered `card.pillars` as three per-Biotic
+        * `ScoreBar`s. Gate 5's own exclusion list says meal-level per-Biotic
+        * bars are "still off every surface"; they were on this one, and in the
+        * fabricated cards they carried invented numbers.
+        *
+        * Removing the fabrication alone would have left these bars rendering a
+        * member's REAL per-Biotic values — still prohibited, and the knowingly
+        * invalid intermediate state the tranche-boundary rule forbids. So the
+        * card is no longer structurally capable of rendering a personal
+        * per-Biotic state at all.
+        *
+        * This is the ONLY Biotics construct 0R-4 touches beyond the retired
+        * profile block. Every other one remains 0R-5's.
+        */}
 
       {/* Pull quote */}
       {card.pullQuote && (
@@ -679,7 +684,6 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     score:             propScore  = null,
     previousScore:     propPrev   = null,
     profileType        = null,
-    biotics:           propBiotics = null,
     recentAnalyses     = [],
     scoreHistory       = [],
     paidReports        = [],
@@ -816,7 +820,25 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const displayStreak  = propStreak  || 0
   const displayProfile = profileType ?? "Emerging Balance"
 
-  const displayBiotics = propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }
+  /*
+   * 0R-4 · P0-TRUST-02 — REMOVED, with the construct it fed.
+   *
+   * This read `propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }`.
+   * Those three numbers are invented, and they were REACHABLE IN PRODUCTION,
+   * not only in the audit fixture: `app/account/page.tsx` returns undefined for
+   * `bioticsProfile` when the member's last five analyses have null per-Biotic
+   * columns, while `recentAnalyses` applies no such filter. So a member who had
+   * logged meals, but whose sub-scores were null, satisfied the
+   * `recentAnalyses.length > 0` gate AND got the fallback — and was shown
+   * 71/23/48, with band words, as their own profile.
+   *
+   * Its only consumers were the three per-Biotic cards below, so the data
+   * source and the construct were ONE remediation unit: removing this line
+   * alone would have left those cards rendering a member's REAL per-Biotic
+   * numbers with band words, which the permanent product rule forbids outright.
+   * That is why the absorbed `P0-SCIENCE-02` closes here rather than in 0R-5 —
+   * a tranche boundary must not require a knowingly invalid intermediate state.
+   */
 
   /* Milestone celebrations — fire once per milestone (localStorage seen-set):
      burst over the stage orb + a celebration card at the top of the feed. */
@@ -962,15 +984,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               }}>
                 Good {timeOfDay},<br />{displayName}.
               </p>
+              {/* The Today and My Food System pills linked to /account/today and
+                  /account/twin. Both are Living Twin surfaces, outside the V1
+                  launch product and refused at runtime — see lib/v1-surface.ts.
+                  The streak and score chips below are in-page state, not doors,
+                  so they stay. */}
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                <Link href="/account/today" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
-                  <Calendar size={13} /> Today
-                </Link>
-                {twin && (
-                  <Link href="/account/twin" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-teal)", color: "var(--icon-teal)" }}>
-                    <Activity size={13} /> My Food System
-                  </Link>
-                )}
                 {displayStreak > 0 && (
                   <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white"
                     style={{ background: "linear-gradient(135deg, #F5C518, #F5A623)", boxShadow: "0 2px 10px rgba(245,166,35,0.35)" }}>
@@ -1104,13 +1123,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             firstName={name?.split(" ")[0] ?? null}
             streak={displayStreak}
             onAddMeal={() => setQuickLogOpen(true)}
-            todayHref="/account/today"
           />
-          <div style={{ background: "#0B1607" }}>
-            <div className="mx-auto max-w-6xl px-4 pb-3 md:px-8">
-              <ExperienceNav variant="dark" />
-            </div>
-          </div>
           <TwinStage
             twin={twin}
             visual={twinVisual}
@@ -1127,7 +1140,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               setReveal(null)
               setQuickLogOpen(true)
             }}
-            signals={todaySignals ? ritualSignals(todaySignals) : []}
+            ritualCount={todaySignals ? countRitual(todaySignals) : 0}
             checklist={
               twin.observations.length < 3 ? (
                 <MeetTwinChecklist twin={twin} addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"} />
@@ -1143,7 +1156,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* [TODAY] — the daily ritual heartbeat + one clear priority */}
           <GroupLabel>Today</GroupLabel>
           <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare figureSrc={twinFigureSrc ?? "/images/couple-hero.png"} onSignalsChange={setTodaySignals} />
+            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare onSignalsChange={setTodaySignals} />
             <TwinNextAction twin={twin} bare />
           </div>
 
@@ -1218,15 +1231,31 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">
                 {name ? `Let's build your food system, ${name.split(" ")[0]}.` : "Let's build your food system."}
               </h2>
+              {/*
+                * 0R-5 · `P0-SCIENCE-01`'s promise, at BOTH of its sites — the
+                * paragraph and step 2. The register named the paragraph only.
+                *
+                * It read "YOUR Biotics score is built one meal at a time … an
+                * instant breakdown of its Prebiotic, Probiotic, and Postbiotic
+                * value", and step 2 made the same promise in five words. The
+                * promise and the three `ScoreBar`s above were internally
+                * consistent, which is exactly why both had to go: a first-use
+                * block that still promised a per-Biotic breakdown would be
+                * advertising a construct the product no longer has.
+                *
+                * CLAUDE.md's vocabulary rule is the replacement's whole basis —
+                * "One meal gets a Meal Biotics Score, never the person's
+                * Biotics Score™" — and the rest names only observable food.
+                */}
               <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
-                Your Biotics score is built one meal at a time. Log your first meal and we&apos;ll give you an instant breakdown of its Prebiotic, Probiotic, and Postbiotic value.
+                Log your first meal and we&apos;ll give it a Meal Biotics Score out of 100, with what we can see in it: plant variety, fibre, anti-inflammatory signals and nutrition.
               </p>
 
               {/* Steps */}
               <div className="mt-6 space-y-3">
                 {[
                   { n: "1", text: "Log your next meal using the box below" },
-                  { n: "2", text: "Get your instant Biotics score breakdown" },
+                  { n: "2", text: "Get its Meal Biotics Score straight away" },
                   { n: "3", text: "Track patterns over time and watch your score grow" },
                 ].map(({ n, text }) => (
                   <div key={n} className="flex items-center gap-3">
@@ -1322,24 +1351,14 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           </>)}
 
-          {/* GLP-1 Companion — compact, self-selecting entry point */}
-          <div className="mt-5">
-            <Glp1CompanionCard />
-          </div>
-
-          {/* EatoBiotics Stability */}
-          <div className="mt-5">
-            <StabilityCard />
-          </div>
+          {/* The GLP-1 Companion, Stability and voice-consultation entry cards
+              are not mounted: each is a single Link into a route outside the V1
+              launch surface (lib/v1-surface.ts). The components survive in
+              dashboard-parts.tsx, so restoring them is one line each. */}
 
           {/* Assessment journey + combined report (renders only when a foundation exists) */}
           <div className="mt-5">
             <AssessmentJourneyCard />
-          </div>
-
-          {/* Talk to EatoBiotic — voice consultation */}
-          <div className="mt-5">
-            <VoiceConsultCard />
           </div>
 
           {/* Refer a friend */}
@@ -1358,10 +1377,6 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
             {/* Gut trend — progress over time (renders once ≥3 days logged) */}
             <GutTrend history={scoreHistory} />
-
-            {/* Loyalty: ask engaged members how it's going (self-hides once
-                answered/dismissed; only shown after a few logged meals). */}
-            {recentAnalyses.length >= 3 && <FeedbackPrompt source="account" />}
 
             {/* Logger */}
             <div id="log-meal" className="scroll-mt-24">
@@ -1564,19 +1579,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     </div>
                   </div>
 
-                  {/* ── BIOTICS ── */}
-                  <div className="px-5 pb-3 pt-4">
-                    <p className="mb-2.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-                      Biotics
-                    </p>
-                    <div className="space-y-2.5">
-                      <ScoreBar label="Prebiotic"  score={r.prebiotic_score  ?? 0} />
-                      <ScoreBar label="Probiotic"  score={r.probiotic_score  ?? 0} />
-                      <ScoreBar label="Postbiotic" score={r.postbiotic_score ?? 0} />
-                    </div>
-                  </div>
-
-                  <div className="mx-5 h-px" style={{ background: "var(--border)" }} />
+                  {/*
+                    * 0R-5 · `P0-SCIENCE-01`, site 3 of 3 — the logger result a
+                    * returning member sees the moment a meal is analysed.
+                    */}
 
                   {/* ── MEAL QUALITY ── */}
                   <div className="px-5 pb-3 pt-3">
@@ -1674,16 +1680,26 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
                 <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
-                {/* Real today's meals — or mock fallback */}
-                {(todayMeals.length > 0 ? todayMeals : MOCK_MEALS[0].meals).map((meal, i) => {
-                  const isMock = todayMeals.length === 0
-                  const name   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).name : ((meal as RealAnalysis).meal_name ?? "Meal")
-                  const time   = isMock
-                    ? (meal as typeof MOCK_MEALS[0]["meals"][0]).time
-                    : new Date((meal as RealAnalysis).created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
-                  const type   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).type : ((meal as RealAnalysis).meal_type ?? "Meal")
-                  const score  = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).score : ((meal as RealAnalysis).biotics_score ?? 0)
-                  const img    = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).image : ((meal as RealAnalysis).image_url ?? "/food-1.webp")
+                {/*
+                  * 0R-4 · P0-TRUST-01. This read
+                  *   (todayMeals.length > 0 ? todayMeals : MOCK_MEALS[0].meals)
+                  * with `const isMock = todayMeals.length === 0` beside the
+                  * comment "Real today's meals — or mock fallback". A returning
+                  * member with no meals logged TODAY — the most common way a
+                  * daily product is opened — was shown a fabricated meal, with
+                  * a name, a time, a type and a Biotics score, under a
+                  * possessive heading, directly above "No meals logged today".
+                  *
+                  * Real meals only. When there are none, the "No meals logged
+                  * today" row below is the truthful empty state, and it already
+                  * existed.
+                  */}
+                {todayMeals.map((meal, i) => {
+                  const name   = meal.meal_name ?? "Meal"
+                  const time   = new Date(meal.created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
+                  const type   = meal.meal_type ?? "Meal"
+                  const score  = meal.biotics_score ?? 0
+                  const img    = meal.image_url ?? "/food-1.webp"
                   return (
                     <div key={i} className="flex items-center gap-3 px-4 py-3.5"
                       style={{ borderTop: i > 0 ? "1px solid var(--border)" : undefined }}>
@@ -1715,14 +1731,24 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   </div>
                 )}
 
-                {/* Daily average */}
-                {(todayMeals.length > 0 || true) && (
+                {/*
+                  * 0R-4 · P0-TRUST-01, second manifestation — NOT in the
+                  * Experience 0 register, found by tracing MOCK_MEALS to every
+                  * consumer.
+                  *
+                  * The gate read `(todayMeals.length > 0 || true)`: somebody
+                  * wrote the honest condition and then neutered it, so the
+                  * average always rendered — and `todayAvg ?? MOCK_MEALS[0]
+                  * .meals[0].score` answered "what did this member average
+                  * today?" with 71, a number nobody logged.
+                  *
+                  * An average of no meals is not a number. It is absence.
+                  */}
+                {todayMeals.length > 0 && todayAvg !== null && (
                   <div className="border-t px-4 py-2.5" style={{ borderColor: "var(--border)" }}>
                     <p className="text-right text-[11px]" style={{ color: "var(--muted-foreground)" }}>
                       Today&apos;s average:{" "}
-                      <strong style={{ color: "var(--icon-green)" }}>
-                        {todayAvg ?? MOCK_MEALS[0].meals[0].score}
-                      </strong>
+                      <strong style={{ color: "var(--icon-green)" }}>{todayAvg}</strong>
                     </p>
                   </div>
                 )}
@@ -1737,56 +1763,61 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             {/* 30 plants a week — detected from this week's logged meals */}
             <PlantsThisWeek mealNames={recentAnalyses.map((a) => a.meal_name)} />
 
-            {/* Biotics Profile */}
+            {/*
+              * 0R-4 · the absorbed `P0-SCIENCE-02` — RETIRED, not restyled.
+              *
+              * "Your Biotics Profile": three cards, each a per-Biotic number in
+              * a ring with a band word — "On track" / "Building" / "Needs
+              * work" / "Strong" / "Stable". A personal numerical Three-Biotic
+              * state in every form the permanent product rule names: a number,
+              * a ring, a band word, and a possessive heading.
+              *
+              * A questionnaire and a meal photo reach none of the three. The
+              * construct has no honest replacement, so nothing replaces it; the
+              * membership progress line below is kept because it claims nothing
+              * about the member's biology.
+              *
+              * Educational Biotics content is unaffected and stays where it
+              * belongs — a correction is never a deletion of the science.
+              */}
             <div>
-              <SectionLabel>Your Biotics Profile</SectionLabel>
-              <div className="grid grid-cols-3 gap-3">
-                {([
-                  { label: "Prebiotic",  score: displayBiotics.prebiotic,  delta: displayBiotics.prebiotic  >= 60 ? "On track"    : displayBiotics.prebiotic  >= 30 ? "Building"    : "Needs work", c0: "#A8E063", c1: "#4CB648", textColor: "#2d7a24", borderColor: "var(--icon-lime)" },
-                  { label: "Probiotic",  score: displayBiotics.probiotic,  delta: displayBiotics.probiotic  >= 60 ? "On track"    : displayBiotics.probiotic  >= 30 ? "Building"    : "Needs work", c0: "#F5C518", c1: "#F5A623", textColor: "#a05a0a", borderColor: "var(--icon-orange)" },
-                  { label: "Postbiotic", score: displayBiotics.postbiotic, delta: displayBiotics.postbiotic >= 60 ? "Strong"      : displayBiotics.postbiotic >= 30 ? "Stable"      : "Needs work", c0: "#4CB648", c1: "#2DAA6E", textColor: "#0a6644", borderColor: "var(--icon-teal)" },
-                ] as { label: string; score: number; delta: string; c0: string; c1: string; textColor: string; borderColor: string }[]).map(({ label, score, delta, c0, c1, textColor, borderColor }) => (
-                  <div key={label} className="flex flex-col items-center overflow-hidden rounded-2xl"
-                    style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 10px rgba(26,46,18,0.05)" }}>
-                    {/* Coloured top border */}
-                    <div className="h-[3.5px] w-full" style={{ background: `linear-gradient(90deg, ${c0}, ${c1})` }} />
-                    <div className="flex flex-col items-center p-3.5">
-                      <p className="mb-2 text-[11px] font-semibold" style={{ color: "var(--muted-foreground)" }}>{label}</p>
-                      <MiniRing score={score} gradId={`ring-${label}`} c0={c0} c1={c1} textColor={textColor} />
-                      <p className="mt-2 text-center text-[10px] font-semibold leading-tight" style={{ color: borderColor }}>{delta}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
               {/* Subtle membership progress line */}
               <p className="mt-2.5 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
                 Week {weekNumber} of 30 · Building your food system
               </p>
             </div>
 
-            {/* Your Focus Today — lowest pillar driven */}
-            <div className="overflow-hidden rounded-2xl" style={{
-              background: "white",
-              border: "1px solid var(--border)",
-              borderLeft: "4px solid var(--icon-orange)",
-              boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
-            }}>
-              <div className="p-4">
-                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
-                  Your Focus Today
-                </p>
-                <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>
-                  Add one fermented food today
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                  Your probiotic score is your lowest pillar. One serving of kimchi, kefir, yoghurt,
-                  or kombucha today would make a measurable difference.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {["Probiotics", "Quick win"].map(t => <Tag key={t}>{t}</Tag>)}
-                </div>
-              </div>
-            </div>
+            {/*
+              * 0R-4 · `P0-TRUST-03`, and the absorbed `P0-SCIENCE-03`
+              * manifestation at the SAME rendered sentence — RETIRED.
+              *
+              * The block was headed "Your Focus Today", commented
+              * "lowest pillar driven", and read:
+              *
+              *   "Your probiotic score is your lowest pillar. One serving of
+              *    kimchi, kefir, yoghurt, or kombucha today would make a
+              *    measurable difference."
+              *
+              * The comment asserted a derivation that did not exist:
+              * `displayBiotics` was referenced ZERO times in the block, and the
+              * sentence was a literal naming Probiotic unconditionally. So it
+              * was not merely unsupported — it was FALSE for any member whose
+              * lowest value was not Probiotic, under a heading claiming it came
+              * from their own data.
+              *
+              * It read true in both captured fixtures by coincidence:
+              * Probiotic was lowest in the fabricated 71/23/48 AND in the
+              * genuine 58/44/63.
+              *
+              * Retired rather than reworded, because nothing in it was derived:
+              * the heading, the action and the tags were all hardcoded. The
+              * member's genuine next action is derived elsewhere on this page
+              * and is unaffected.
+              *
+              * `P0-SCIENCE-03`'s other two sites — the pull-quote and
+              * "This month's focus" — are NOT shared with a trust finding and
+              * remain 0R-5's.
+              */}
 
             {/* Consultation — premium editorial card */}
             <div>
@@ -1854,20 +1885,38 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   {/* Divider */}
                   <div className="my-4 h-px" style={{ background: "rgba(255,255,255,0.15)" }} />
 
-                  {/* Pull quote — real or fallback */}
-                  <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.10)" }}>
-                    <div className="mb-2 flex items-center gap-2">
-                      <MessageSquare size={11} color="rgba(255,255,255,0.50)" />
-                      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.50)" }}>
-                        {weeklyReport?.report_json?.weekNumber
-                          ? `From your Week ${weeklyReport.report_json.weekNumber} report`
-                          : "From your latest report"}
+                  {/*
+                    * 0R-4 · `P0-TRUST-02`, site 2 — and the absorbed
+                    * `P0-SCIENCE-03` manifestation at the same sentence.
+                    *
+                    * The quotation was `pullQuote ?? "Your probiotic score is
+                    * your biggest lever right now. One daily fermented food
+                    * would shift your overall Biotics number by 8–12 points
+                    * within three weeks."` — presented under **"From your
+                    * latest report"**, so a member with no report at all was
+                    * shown an invented sentence attributed to a report of
+                    * theirs that does not exist, carrying a quantified
+                    * predicted outcome with a magnitude and a deadline.
+                    *
+                    * With no report there is no quotation. The attributed frame
+                    * now renders ONLY when a real `pullQuote` exists — absence
+                    * is rendered as absence, and nothing is substituted.
+                    */}
+                  {weeklyReport?.report_json?.pullQuote && (
+                    <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                      <div className="mb-2 flex items-center gap-2">
+                        <MessageSquare size={11} color="rgba(255,255,255,0.50)" />
+                        <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.50)" }}>
+                          {weeklyReport.report_json.weekNumber
+                            ? `From your Week ${weeklyReport.report_json.weekNumber} report`
+                            : "From your latest report"}
+                        </p>
+                      </div>
+                      <p className="text-sm italic leading-relaxed text-white">
+                        &ldquo;{weeklyReport.report_json.pullQuote}&rdquo;
                       </p>
                     </div>
-                    <p className="text-sm italic leading-relaxed text-white">
-                      &ldquo;{weeklyReport?.report_json?.pullQuote ?? "Your probiotic score is your biggest lever right now. One daily fermented food would shift your overall Biotics number by 8–12 points within three weeks."}&rdquo;
-                    </p>
-                  </div>
+                  )}
 
                   {/* Next session box — white card */}
                   <div className="mt-4 overflow-hidden rounded-xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
@@ -1889,61 +1938,63 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     </div>
                   </div>
 
-                  {/* CTA — link to latest report if available, else tab switch */}
-                  {weeklyReport ? (
-                    <Link href={`/account/report/${weeklyReport.id}`}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
-                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
-                      View your latest report <ChevronRight size={13} />
-                    </Link>
-                  ) : (
+                  {/* CTA — the tab switch. This used to deep-link to
+                      /account/report/<id> when a weekly check-in existed; that
+                      route is the weekly check-in report, not the €49 Personal
+                      Food System Report, and it is outside the V1 launch
+                      surface. The in-page tab was already the fallback. */}
                   <button onClick={() => setTab("consultations")}
                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
                     style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
                     View past consultations <ChevronRight size={13} />
                   </button>
-                  )}
 
                 </div>
               </div>
             </div>
 
-            {/* Monthly Focus */}
-            <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
-              <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-              <div className="flex overflow-hidden">
-                <div className="w-[3px] shrink-0"
-                  style={{ background: "linear-gradient(to bottom, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
-                <div className="p-5">
-                  <p className="mb-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-                    This month&apos;s focus
-                  </p>
-                  <h3 className="font-serif text-lg font-bold leading-snug" style={{ color: "var(--foreground)" }}>
-                    Fix your fermented food gap.
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                    Your Prebiotics have been strong but your Probiotics are pulling down your Biotics Score™.
-                    One fermented food daily for 30 days changes this.
-                  </p>
-                  <Link href="#" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold transition-opacity hover:opacity-75"
-                    style={{ color: "var(--icon-green)" }}>
-                    Read your full plan <ChevronRight size={14} />
-                  </Link>
-                </div>
-              </div>
-            </div>
+            {/*
+              * ══ 0R-5 · `P0-SCIENCE-03`, THIRD SITE — RETIRED, NOT REWORDED ══
+              *
+              * The "Monthly Focus" card. Under the eyebrow "This month's focus"
+              * and the heading "Fix your fermented food gap." it read:
+              *
+              *   "Your Prebiotics have been strong but your Probiotics are
+              *    pulling down your Biotics Score™. One fermented food daily
+              *    for 30 days changes this."
+              *
+              * Four prohibited constructs in two sentences: two personal
+              * per-Biotic states, a CAUSAL MECHANISM between them — one Biotic
+              * making another fall, which the permanent product rule refuses by
+              * name ("not as a mechanism") — and a 30-day outcome promise.
+              *
+              * ── WHY RETIRED RATHER THAN REWRITTEN ─────────────────────────
+              *
+              * Because nothing in it was DERIVED. `twin`, `displayBiotics` and
+              * every per-Biotic field appear zero times in the block: the
+              * eyebrow, the heading, both sentences and the link were literals,
+              * so there was no computation to correct and no member-specific
+              * content to preserve. Identical to `P0-TRUST-03`'s "Your Focus
+              * Today" one screen up, and retired for the identical reason.
+              *
+              * Rewording it would have kept the frame — a monthly focus the
+              * product claims to have chosen for this member — over a
+              * conclusion the product has not made. The member's genuine next
+              * action is derived elsewhere on this page (`TwinNextAction`)
+              * and is unaffected. `DailyLoopCard` is NOT one of those: 0R-5
+              * found its "Today's focus" nudge naming the member's weakest
+              * Biotic with a score and a colour, and removed it — see that
+              * component.
+              *
+              * Consequence worth recording rather than claiming as a repair:
+              * the block's `<Link href="#">` was one of the dead destinations
+              * inventoried for 0R-8, and it goes with the card.
+              */}
 
-            {/* GLP-1 Companion — compact, self-selecting entry point */}
-            <Glp1CompanionCard />
-
-            {/* EatoBiotics Stability */}
-            <StabilityCard />
+            {/* GLP-1, Stability and voice cards unmounted — see above. */}
 
             {/* Assessment journey + combined report (renders only when a foundation exists) */}
             <AssessmentJourneyCard />
-
-            {/* Talk to EatoBiotic — voice consultation */}
-            <VoiceConsultCard />
 
             {/* Refer a friend */}
             <ReferralCard code={referralCode} />
@@ -1958,18 +2009,34 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {tab === "meals" && (
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           {(() => {
-            /* Use real data if available, else fall back to mock */
-            const groups = analysesByDate.length > 0
-              ? analysesByDate.map(({ date, meals }) => ({
-                  date,
-                  cards: meals.map(a => realToMealEntry(a)),
-                }))
-              : MOCK_MEALS.map(({ date, meals }) => ({ date, cards: meals }))
+            /*
+             * 0R-4 · P0-TRUST-01, third and fourth manifestations — NEITHER in
+             * the Experience 0 register. The audit read the Overview tab; these
+             * are on My Meals, and they reach a different population: not "a
+             * member with no meal TODAY" but a member with NO ANALYSES AT ALL.
+             *
+             * `groups` fell back to `MOCK_MEALS.map(…)`, which is a fabricated
+             * SEVEN-DAY history — invented meal names, times, scores,
+             * per-Biotic numbers, nutrition figures and insight prose, including
+             * "The kimchi lifts your probiotic score significantly" and "would
+             * push your diversity score from 55 to ~72". A member who had
+             * logged nothing was shown a week of someone else's eating as their
+             * own, and told they had logged "7 meals this week · Average score:
+             * 73".
+             *
+             * Real data only, and an honest empty state below. The counts now
+             * derive from `recentAnalyses` and nothing else; when there is
+             * nothing to average there is no average, not 73.
+             */
+            const groups = analysesByDate.map(({ date, meals }) => ({
+              date,
+              cards: meals.map(a => realToMealEntry(a)),
+            }))
 
-            const totalMeals = analysesByDate.length > 0 ? recentAnalyses.length : 7
-            const avgScore   = analysesByDate.length > 0 && recentAnalyses.length > 0
+            const totalMeals = recentAnalyses.length
+            const avgScore   = recentAnalyses.length > 0
               ? Math.round(recentAnalyses.reduce((s, a) => s + (a.biotics_score ?? 0), 0) / recentAnalyses.length)
-              : 73
+              : null
 
             return (
               <>
@@ -1977,14 +2044,27 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <div>
                     <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Meals</h2>
                     <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                      {totalMeals} meal{totalMeals !== 1 ? "s" : ""} logged this week · Average score:{" "}
-                      <strong style={{ color: "var(--icon-green)" }}>{avgScore}</strong>
+                      {totalMeals} meal{totalMeals !== 1 ? "s" : ""} logged this week
+                      {avgScore !== null && (
+                        <>
+                          {" · Average score: "}
+                          <strong style={{ color: "var(--icon-green)" }}>{avgScore}</strong>
+                        </>
+                      )}
                     </p>
                   </div>
                   <GradientButton small onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTab("overview"); setLoggerState("empty") }}>
                     <Camera size={13} /> Log meal
                   </GradientButton>
                 </div>
+
+                {groups.length === 0 && (
+                  <div className="rounded-2xl border px-5 py-8 text-center" style={{ borderColor: "var(--border)", background: "white" }}>
+                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                      No meals logged yet. Log your first meal and it will appear here.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-8">
                   {groups.map(({ date, cards }) => (
@@ -2108,8 +2188,17 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           CONSULTATIONS TAB
       ══════════════════════════════════════════════════════════════════ */}
       {tab === "consultations" && (() => {
-        const reports   = weeklyReports.length > 0 ? weeklyReports : null
-        const count     = reports?.length ?? MOCK_CONSULTATIONS.length
+        /*
+         * 0R-4 · `P0-TRUST-02`, site 3 — NOT in the Experience 0 register,
+         * found by tracing every mock constant to every consumer.
+         *
+         * `count` was `reports?.length ?? MOCK_CONSULTATIONS.length`, so a
+         * member with no weekly reports was told how many consultations they
+         * had by counting a demo array. Zero reports must render as zero
+         * reports.
+         */
+        const reports   = weeklyReports
+        const count     = reports.length
 
         /* Normalise real reports → ReportCardData */
         const realCards: ReportCardData[] = (reports ?? []).map((r) => {
@@ -2123,32 +2212,38 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                                 ? Math.round(rj.averageScore - rj.previousWeekAverage)
                                 : null,
             weekSummaryTitle: rj?.weekSummaryTitle ?? null,
-            pillars:          rj?.pillars ?? null,
+            // `pillars` is not mapped: 0R-5 removed it from `ReportCardData`.
+            // The stored `report_json` still has it — that is a historical DB
+            // row and is not rewritten — but nothing carries it to a renderer.
             pullQuote:        rj?.pullQuote ?? null,
             focusAction:      rj?.focusAction ?? null,
             mealCount:        rj?.mealCount ?? null,
-            reportHref:       `/account/report/${r.id}`,
-            chatHref:         `/account/report/${r.id}#chat`,
+            // Null for the same reason the mock cards are: /account/report/<id>
+            // is outside the V1 launch surface. ReportCard already renders the
+            // no-link shape.
+            reportHref:       null,
+            chatHref:         null,
           }
         })
 
-        /* Normalise mock → ReportCardData */
-        const mockCards: ReportCardData[] = MOCK_CONSULTATIONS.map((c) => ({
-          id:               c.id,
-          dateStr:          c.date,
-          weekLabel:        c.week,
-          avgScore:         c.avgScore,
-          delta:            c.delta,
-          weekSummaryTitle: c.weekSummaryTitle,
-          pillars:          c.pillars,
-          pullQuote:        c.pullQuote,
-          focusAction:      c.focusAction,
-          mealCount:        c.mealCount,
-          reportHref:       null,
-          chatHref:         null,
-        }))
-
-        const cards = reports ? realCards : mockCards
+        /*
+         * 0R-4 · `P0-TRUST-02`, site 3 continued — the fabricated cards.
+         *
+         * `const cards = reports ? realCards : mockCards` showed a member with
+         * zero real reports THREE invented weekly consultations: fabricated
+         * dates, "Week 8 of 30" labels, average scores, week-on-week deltas,
+         * meal counts, a score-progression strip derived from them, and
+         * quotations attributed to the member's own reports —
+         * "Your prebiotic score held steady…", "Monday–Friday averaged 71 but
+         * Saturday dropped to 48." Each card also carried
+         * `pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 }`, the same
+         * invented numbers as the retired profile fallback, rendered as
+         * per-Biotic bars.
+         *
+         * `MOCK_CONSULTATIONS` is no longer read. Real reports only, with a
+         * truthful empty state below.
+         */
+        const cards = realCards
 
         /* Score progression strip — scores oldest→newest */
         const scoreSequence = cards.map(c => c.avgScore).filter((s): s is number => s != null).reverse()
@@ -2249,9 +2344,23 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
 
             {/* ── Report cards ── */}
-            <div className="space-y-5">
-              {cards.map(card => <ReportCard key={card.id} card={card} />)}
-            </div>
+            {cards.length === 0 ? (
+              /*
+               * 0R-4 · zero reports render as zero reports. This branch did not
+               * exist: the tab fell back to three fabricated consultations
+               * instead, so a member who had never received one was shown a
+               * history of reports attributed to them.
+               */
+              <div className="rounded-2xl border px-5 py-8 text-center" style={{ borderColor: "var(--border)", background: "white" }}>
+                <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                  No consultations yet. Your weekly check-in will appear here once it has been generated.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {cards.map(card => <ReportCard key={card.id} card={card} />)}
+              </div>
+            )}
 
           </div>
         )

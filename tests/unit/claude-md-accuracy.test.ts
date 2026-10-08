@@ -184,3 +184,67 @@ describe("the table-count claim is gone rather than merely updated", () => {
     expect(DOC).toMatch(/`list_tables` against `ephmojiwlcebenholhpc`/)
   })
 })
+
+/* ════════════════════════════════════════════════════════════════════════════
+   The permanent product rule — present, and pointing at a guard that exists.
+
+   Gate 3.7 put a three-clause rule in CLAUDE.md after the same claim class had
+   been corrected four times in four tranches, each fix scoped to the form it
+   took rather than to the rule behind it. A rule that is only prose is one
+   careless edit from being gone, and CLAUDE.md is read as instruction by every
+   session before it writes anything — `agent-vocabulary.test.ts`'s
+   `collectInstructionFiles()` treats it that way by name.
+
+   So the sentence is pinned, and so is the pointer to the guard that enforces
+   it. The second half is the part worth having: a rule that cited a test which
+   had been renamed or deleted would read as governed while being unenforced,
+   which is the shape of defect this repository keeps finding.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("the permanent product rule is stated and enforced", () => {
+  const RULE =
+    "Measure the food system we can observe. Teach the biology accurately. Never"
+
+  it("states the rule verbatim", () => {
+    expect(DOC, "the permanent product rule is missing from CLAUDE.md").toContain(RULE)
+    expect(DOC).toContain("present the biology as personally measured when it isn't")
+  })
+
+  it("names all three clauses, not just the headline", () => {
+    for (const clause of [
+      "Measure what we observe",
+      "Teach the biology accurately",
+      "Never present the biology as personally measured",
+    ]) {
+      expect(DOC, `the rule's breakdown lost "${clause}"`).toContain(clause)
+    }
+  })
+
+  it("points at guards that actually exist", () => {
+    /*
+     * Named in the rule's "What enforces it" list. Asserted to be real files
+     * rather than merely mentioned, because a citation is only worth as much as
+     * the thing it cites.
+     */
+    for (const guard of [
+      "tests/unit/biotic-claims.test.ts",
+      "tests/unit/agent-loop-claims.test.ts",
+    ]) {
+      expect(DOC, `the rule no longer cites ${guard}`).toContain(guard)
+      expect(
+        readFileSync(join(process.cwd(), guard), "utf-8").length,
+        `${guard} is cited by CLAUDE.md but is empty or missing`,
+      ).toBeGreaterThan(1000)
+    }
+    expect(DOC).toContain("PERSONAL_BIOTIC_STATE")
+    expect(DOC).toContain("NO_PERSONAL_BIOTIC_NUMBER")
+  })
+
+  it("keeps the instruction that a new generator joins the behavioural guard", () => {
+    /*
+     * The operative sentence. Without it the rule reads as a description of
+     * past work rather than a requirement on the next piece — and the next
+     * generator of customer-facing prose is exactly where this breaks again.
+     */
+    expect(DOC).toMatch(/new generator of customer-facing prose belongs in\s+that file/)
+  })
+})

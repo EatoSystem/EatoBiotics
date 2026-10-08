@@ -17,6 +17,25 @@ let claudeThrows = false
 let guardResult: unknown = null // null = allowed
 let rlAllowed = true
 
+/*
+ * ── The V1 scope gate is opened FOR THESE TESTS, deliberately ──────────────
+ *
+ * Feedback capture is outside the V1 surface (see `lib/v1-scope.ts`), so the
+ * production constant is `false` and this handler refuses with 404 before it
+ * does anything at all.
+ *
+ * These tests keep the IMPLEMENTATION covered anyway, because the promise made
+ * when the surface was withdrawn was that switching it back on would be a small
+ * change. That promise is only true if the behaviour behind the gate is still
+ * proven. Deleting this file would have made reinstatement an unreviewed
+ * rewrite; skipping it would have hidden the same gap more quietly.
+ *
+ * `tests/unit/v1-surface-feedback.test.ts` asserts the opposite and is the one
+ * that speaks for production: nothing mounts the widget, and the gate is the
+ * first statement in the handler.
+ */
+vi.mock("@/lib/v1-scope", () => ({ FEEDBACK_CAPTURE_ENABLED: true }))
+
 vi.mock("@/lib/supabase-server", () => ({
   getUserFromRequest: async () => currentUser,
 }))
@@ -211,5 +230,23 @@ describe("/api/feedback retention and privacy", () => {
     await post({ message: "anon here" })
     const row = insertSpy.mock.calls[0][0] as Record<string, unknown>
     expect(row.user_id).toBeNull()
+  })
+})
+
+describe("the V1 scope gate", () => {
+  /**
+   * The other half of the mock at the top of this file. With the gate closed —
+   * which is production — the handler must refuse before touching anything,
+   * and that is asserted HERE rather than only in the surface guard, so the
+   * route's own suite covers both states.
+   */
+  it("refuses with 404 and does no work when capture is out of scope", async () => {
+    vi.resetModules()
+    vi.doMock("@/lib/v1-scope", () => ({ FEEDBACK_CAPTURE_ENABLED: false }))
+    // `post()` imports the route itself, so it picks up the mock above.
+    const res = await post({ message: "hello there" })
+    expect(res.status).toBe(404)
+    vi.doUnmock("@/lib/v1-scope")
+    vi.resetModules()
   })
 })

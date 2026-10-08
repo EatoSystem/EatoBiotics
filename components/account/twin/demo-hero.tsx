@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from "react"
 import { TodayStrip } from "./today-strip"
 import { TwinStage } from "./twin-stage"
 import { QuickLog, MOCK_QUICK_LOG_RESULT, type QuickLogResult } from "./quick-log"
-import { browserStore, dayKey, loadRitual, ritualSignals } from "@/lib/account/ritual"
+import { browserStore, dayKey, loadRitual, ritualCount } from "@/lib/account/ritual"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinVideo } from "@/lib/account/twin-figure"
@@ -38,11 +38,12 @@ export function DemoTwinHero({
     setReveal(r)
     document.getElementById("fs-stage")?.scrollIntoView({ behavior: "smooth" })
   }, [])
-  /* Light the demo stage with today's ritual signals (re-reads when the tab
-     regains focus, e.g. after ticking a signal further down the page). */
-  const [signals, setSignals] = useState(() => ritualSignals(loadRitual(null, dayKey())))
+  /* Brighten the demo stage with how much of today's ritual is logged
+     (re-reads when the tab regains focus, e.g. after ticking one further down
+     the page). 0R-5 replaced the per-check body coordinates with this count. */
+  const [ritualDone, setRitualDone] = useState(() => ritualCount(loadRitual(null, dayKey())))
   useEffect(() => {
-    const read = () => setSignals(ritualSignals(loadRitual(browserStore(), dayKey())))
+    const read = () => setRitualDone(ritualCount(loadRitual(browserStore(), dayKey())))
     read()
     window.addEventListener("focus", read)
     return () => window.removeEventListener("focus", read)
@@ -66,7 +67,7 @@ export function DemoTwinHero({
           setReveal(null)
           setQuickLogOpen(true)
         }}
-        signals={signals}
+        ritualCount={ritualDone}
       />
       <QuickLog open={quickLogOpen} onClose={() => setQuickLogOpen(false)} onReveal={onReveal} mock />
     </>

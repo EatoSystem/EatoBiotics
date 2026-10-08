@@ -48,6 +48,34 @@ export default defineConfig({
       // It does NOT enable new deterministic claims: those still require
       // EATOBIOTICS_ENABLE_PERSISTED_CONSULTATION_PREVIEW, which is unset here.
       VERCEL_ENV: "preview",
+      // A test-only admin secret so tests/e2e/publishing-exports.spec.ts can
+      // prove BOTH sides of the publishing-export gate: refused without a
+      // valid admin cookie, served with one. Without a secret configured,
+      // verifyAdminCookieEdge fails closed and only the refusal is testable,
+      // which would leave "an author can still do their job" unproven.
+      //
+      // It changes nothing for the other suites: an unauthenticated request
+      // is still refused, so the /cms default-deny assertions stand.
+      ADMIN_PASSWORD: "playwright-admin-secret",
+      // Experience 0 step 7. `/assessment/report` is V1_CORE — the live €49
+      // Personal Food System Report, and the only Report on the money path.
+      // Auditing it at the same evidentiary standard as Account, Assessment and
+      // the Twin means rendering it, and reaching it otherwise would require a
+      // settled Stripe checkout session.
+      //
+      // `isUnverifiedPaidFlowAllowed` (lib/paid-flow-policy.ts) requires BOTH
+      // this exact string AND a runtime it can prove is not production, and
+      // denies anything it does not recognise. With it, the page returns
+      // <FullReportClient tier="full" />, which composes the report CLIENT-SIDE
+      // from the assessment in localStorage — so the capture makes no Stripe
+      // call, no Supabase read and no payment, and the content it photographs
+      // is derived from answers the harness actually gave through the real UI.
+      //
+      // It changes REACHABILITY, not content: the same component, the same
+      // generators, the same copy. tests/e2e/audit-capture-reports.spec.ts
+      // asserts that explicitly, because a flag that changed what the document
+      // CLAIMS would make the whole capture worthless as evidence.
+      EATOBIOTICS_ALLOW_UNVERIFIED_PAID_FLOW: "true",
     },
   },
 })

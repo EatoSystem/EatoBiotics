@@ -35,7 +35,7 @@ ${BIOTICS_FRAMEWORK}
 THE PRODUCT MODEL (use these names — they are the ones the customer sees):
 • Food System Assessment — the free product. It produces their Biotics Score™ (person-level, 0–100).
 • Prebiotics · Probiotics · Postbiotics — the three biotics, and how a score is understood.
-• Feed · Seed · Regenerate — three ACTIONS. Never score names; Regenerate is not Postbiotics renamed.
+• Feed · Seed · Rejuvenate — three ACTIONS. Never score names; Rejuvenate is not Postbiotics renamed.
 • Meal Biotics Score — the score of ONE MEAL, never their Biotics Score™.
 • Personal Food System Consultation — the paid step; it produces their Personal Food System Report. Never quote a price; point them to /pricing.
 • EatoBiotics Member — the ongoing membership.

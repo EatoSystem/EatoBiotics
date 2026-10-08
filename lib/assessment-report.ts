@@ -1,6 +1,6 @@
 /* ── Full Report Generation — Prebiotics / Probiotics / Postbiotics ───── */
 
-import type { AssessmentResult, PillarInsight } from "./assessment-scoring"
+import type { AssessmentResult } from "./assessment-scoring"
 import type { PillarKey } from "./assessment-data"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -14,7 +14,34 @@ export interface FoodRecommendation {
 export interface PillarDeepDive {
   pillar: PillarKey
   label: string
-  score: number
+  /*
+   * ══ 0R-6 · `P0-SCIENCE-07` — `score` IS GONE FROM THIS CONTRACT ═══════════
+   *
+   * It rendered as **Probiotics 33/100 · Prebiotics 50/100 · Postbiotics
+   * 61/100** in `full-report-client.tsx`, beside summaries reading *"Your
+   * probiotics score has clear room to grow"*. A number, a denominator and a
+   * possessive, three times over — three of the forms the permanent product
+   * rule names, in one block.
+   *
+   * Removed from the TYPE rather than merely unrendered: a renderer cannot
+   * show a per-Biotic score it is not handed, which is the same reasoning that
+   * took the prop off `BioticsProgressPanel`, `ScoreRing`'s `percentile`,
+   * `MealCard`'s `biotics` and `QuickLogResult`'s three fields.
+   *
+   * ── AND IT CLOSED THE SELECTION AS A CONSEQUENCE ─────────────────────────
+   *
+   * `generateFullReport` sorted the deep dives `a.score - b.score` — "weakest
+   * first (most actionable at top)" — and `full-report-client.tsx` then read
+   * `deepDives[0].pillar` as the member's weakest pathway and fed it to the
+   * food swaps. So a per-Biotic ranking chose both the ORDER of the sections
+   * and WHICH swaps a customer saw.
+   *
+   * With no score on the contract the sort cannot exist, so the order is the
+   * static `PILLAR_ORDER` and `deepDives[0]` is a constant rather than a
+   * verdict. The ranking is gone by construction, which is why `-07` needed no
+   * authorised replacement selection source — unlike `P0-SCIENCE-06`, where the
+   * Report genuinely must choose.
+   */
   color: string
   gradient: string
   icon: string
@@ -55,7 +82,8 @@ function reportPillarKey(pillar: string): "feed" | "seed" | "heal" {
 
 const PILLAR_DEEP_DIVES: Record<
   string,
-  Omit<PillarDeepDive, "score" | "pillar" | "summary">
+  // 0R-6 · `"score"` left this Omit with the field it omitted.
+  Omit<PillarDeepDive, "pillar" | "summary">
 > = {
   feed: {
     label: "Prebiotics",
@@ -124,7 +152,7 @@ const PILLAR_DEEP_DIVES: Record<
       },
       {
         food: "Sauerkraut (unpasteurised)",
-        why: "Naturally fermented cabbage contains hundreds of millions of live bacteria per gram — including Lactobacillus plantarum, linked to immune modulation.",
+        why: "Naturally fermented cabbage. Whether it is still unpasteurised when it reaches you is the thing that matters: buy refrigerated, since shelf-stable jars are usually heat-treated after fermentation.",
         howToUse: "1–2 tablespoons alongside meals. Refrigerated, unpasteurised versions only.",
       },
       {
@@ -139,14 +167,14 @@ const PILLAR_DEEP_DIVES: Record<
       },
       {
         food: "Kombucha (low sugar)",
-        why: "Fermented tea containing organic acids and live cultures. Lower-sugar versions provide the microbial benefit without the glycaemic spike.",
+        why: "A fermented tea, which is where its organic acids come from. Lower-sugar versions keep that without the glycaemic spike.",
         howToUse: "Drink 150–200ml with or between meals. Choose brands with <5g sugar per 100ml.",
       },
     ],
     reduce: [
       {
         food: "Pasteurised fermented products",
-        reason: "Pasteurisation kills the live cultures that give fermented foods their gut benefit. Yoghurts and krauts labelled 'heat-treated' after fermentation provide no live bacteria.",
+        reason: "Pasteurisation after fermentation kills the microorganisms. Yoghurts and krauts labelled 'heat-treated' have been fermented and then heated, so they arrive without them — which is the distinction worth learning to read on a label.",
       },
       {
         food: "Frequent alcohol",
@@ -228,12 +256,25 @@ const ALL_FOODS: PersonalisedFood[] = [
 
 /* ── 30-day plan template (pillar-aware) ────────────────────────────── */
 
-function buildWeeklyHabits(
-  week: number,
-  sortedInsights: PillarInsight[]
-): { habit: string; detail: string }[] {
-  const weakest = reportPillarKey(sortedInsights[0]?.pillar ?? "feed")
-  const second = reportPillarKey(sortedInsights[1]?.pillar ?? "seed")
+/*
+ * ══ 0R-6R · THE WEEKLY HABITS ARE NO LONGER CHOSEN BY A RANKING ════════════
+ *
+ * This took `sortedInsights` — `insights` sorted ascending by per-pillar score
+ * — and read `[0]` and `[1]` as the member's weakest and second-weakest
+ * pathway, then picked two of its three habit pools by those keys.
+ *
+ * 0R-6 removed the DEEP-DIVE sort from this module and left this one, because
+ * the ruling in hand at the time was about the live paid Report and this module
+ * is latent (`FullReportClient`, behind `isUnverifiedPaidFlowAllowed`). That
+ * left a working copy of the retired selector one environment variable from a
+ * customer, which is the thing "repair the construct, not the sentence" exists
+ * to prevent.
+ *
+ * The pools are unchanged reviewed copy. The selection is now fixed: feed,
+ * seed and heal in `PILLAR_ORDER`, so every reader gets the same three habits
+ * for a given week.
+ */
+function buildWeeklyHabits(week: number): { habit: string; detail: string }[] {
 
   const HABIT_POOLS: Record<string, string[][]> = {
     feed: [
@@ -244,7 +285,7 @@ function buildWeeklyHabits(
     seed: [
       ["Add one fermented food to one meal daily", "Natural yoghurt at breakfast, sauerkraut with lunch, miso broth at dinner. Rotate them across the week."],
       ["Buy three fermented foods you haven't tried", "Kefir, kimchi, and kombucha are good starting points. Introduce one new one each week."],
-      ["Make miso broth your daily snack or side", "Dissolve a teaspoon of miso paste in warm water. Takes 60 seconds and delivers live cultures."],
+      ["Make miso broth your daily snack or side", "Dissolve a teaspoon of miso paste in warm — not boiling — water. Takes 60 seconds, and keeping it off the heat is what preserves the fermentation."],
     ],
     heal: [
       ["Set three fixed meal times and protect them", "Choose your usual breakfast, lunch, and dinner window. Within 30 minutes is close enough to stabilise your gut rhythm."],
@@ -253,9 +294,9 @@ function buildWeeklyHabits(
     ],
   }
 
-  const h1 = (HABIT_POOLS as Record<string, string[][]>)[weakest]?.[(week - 1) % 3] ?? HABIT_POOLS.heal[(week - 1) % 3]
-  const h2 = (HABIT_POOLS as Record<string, string[][]>)[second]?.[(week - 1) % 3] ?? HABIT_POOLS.feed[(week - 1) % 3]
-  const h3 = HABIT_POOLS["heal"][(week - 1) % 3]
+  const h1 = HABIT_POOLS.feed[(week - 1) % 3]
+  const h2 = HABIT_POOLS.seed[(week - 1) % 3]
+  const h3 = HABIT_POOLS.heal[(week - 1) % 3]
 
   return [
     { habit: h1[0], detail: h1[1] },
@@ -267,38 +308,43 @@ function buildWeeklyHabits(
 /* ── Main export ────────────────────────────────────────────────────── */
 
 export function generateFullReport(result: AssessmentResult): FullReport {
-  const { subScores, insights } = result
+  const { insights } = result
 
   // Build deep dives with score-aware summaries
   const deepDives: PillarDeepDive[] = (
     Object.keys(PILLAR_DEEP_DIVES) as PillarKey[]
   ).map((key) => {
-    const score = subScores[key as keyof typeof subScores] ?? 0
     const meta = PILLAR_DEEP_DIVES[key]
     const insight = insights.find((i) => i.pillar === key)
 
+    /*
+     * 0R-6 · the summary no longer branches on a per-Biotic score, and neither
+     * fallback states one. The reviewed per-pillar insight is used when the
+     * scoring engine supplies one; the fallback describes what the food
+     * recommendations below are for, which is the thing this section can
+     * honestly say.
+     */
     const summary =
-      score >= 65
-        ? (insight?.strength ?? `Your ${meta.label.toLowerCase()} score is strong — keep it consistent and explore ways to diversify further.`)
-        : (insight?.opportunity ?? `Your ${meta.label.toLowerCase()} score has clear room to grow — the food recommendations below are your most direct lever.`)
+      insight?.strength ??
+      insight?.opportunity ??
+      `The food recommendations below are the most direct way to bring more ${meta.label.toLowerCase()}-supporting foods into meals you already eat.`
 
-    return { pillar: key, score, summary, ...meta }
+    return { pillar: key, summary, ...meta }
   })
 
-  // Sort deep dives weakest first (most actionable at top)
-  deepDives.sort((a, b) => a.score - b.score)
+  // 0R-6 · the "weakest first" sort is gone with the score it sorted by. The
+  // order is PILLAR_ORDER, which is static and the same for every customer.
 
-  // Build personalised food list — prioritise foods that hit weakest pillars
-  const sortedInsights = [...insights].sort((a, b) => a.score - b.score)
-  const weakPillars: Array<"feed" | "seed" | "heal"> = sortedInsights
-    .slice(0, 3)
-    .map((i) => reportPillarKey(i.pillar))
-
-  const scored = ALL_FOODS.map((f) => {
-    const pillarHits = f.pillars.filter((p) => weakPillars.includes(reportPillarKey(p))).length
-    const priorityScore = f.priority === "high" ? 2 : 1
-    return { ...f, _score: pillarHits * 2 + priorityScore }
-  })
+  /*
+   * 0R-6R · the food list is no longer ordered by the weakest pillars.
+   *
+   * It was `sortedInsights.slice(0, 3)` — an argmin over the three per-pillar
+   * scores — scoring each food by how many of the member's "weak" pillars it
+   * hit. So which twelve foods a reader saw, and in what order, was chosen by a
+   * ranking the product may not make. The catalogue's own reviewed `priority`
+   * field is what orders it now, which is a property of the FOOD.
+   */
+  const scored = ALL_FOODS.map((f) => ({ ...f, _score: f.priority === "high" ? 2 : 1 }))
   scored.sort((a, b) => b._score - a._score)
   const top12Foods = scored.slice(0, 12).map(({ _score: _, ...f }) => f)
 
@@ -308,25 +354,28 @@ export function generateFullReport(result: AssessmentResult): FullReport {
       week: 1,
       title: "Foundation",
       focus: "Establish your two non-negotiable daily habits and track them consistently.",
-      habits: buildWeeklyHabits(1, sortedInsights),
+      habits: buildWeeklyHabits(1),
     },
     {
       week: 2,
       title: "Build",
       focus: "Add your fermented foods routine and begin expanding your plant variety.",
-      habits: buildWeeklyHabits(2, sortedInsights),
+      habits: buildWeeklyHabits(2),
     },
     {
       week: 3,
       title: "Deepen",
-      focus: "Push your Prebiotics score up and fine-tune how your body responds after meals.",
-      habits: buildWeeklyHabits(3, sortedInsights),
+      // 0R-6 · was "Push your Prebiotics score up and fine-tune how your body
+      // responds after meals." — a possessive per-Biotic score plus a bodily
+      // response to an action. Neither is measured.
+      focus: "Widen the range of plants across the week, and keep the rhythm you have established.",
+      habits: buildWeeklyHabits(3),
     },
     {
       week: 4,
       title: "Sustain",
       focus: "Lock in the habits that have worked and identify your next growth area.",
-      habits: buildWeeklyHabits(4, sortedInsights),
+      habits: buildWeeklyHabits(4),
     },
   ]
 
@@ -608,7 +657,7 @@ function buildPremiumAddons(
         "Drizzle of sesame oil",
         "Optional: 1 soft-boiled egg",
       ],
-      method: "Dissolve miso in warm (not boiling) water to preserve live cultures. Add ginger, greens, and nori. Top with spring onion and sesame oil. Drink immediately. This quick lunch delivers live cultures, prebiotic fibre, and minerals in under 10 minutes.",
+      method: "Dissolve miso in warm (not boiling) water — boiling undoes the fermentation. Add ginger, greens, and nori. Top with spring onion and sesame oil. Drink immediately. A fermented food, plant fibre and minerals in under 10 minutes.",
     },
     heal: {
       name: "Golden Gut Overnight Oats",

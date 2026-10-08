@@ -7,6 +7,7 @@ import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
 import { CountryLeaderboard } from "@/components/waitlist/country-leaderboard"
 import { resultFromLead } from "@/lib/waitlist-result"
 import { ENGINES, type QuickPillar } from "@/lib/quick-assessment"
+import { pillarBehaviour } from "@/lib/pillars"
 import { marketByName, DEFAULT_MARKET } from "@/lib/market"
 import { foodSet } from "@/lib/foods-by-country"
 
@@ -123,16 +124,28 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
         </div>
       </section>
 
-      {/* Strongest + biggest opportunity */}
+      {/* Strongest + biggest opportunity
+        *
+        * These printed the Biotic's own label — "Biggest opportunity:
+        * Postbiotics" — which is a personal Biotic state in words rather than
+        * digits, and POSTBIOTICS_INFERENCE_BOUNDARY prohibits "low
+        * Postbiotics" by name. They now name the food behaviour the questions
+        * actually asked about, via lib/pillars.ts's PILLAR_BEHAVIOUR, which is
+        * also the thing a person can act on. The Biotics keep their section
+        * above; only the personal claim goes. */}
       <section className="mt-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-3xl border border-border bg-card p-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">Strongest engine</p>
-          <p className="mt-1 font-serif text-lg font-bold text-foreground">{strongest?.label}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">Working well</p>
+          <p className="mt-1 font-serif text-lg font-bold text-foreground">
+            {pillarBehaviour(strongest?.label) ?? strongest?.label}
+          </p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Keep it up — it&rsquo;s doing real work for your gut.</p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-6">
           <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-orange)]">Biggest opportunity</p>
-          <p className="mt-1 font-serif text-lg font-bold text-foreground">{weakest?.label}</p>
+          <p className="mt-1 font-serif text-lg font-bold text-foreground">
+            {pillarBehaviour(weakest?.label) ?? weakest?.label}
+          </p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">A good place to create momentum from here.</p>
         </div>
       </section>
@@ -149,7 +162,7 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl p-4" style={{ background: "color-mix(in srgb, var(--icon-teal) 7%, transparent)" }}>
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>Live foods (Probiotics)</p>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>Fermented foods (Probiotics)</p>
               <p className="mt-1 text-sm text-foreground/80">{foods.fermented}</p>
             </div>
             <div className="rounded-2xl p-4" style={{ background: "color-mix(in srgb, var(--icon-green) 7%, transparent)" }}>

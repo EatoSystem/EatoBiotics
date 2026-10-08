@@ -30,7 +30,7 @@ export const STAGE_META: Record<
   },
   understand: {
     label: "Understand",
-    meaning: "See your Food System Score and three-biotics profile — strengths and gaps.",
+    meaning: "See your Biotics Score™ and three-biotics profile — strengths and gaps.",
   },
   observe: {
     label: "Observe",

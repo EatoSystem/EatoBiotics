@@ -27,6 +27,12 @@ Fail-closed items — the feature is OFF or erroring without them:
 
 - [ ] `CRON_SECRET` — ALL cron routes return 503 without it
 - [ ] `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) — admin login fails closed
+- [ ] `UNSUBSCRIBE_SECRET` — **required.** Without it no unsubscribe token can
+      be signed, so the RFC 8058 one-click `List-Unsubscribe` header is omitted
+      entirely and mail clients show no one-click button. The footer link and
+      the /unsubscribe page still work. There is deliberately NO fallback: a
+      signing secret that lives in the repository would let anyone opt a
+      stranger out of their own mail
 - [ ] `STATSIG_SERVER_KEY` — without it every server funnel event (signup,
       first meal, checkout, churn) is silently dropped
 - [ ] `NEXT_PUBLIC_POSTHOG_KEY` (+ host) — browser analytics & error capture
@@ -38,26 +44,41 @@ Fail-closed items — the feature is OFF or erroring without them:
 - [ ] `NEXT_PUBLIC_SITE_URL=https://eatobiotics.com`
 - [ ] Optional: `ELEVENLABS_API_KEY` + `ELEVENLABS_AGENT_ID` (voice), promo coupon IDs
 
-## 3. Remove the dev gate fallback
+## 3. Decide the preview gate explicitly
 
-- [ ] `lib/dev-password-gate.ts` contains a TEMPORARY hardcoded fallback
-      password — **delete it** and set the gate env explicitly:
-      `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` (public launch) or a strong
-      `DEV_PASSWORD` (private beta).
+The hardcoded fallback password this section used to warn about is **already
+gone** from `lib/dev-password-gate.ts`, which now fails open rather than
+closed: with no `DEV_PASSWORD` and no explicit `EATOBIOTICS_PASSWORD_GATE`,
+the gate is OFF and the site is public. So this is a decision to make, not a
+deletion to perform.
+
+- [ ] Public launch → set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` (the
+      kill-switch always wins), **or**
+- [ ] Private beta → set a strong `DEV_PASSWORD`. Leaving both unset takes the
+      site public by default, which is the one outcome nobody should reach by
+      accident.
 
 ## 4. Cron schedule (vercel.json — verify after deploy)
 
+The V1 scope freeze reduced scheduled automation from nine jobs to **one**.
+
 | Route | Schedule | Purpose |
 |---|---|---|
-| `/api/weekly-checkin` | `0 8 * * 1` | Member weekly check-in generation |
-| `/api/email/week-inside` | `0 9 * * 1` | "Your Food System This Week" Monday story email |
-| `/api/stability/reminder` | `0 9 * * *` | Stability tracking nudge |
-| `/api/email/sequence` | `0 9 * * *` | Lifecycle sequences |
-| `/api/email/trial-winback` | `0 10 * * *` | Trial pre/post-expiry |
-| `/api/email/paid-onboarding` | `0 11 * * *` | Paid onboarding drip |
-| `/api/glp1/reminder` | `0 18 * * *` | GLP-1 daily log nudge |
+| `/api/feedback/retention` | `0 3 * * *` | Deletes `paid_report_intents` rows past their 30-day `expires_at` — the only thing enforcing that retention promise |
 
-- [ ] Each returns 503/401 when curled WITHOUT the bearer (fail-closed check).
+- [ ] It returns 503/401 when curled WITHOUT the bearer (fail-closed check).
+- [ ] It returns `{"ok":true}` with the bearer, and `deleted.paid_report_intents`
+      is a number rather than the job reporting a skip. A skip means the table
+      is missing, which would mean something is wrong with the deploy.
+
+**Dormant — on disk, protected by `CRON_SECRET`, but NOT scheduled.** Nothing
+here should run in V1, and finding any of them on the schedule means the set
+drifted: `/api/email/sequence`, `/api/weekly-checkin`, `/api/email/week-inside`,
+`/api/stability/reminder`, `/api/email/trial-winback`,
+`/api/email/paid-onboarding`, `/api/glp1/reminder`, `/api/feedback/digest`.
+
+`tests/unit/v1-cron-surface.test.ts` pins the scheduled set exactly, in both
+directions, so this table and `vercel.json` cannot drift apart silently.
 
 ## 5. Launch metrics (agree the definitions before day one)
 
@@ -69,6 +90,13 @@ Verify events fire in Statsig/PostHog on a production smoke run before launch.
 
 ## 6. Smoke test (production, one pass)
 
+> **Partly stale — not rewritten here.** Several rows below name surfaces that
+> Steps 3 and 5 took out of V1: `/digital-twin` is refused, the Twin and
+> QuickLog surfaces are Post-V1, and the week-inside cron is unscheduled. They
+> are left as written rather than quietly edited inside a verification phase;
+> reconciling this list is Step 10's job. **For the €49 journey, use §7 —
+> that is the current, authoritative commercial check.**
+
 - [ ] Assessment → results → magic link → `/account` (Twin renders, stage + mood)
 - [ ] QuickLog a meal (text AND photo) → score returns → Twin bursts → feed updates
 - [ ] Daily ritual taps persist after a hard refresh AND on a second device (Migration 36)
@@ -76,3 +104,37 @@ Verify events fire in Statsig/PostHog on a production smoke run before launch.
 - [ ] `/method`, `/digital-twin`, `/pricing` load logged-out; nav + footer links resolve
 - [ ] Week-inside cron: manual bearer curl → email received once, second run skipped (idempotent)
 - [ ] Share my Twin downloads a PNG on desktop and opens the share sheet on mobile
+
+---
+
+## 7. The €49 commercial journey (external verification — REQUIRED)
+
+The automated proof for the paid journey runs in a container with no Stripe
+credentials and no route to `api.stripe.com`, so it proves the **handlers** —
+real webhook signatures, duplicate/replayed/concurrent delivery, idempotency,
+and the entitlement window — against a **database double**. It proves nothing
+about this Stripe account's configuration, storage, or real email delivery.
+
+Those are a separate, human step:
+
+- [ ] Complete **`docs/v1-step7-commercial-runbook.md`** in Stripe **test
+      mode**, against a non-production deployment and a non-production Supabase
+      project. Record the sign-off block at the end.
+
+**Do not treat the €49 path as launch-verified until that runbook is signed
+off.** Step 7 is reported as *implementation and CI proof complete, external
+commercial verification pending* until then.
+
+### The one item that can block launch
+
+- [ ] **Runbook step R2 — which payment methods are enabled?**
+      `/api/checkout` sets no `payment_method_types`, so the enabled set comes
+      from the Stripe Dashboard. If any **delayed-notification** method is
+      reachable (SEPA Direct Debit, iDEAL, Bancontact, Sofort, Przelewy24,
+      BLIK, multibanco, customer balance), a buyer can pay €49 and receive
+      nothing: `checkout.session.completed` arrives `payment_status: "unpaid"`,
+      the handler breaks, the event is marked processed, and
+      `checkout.session.async_payment_succeeded` is not handled at all.
+      Current behaviour is pinned in `tests/unit/v1-paid-journey.test.ts`.
+      **All methods synchronous → deferred. Any delayed method → repair before
+      launch.**

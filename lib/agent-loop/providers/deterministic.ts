@@ -13,7 +13,8 @@ import type {
   AgentLoopRecommendation,
   BioticKey,
 } from "../types"
-import { BIOTIC_LABELS, BIOTIC_FOOD_HINTS } from "../biotics"
+import { BIOTIC_FOOD_HINTS } from "../biotics"
+import { behaviourFor } from "../behaviour"
 import { getSystem } from "../systems"
 import { LOOP_DISCLAIMER } from "../safety"
 import type { LoopIntelligenceProvider, ProviderContext } from "./provider"
@@ -67,14 +68,43 @@ export class DeterministicProvider implements LoopIntelligenceProvider {
       )
     }
 
-    improving.push(`${BIOTIC_LABELS[strongest]} remains your strongest area.`)
+    /*
+     * ── GATE 3.6: THESE SENTENCES NAME A FOOD PATTERN, NOT A BIOTIC ──────
+     *
+     * They used to read "Prebiotics remains your strongest area" and "Your
+     * Prebiotics look settled, while Postbiotics appear lower". The `why` built
+     * from that rationale renders on /account, which is V1_CORE — so a paying
+     * member was being told the state of their Postbiotics, which neither this
+     * provider nor anything upstream of it measures.
+     *
+     * `baseline.biotics.strongest/weakest` is still what RANKS them, and that
+     * is fine: it is a rank over the person's own answers, used to pick which
+     * food pattern to talk about. What changed is that the rank is reported as
+     * a pattern ("fermented foods") rather than as a Biotic ("Probiotics").
+     *
+     * Note the comparative is between the person's OWN patterns and carries no
+     * outcome — "looks like the greater opportunity", never "will improve".
+     */
+    /*
+     * `bioticsSource` decides BOTH the vocabulary and the attribution, because
+     * on /account these numbers are averaged meal sub-scores and on the
+     * foundation path they are assessment answers. Saying "your answers" for
+     * the first, or "eating rhythm" for a meal bucket that measures
+     * polyphenol-rich foods, is an unsupported claim about where a finding came
+     * from — small, and exactly the kind this gate exists to remove.
+     */
+    const src = baseline.bioticsSource
+    const described = src === "meals" ? "Your recent meals describe" : "Your answers described"
+
+    improving.push(`One of your stronger patterns: ${behaviourFor(strongest, src)}.`)
     needsAttention.push(
-      `${BIOTIC_LABELS[weakest]} appears lower — a gentle place to focus next.`,
+      `The bigger opportunity right now: ${behaviourFor(weakest, src)}.`,
     )
 
     const rationale =
-      `Your ${BIOTIC_LABELS[strongest]} look settled, while ${BIOTIC_LABELS[weakest]} ` +
-      `appear lower. Small, repeatable food changes here tend to move your Food System Score most.`
+      `${described} ${behaviourFor(strongest, src)} as one of your steadier patterns, ` +
+      `and ${behaviourFor(weakest, src)} as the greater opportunity. Small, repeatable ` +
+      `food changes here are usually the most direct place to start.`
 
     return {
       changes,
@@ -108,7 +138,7 @@ export class DeterministicProvider implements LoopIntelligenceProvider {
 
     const why =
       analysis.rationale +
-      ` Focusing on ${BIOTIC_LABELS[target]} supports the area with the most room to grow.`
+      ` Focusing on ${behaviourFor(target, baseline.bioticsSource)} is where there is the most room right now.`
 
     return {
       id: rid(),

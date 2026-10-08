@@ -1,30 +1,45 @@
 import type { ComponentType } from "react"
 import {
   UtensilsCrossed,
-  ScanLine,
-  Calendar,
   BookOpen,
   Library,
-  Zap,
   Mic,
-  Smartphone,
-  Orbit,
   Route,
+  LifeBuoy,
 } from "lucide-react"
-import { SYSTEMS, SYSTEM_KEYS, FAMILY_META, systemsByFamily, type SystemFamily } from "@/lib/systems"
 
 /**
  * lib/nav.ts — single source of truth for site navigation.
  *
- * Consumed by components/nav.tsx (header: mega menu + dropdowns) and
- * components/footer.tsx (full NAV_GROUPS columns) so the two can never drift.
+ * Consumed by components/nav.tsx (header) and components/footer.tsx (full
+ * NAV_GROUPS columns) so the two can never drift.
  *
- * Grouping model (product architecture):
- * - Food Systems → the platform itself, generated from the lib/systems.ts
- *   catalog (Foundation / Health / Life) — never hand-listed here.
- * - Food         → daily-use tools
- * - Learn        → content, media, and the how-it-works spine
- * Pricing and About are standalone top-level links; the CTA is always visible.
+ * ══ WHAT V1 NAVIGATION IS FOR ═══════════════════════════════════════════════
+ *
+ * V1 sells three things: the free Food System Assessment, the €49 Personal
+ * Food System Consultation, and EatoBiotics Member. Navigation exists to make
+ * that funnel findable and to let someone read the public library. It does not
+ * exist to advertise the platform's future.
+ *
+ * ══ WHY THE FOOD SYSTEMS MEGA MENU IS GONE ══════════════════════════════════
+ *
+ * It was generated from the lib/systems.ts catalog, and every destination in it
+ * — You, Family, Stability, Glucose, Mind, Performance, Recovery, Longevity,
+ * Pregnancy, Birth, Baby — is outside the V1 launch product and now refuses at
+ * runtime (see lib/v1-surface.ts). A menu of eleven doors that all answer 404
+ * is worse than no menu, and "Coming soon" on nine of them was already telling
+ * a launch visitor that most of what they can see is not for sale.
+ *
+ * The catalog itself is untouched. lib/systems.ts is still the product
+ * architecture, still drives the system landing pages, and reinstating the
+ * menu after launch means restoring this file's group and the routes'
+ * classification — not rebuilding anything.
+ *
+ * Grouping model, as it now stands:
+ * - Food  → the public food library
+ * - Learn → content, media, and the how-it-works spine
+ * Pricing, About and Help are standalone top-level links; the CTA is always
+ * visible.
  */
 
 export interface NavItem {
@@ -39,83 +54,29 @@ export interface NavGroup {
   items: NavItem[]
 }
 
-/* ── Food Systems (catalog-driven — the mega menu + footer column) ────────── */
-
-/** A mega-menu entry: a NavItem plus the system's visual identity + status. */
-export interface MegaMenuItem extends NavItem {
-  accent: string
-  gradient: string
-  comingSoon: boolean
-}
-
-export interface MegaMenuGroup {
-  family: SystemFamily
-  label: string
-  blurb: string
-  items: MegaMenuItem[]
-}
-
-function toMegaItem(key: (typeof SYSTEM_KEYS)[number]): MegaMenuItem {
-  const s = SYSTEMS[key]
-  return {
-    href: s.href,
-    label: s.label,
-    description: s.tagline,
-    icon: s.icon,
-    accent: s.accent,
-    gradient: s.gradient,
-    comingSoon: s.status !== "live",
-  }
-}
-
-/** Foundation / Health / Life sections for the header mega menu. */
-export const MEGA_MENU_GROUPS: MegaMenuGroup[] = (
-  ["foundation", "health", "life"] as SystemFamily[]
-).map((family) => ({
-  family,
-  label: FAMILY_META[family].label,
-  blurb: FAMILY_META[family].blurb,
-  items: systemsByFamily(family).map((s) => toMegaItem(s.key)),
-}))
-
-/* ── Full group config (footer renders all of this) ───────────────────────── */
+/* ── Group config (footer renders all of this) ────────────────────────────── */
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Food Systems",
-    // Generated from the catalog so the footer and menus can never drift from
-    // the product architecture in lib/systems.ts.
-    items: SYSTEM_KEYS.map((k) => {
-      const s = SYSTEMS[k]
-      return { href: s.href, label: s.label, description: s.tagline, icon: s.icon }
-    }),
-  },
-  {
     label: "Food",
     items: [
-      { href: "/food",    label: "Food Library",  description: "Every food profiled for your gut",      icon: UtensilsCrossed },
-      { href: "/analyse", label: "Score My Meal", description: "Describe a plate, get its Meal Biotics Score", icon: ScanLine },
-      { href: "/today",   label: "Today's Food",  description: "A new food spotlight, daily",            icon: Calendar },
+      { href: "/food", label: "Food Library", description: "Every food profiled for your gut", icon: UtensilsCrossed },
     ],
   },
   {
     label: "Learn",
     items: [
-      { href: "/digital-twin", label: "Your Food System",  description: "The living model behind EatoBiotics",      icon: Orbit },
-      { href: "/method",       label: "How It Works",      description: "The method, step by step",                  icon: Route },
-      { href: "/book",         label: "The Book",          description: "Read EatoBiotics chapter by chapter",      icon: BookOpen },
-      { href: "/books",        label: "The Trilogy",       description: "Three books. One complete system.",        icon: Library },
-      { href: "/gut-brain",    label: "Gut-Brain Science", description: "How your gut shapes your mind",            icon: Zap },
-      { href: "/podcast",      label: "The Podcast",       description: "Conversations about food & performance",   icon: Mic },
-      { href: "/app",          label: "The App",           description: "Your daily plate companion",               icon: Smartphone },
+      { href: "/method",    label: "How It Works",      description: "The method, step by step",              icon: Route },
+      { href: "/book",      label: "The Book",          description: "Read EatoBiotics chapter by chapter",   icon: BookOpen },
+      { href: "/books",     label: "The Trilogy",       description: "Three books. One complete system.",     icon: Library },
+      { href: "/podcast",   label: "The Podcast",       description: "Conversations about food & performance", icon: Mic },
+      { href: "/help",      label: "Help",              description: "Answers, and how to reach us",          icon: LifeBuoy },
     ],
   },
 ]
 
-/** The standard header dropdowns (the Food Systems group gets the mega menu). */
-export const HEADER_DROPDOWN_GROUPS: NavGroup[] = NAV_GROUPS.filter(
-  (g) => g.label === "Food" || g.label === "Learn",
-)
+/** The header dropdowns. */
+export const HEADER_DROPDOWN_GROUPS: NavGroup[] = NAV_GROUPS
 
 /** Standalone top-level header links rendered after the menus. */
 export const NAV_LINKS: Array<{ href: string; label: string }> = [

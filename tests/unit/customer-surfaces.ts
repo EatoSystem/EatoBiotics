@@ -115,6 +115,35 @@ export const ACCOUNT_SURFACES = [
   "components/account/monthly-progress-card.tsx",
   "components/account/seven-day-guide.tsx",
   "components/account/upgrade-gate.tsx",
+  /*
+   * ── GATE 3.6: THE PRODUCERS, NOT ONLY THE MOUNTER ─────────────────
+   *
+   * `live-dashboard.tsx` has been first in this list from the beginning. Every
+   * file BELOW was outside it — and those are the files that actually WRITE
+   * the sentences live-dashboard renders: the loop's rationale, the learning
+   * feed, the week story, the Inside You chapters, the body-map hotspots.
+   *
+   * So the guard read the importer and not the imported module, which is
+   * verbatim what this file's own docblock says went wrong with
+   * `biotics-prompt.ts` — the surface was listed, and the module that gave it
+   * its words was not. Gate 3.6 found five live personal-Biotic claims in
+   * here, including the member's three Biotic scores drawn onto a public PNG.
+   *
+   * A COPY SOURCE COUNTS AS A SURFACE, which this list already says of
+   * `dashboard-client-data.ts`. These are the same thing, generated at runtime.
+   */
+  // 0R-3. `ask-twin.tsx` was in NO corpus until P0-TRUST-05 was traced — the
+  // one live surface that offers the member a question to ask a model. Its
+  // claim was interpolated, so the behavioural guard in
+  // `agent-loop-claims.test.ts` is what actually reads it; this entry closes
+  // the coverage half.
+  "components/account/twin/ask-twin.tsx",
+  "components/account/twin/twin-stage.tsx",
+  "components/account/twin/twin-sections.tsx",
+  "components/account/twin/share-twin.tsx",
+  "components/account/twin/meal-reveal.tsx",
+  "components/agent-loop/NextBestActionCard.tsx",
+  "components/agent-loop/BioticsProgressPanel.tsx",
 ]
 
 /**
@@ -132,6 +161,10 @@ export const EMAIL_SURFACES = [
   "lib/email/trial-winback-email.ts",
   "lib/email/paid-report-email.ts",
   "lib/email/meal-analysis-email.ts",
+  // In NO guard's corpus until Tranche 2C, while carrying the same "Live
+  // Foods" pillar label the other three did. A group is only as good as its
+  // membership.
+  "lib/email/nudge-email.ts",
   "app/api/email/nurture/route.ts",
 ]
 
@@ -155,10 +188,69 @@ export const SAMPLE_REPORT_SURFACES = [
 ]
 
 /** Public marketing and commercial pages. */
+/**
+ * The Report family — Experience 0R-1.
+ *
+ * ══ WHY THIS LIST DID NOT EXIST ═════════════════════════════════════════════
+ *
+ * `P0-GUARD-02`. Not one report generator or component had ever been in any
+ * claims corpus, and `/assessment/report` is `V1_CORE_ROUTES:94` — the live €49
+ * product. So the one Report EatoBiotics actually sells was the least guarded
+ * surface in the repository.
+ *
+ * This is the THIRD instance of the same enforcement failure: Account was
+ * outside the scan (`P0-GUARD-01`), Assessment was outside the scan, Report was
+ * outside the scan. 0R-2's derivation exists so this is the last list anyone
+ * has to remember to write.
+ *
+ * ══ GENERATORS AND COMPONENTS, DELIBERATELY ═════════════════════════════════
+ *
+ * `build-food-system-report.ts` composes the sentence; `food-system-section.tsx`
+ * renders it. Gate 3.6 learned this the hard way — the guard read the importer
+ * and not the module that gave it its words. A COPY SOURCE COUNTS AS A SURFACE.
+ */
+export const REPORT_SURFACES = [
+  // The generators. `build-food-system-report.ts:457-469` composes
+  // `dominantPattern`, which is `P0-SCIENCE-06` — a personal Biotic ranking on
+  // the money path.
+  "lib/report/build-food-system-report.ts",
+  "lib/report/subscores.ts",
+  "lib/report/framing.ts",
+  "lib/report/addon-lens.ts",
+  // "what a paying customer actually receives" when generation fails.
+  "lib/fallback-paid-report.ts",
+  "lib/assessment-report.ts",
+  // The renderers.
+  "components/report/food-system-section.tsx",
+  "components/report/demo-report.tsx",
+  "components/assessment/full-report-client.tsx",
+] as const
+
 export const MARKETING_SURFACES = [
   "app/page.tsx",
+  // The holding page — the ONLY page a visitor sees while the password gate is
+  // on, and until Step 7B the only customer-facing surface no guard was
+  // reading. It linked to /waitlist ("See what's coming — Book, App & Course")
+  // and /waitlist sold "three launches", a pre-order price and waitlist-only
+  // early-bird pricing, none of which EatoBiotics has ever sold under the V1
+  // commercial model. That page is refused now; this one is guarded, which is
+  // the half that stops it happening again.
+  "app/enter/page.tsx",
+  "app/enter/waitlist-hero.tsx",
+  ...filesIn("components/waitlist"),
   "components/home/membership-teaser.tsx",
   "components/home/feed-seed-heal.tsx",
+  // The framework cards the holding page and /c/[country] actually render.
+  // app/enter/page.tsx joined this list in Step 7B, but the sections it renders
+  // did not, so the three vocabulary guards were reading a page wrapper while
+  // the copy on it stayed unguarded — the same shape as the gap that list was
+  // added to close.
+  "components/home/the-framework.tsx",
+  // The four-step explainer, on the homepage AND the holding page. It shipped
+  // "See your Food System Score instantly." — a banned term, on the only page a
+  // visitor can currently reach — and no guard was reading it. Same gap as
+  // the-framework.tsx above, found the same way: by looking, not by CI.
+  "components/home/how-it-works.tsx",
   "app/start/page.tsx",
   ...filesIn("components/start"),
   "app/pricing/page.tsx",
@@ -176,11 +268,33 @@ export const MARKETING_SURFACES = [
   "app/roadmap/page.tsx",
 ]
 
-/** Live system prompts. Judged separately — an instruction is not page copy. */
+/**
+ * Live system prompts. Judged separately — an instruction is not page copy.
+ *
+ * Three were missing until Tranche 2B, and the omission had teeth: a prompt
+ * sentence is regenerated into many customer-facing forms, in wording nobody
+ * reviews. `app/api/eatobiotic/route.ts` WAS listed and carried no claim of
+ * its own, because the claim lived in `lib/biotics-prompt.ts` — which was not
+ * listed. A guard reading the importer and not the imported module is the same
+ * gap `the-framework.tsx` and `how-it-works.tsx` fell through.
+ */
 export const AI_PROMPT_SURFACES = [
   "app/api/consult/route.ts",
   "app/api/demo/consult/route.ts",
   "app/api/eatobiotic/route.ts",
+  "app/api/report-chat/route.ts",
+  "app/api/food-intelligence/route.ts",
+  // The shared classifier and framework text behind /api/analyse,
+  // /api/analyse/stream, /api/analyse-plate, /api/create-plate and
+  // /api/eatobiotic — the prompt that actually assigns a Meal Biotics Score.
+  "lib/biotics-prompt.ts",
+  /*
+   * Gate 3.7. Behind /account/twin, which V1 refuses — listed anyway, because a
+   * prompt is where a removed claim waits patiently for the route to come back.
+   * Its system prompt told the model the member's "weakest biotic" and asked it
+   * for "what it feeds", months after every page had lost both.
+   */
+  "app/api/menu-scan/route.ts",
 ]
 
 /** Everything a customer can read, by group. */

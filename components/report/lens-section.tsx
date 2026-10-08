@@ -92,11 +92,14 @@ export function LensSection({ lens, chapterNumber }: { lens: FoodSystemLens; cha
             background: "color-mix(in srgb, var(--icon-teal) 7%, transparent)",
           }}
         >
+          {/*
+            * 0R-6R · the heading stays, the nominated Biotic underneath it is
+            * gone. "Where it matters most" followed by "Prebiotics" was the
+            * core report's argmin printed as a lens verdict; the `why` below
+            * now connects the lens to all three pathways instead.
+            */}
           <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-teal-text)]">
             Where it matters most
-          </p>
-          <p className="mt-2 text-base font-semibold text-foreground">
-            {PATHWAY_LABEL[lens.priorityConnection.pathway]}
           </p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {lens.priorityConnection.why}

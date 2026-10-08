@@ -22,7 +22,7 @@ const EXAMPLE = {
       score: 38,
       color: "var(--icon-teal-text)",
       gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
-      description: "Fermented & live foods",
+      description: "Fermented foods",
     },
     {
       label: "Postbiotics",

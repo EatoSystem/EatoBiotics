@@ -175,7 +175,7 @@ export function buildMealAnalysisEmail(opts: MealAnalysisEmailOpts): { subject: 
               <p style="margin: 0 0 6px; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; color: #3ab0a0; font-family: Arial, sans-serif;">Take the next step</p>
               <h2 style="margin: 0 0 12px; font-size: 26px; font-weight: bold; color: #222222; font-family: Georgia, serif; line-height: 1.3;">The Food System<br/>Inside You</h2>
               <p style="margin: 0 0 20px; font-size: 14px; color: #555555; font-family: Arial, sans-serif; line-height: 1.7; max-width: 440px; margin-left: auto; margin-right: auto;">
-                A 15-question Food System Assessment that produces your Biotics Score&trade; &mdash; your Prebiotics, Probiotics and Postbiotics, and where to start.
+                A 15-question Food System Assessment that produces your Biotics Score&trade; &mdash; built on Prebiotics, Probiotics and Postbiotics, and where to start.
               </p>
               <a href="https://eatobiotics.com/assessment"
                  style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 16px 36px; border-radius: 50px;">

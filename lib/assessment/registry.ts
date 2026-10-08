@@ -30,7 +30,7 @@ export interface AssessmentSummary {
   key: AssessmentKey
   kind: "foundation" | "health" | "life"
   label: string // "You", "Family", "Stability", …
-  scoreLabel: string // "Food System Score", "Stability Score", …
+  scoreLabel: string // "Biotics Score™", "Stability Score", …
   score: number // 0–100
   bandLabel: string // profile type / band, e.g. "Strong Foundation"
   bandDescription?: string
@@ -128,7 +128,7 @@ function fromAssessmentResult(
 
 function youSummary(): AssessmentSummary | null {
   const r = readLS<ResultStateLike>(LS.you)?.result
-  return r ? fromAssessmentResult("you", "foundation", "You", "Food System Score", r) : null
+  return r ? fromAssessmentResult("you", "foundation", "You", "Biotics Score™", r) : null
 }
 
 function familySummary(): AssessmentSummary | null {

@@ -13,7 +13,6 @@ interface ReportMembershipCTAProps {
    *  98/100 customer they could reach "100–100". */
   overall?: number
   /** Display label of the pathway the report chose to start with. */
-  priorityLabel?: string
   membershipBridge?: string
   membershipTier?: string
 }
@@ -55,13 +54,21 @@ const MEMBER_PLAN = {
  * degenerated to "100–100" for high scorers. Replaced by ContinuationCard:
  * the real current score, the report's own priority pathway, and what
  * membership is actually for — practising the plan, not receiving a number. */
-function ContinuationCard({
-  overall,
-  priorityLabel,
-}: {
-  overall: number
-  priorityLabel?: string
-}) {
+/*
+ * 0R-6R · `priorityLabel` is gone from this card.
+ *
+ * It was `PATHWAY_LABEL[foodSystem.systemSnapshot.priorityPathway]` — the core
+ * report's argmin — and it produced two sentences on the paid Report:
+ *
+ *     "Your plan starts with Prebiotics — membership is where you practise it."
+ *     "…watch your Prebiotics habits hold through ordinary weeks…"
+ *
+ * Both branches already had a non-ranked fallback, written for the case where
+ * no food-system block existed. Those fallbacks are now the only text, which is
+ * the whole repair: the card says the plan is set and membership is where it is
+ * practised, without naming one of three pathways as this reader's.
+ */
+function ContinuationCard({ overall }: { overall: number }) {
   return (
     <div
       className="rounded-2xl border-2 border-transparent p-5"
@@ -87,13 +94,10 @@ function ContinuationCard({
 
         <div className="flex-1">
           <p className="font-serif text-base font-bold text-foreground leading-snug">
-            {priorityLabel
-              ? `Your plan starts with ${priorityLabel} — membership is where you practise it.`
-              : "Your plan is set — membership is where you practise it."}
+            Your plan is set — membership is where you practise it.
           </p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            Log what you actually eat, watch your{" "}
-            {priorityLabel ? `${priorityLabel} habits` : "new habits"} hold through ordinary
+            Log what you actually eat, watch your new habits hold through ordinary
             weeks, and retake the assessment after your 30-day cycle. Your score is
             recalculated from your answers each time — individual outcomes vary.
           </p>
@@ -105,7 +109,6 @@ function ContinuationCard({
 
 export function ReportMembershipCTA({
   overall,
-  priorityLabel,
   membershipBridge,
   membershipTier,
 }: ReportMembershipCTAProps) {
@@ -136,7 +139,7 @@ export function ReportMembershipCTA({
 
       {/* Continuation — current score + priority, never a forecast */}
       {typeof overall === "number" && (
-        <ContinuationCard overall={overall} priorityLabel={priorityLabel} />
+        <ContinuationCard overall={overall} />
       )}
 
       {/* Membership bridge */}

@@ -29,3 +29,19 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# Experience 0 capture harness: per-capture manifest shards. Intermediate
+# only — SCREENSHOT_INDEX.md and manifest.json are the committed artefacts.
+docs/experience/audit/.manifest-shards/
+
+# Experience 0 full screenshot corpus. Deliberately OUT of normal Git history:
+# the account corpus alone is 33 MB and the remaining surfaces would triple it.
+# manifest.json carries every row with its SHA-256, a representative set is
+# committed under docs/experience/audit/screenshots/, and the complete corpus is
+# packaged at Experience 0 close onto the orphan branch `audit-artifacts`
+# (see docs/experience/audit/ARCHIVE.md). No Git LFS — the repository does not
+# use it, and a temporary evidence corpus is not a reason to adopt it.
+docs/experience/audit/corpus/
+
+# Sabotage harness bytecode
+tools/sabotage/__pycache__/

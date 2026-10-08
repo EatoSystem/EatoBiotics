@@ -359,16 +359,6 @@ export default function WaitlistPage() {
             </div>
           </div>
 
-          <ScrollReveal>
-            <div className="mt-12 text-center">
-              <Link
-                href="/food-systems"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green underline underline-offset-4 transition-colors hover:text-icon-teal"
-              >
-                Explore all Food Systems <ArrowUpRight size={15} />
-              </Link>
-            </div>
-          </ScrollReveal>
         </div>
       </section>
 

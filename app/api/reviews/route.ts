@@ -3,6 +3,7 @@ import { z } from "zod"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
+import { FEEDBACK_CAPTURE_ENABLED } from "@/lib/v1-scope"
 
 /*
   PRIVATE account-linked structured feedback. Migration 45 (`reviews`).
@@ -42,6 +43,20 @@ const postSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  /*
+   * OUT OF V1 SCOPE. Refused before anything else happens.
+   *
+   * Placed above parsing, auth, the rate limiter and the AI call on purpose:
+   * the previous behaviour spent a Claude extraction call and THEN failed on
+   * an insert into a table that does not exist in production, so every
+   * submission cost money and returned an apology. A refusal that arrives
+   * after the expensive work is not a refusal.
+   *
+   * 404 rather than 503: the surface is not temporarily unwell, it is not part
+   * of this product yet, and a 503 invites a retry that can never succeed.
+   */
+  if (!FEEDBACK_CAPTURE_ENABLED) return new NextResponse(null, { status: 404 })
+
   const user = await getUser()
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
 

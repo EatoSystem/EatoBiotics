@@ -1,4 +1,5 @@
 // lib/pdf/report-pdf.tsx
+import { heroTaglineFor } from "@/lib/report/framing"
 // Server-only — no "use client" directive
 // Renders branded EatoBiotics PDF reports using @react-pdf/renderer
 
@@ -20,12 +21,6 @@ import type {
 } from "@/lib/claude-report"
 import { bioticLabel, type BioticKey } from "@/lib/report/visual-token"
 import { FOOD_TOOL_COUNT } from "@/lib/report/build-food-system-report"
-import {
-  normalizeToBiotics,
-  orderedByNeed,
-  PATHWAY_LABEL,
-  type IncomingSubScores,
-} from "@/lib/report/subscores"
 import type { AssessmentProfile } from "@/lib/assessment-scoring"
 import { BRAND } from "./pdf-brand"
 import { FONT } from "./pdf-fonts"
@@ -37,9 +32,20 @@ export interface ReportPDFProps {
   tier: "starter" | "full" | "premium"
   leadName: string
   generatedAt: string
+  /*
+   * 0R-6R · `subScores` is gone from this prop.
+   *
+   * `PillarScoresSection` was its only reader, and leaving the field would hand
+   * every future renderer in this document the three per-Biotic scores to use.
+   * A compatibility field kept because today's renderer no longer reads it is
+   * the invitation, not the safeguard.
+   *
+   * Callers pass a wider `FreeScores` object, which structurally satisfies the
+   * narrower shape, so no caller changes — `app/api/submit-deep-assessment`
+   * is untouched, as CLAUDE.md requires.
+   */
   freeScores: {
     overall: number
-    subScores: IncomingSubScores
     profile: AssessmentProfile
   }
   report: DeepReport
@@ -194,41 +200,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Pillar row
-  pillarRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  pillarAccent: {
-    width: 4,
-    height: 20,
-    borderRadius: 2,
-    marginRight: 12,
-  },
-  pillarLabel: {
-    fontSize: 11,
-    fontFamily: FONT.sansBold,
-    color: BRAND.darkText,
-    width: 100,
-  },
-  pillarBarBg: {
-    flex: 1,
-    height: 6,
-    backgroundColor: BRAND.lightGrey,
-    borderRadius: 3,
-    marginHorizontal: 10,
-  },
-  pillarBarFill: {
-    height: 6,
-    borderRadius: 3,
-  },
-  pillarScore: {
-    fontSize: 11,
-    fontFamily: FONT.sansBold,
-    width: 36,
-    textAlign: "right",
-  },
+  // 0R-6R · the five `pillar*` styles went with `PillarScoresSection`:
+  // pillarRow, pillarAccent, pillarLabel, pillarBarBg, pillarBarFill and
+  // pillarScore. `pillarBarFill` is the one worth naming — a 6pt bar whose
+  // width was `${score}%`, which is the EXTENT sink by itself.
 
   // Two-column list
   twoColRow: {
@@ -521,52 +496,53 @@ function CoverPage({
 
       {/* Profile */}
       <Text style={styles.coverProfileType}>{profile.type}</Text>
-      <Text style={styles.coverTagline}>{profile.tagline}</Text>
+      {/*
+        * 0R-6R · the cover tagline goes through the same refusal as the web
+        * hero. It is `getProfile`'s string, and the `>= 65` branch reads
+        * "A solid base in your answers, with one pathway thinner than the
+        * rest" — a ranking with the pathway elided. This was found by the new
+        * PDF render proof: the web boundary was closed and the PDF read
+        * `profile.tagline` directly, which is the same construct one file over.
+        *
+        * `heroTaglineFor` returns null when it refuses; the cover then shows
+        * nothing rather than a substitute sentence, which is the honest answer.
+        */}
+      {heroTaglineFor({ profile }) && (
+        <Text style={styles.coverTagline}>{heroTaglineFor({ profile })}</Text>
+      )}
 
       <Footer />
     </Page>
   )
 }
 
-/* ── PillarScoresSection ─────────────────────────────────────────────── */
-
-function PillarScoresSection({ subScores }: { subScores: IncomingSubScores }) {
-  // Was: Object.entries(subScores) looked up in maps covering only the five
-  // legacy pillars. You-flow data has six keys (the canonical three plus the
-  // feed/seed/heal aliases) and none of them were in those maps, so the panel
-  // rendered six rows with no label and no colour. Normalizing first means one
-  // panel that is correct for both the You and Family flows.
-  const biotics = normalizeToBiotics(subScores)
-  // Render nothing rather than a broken panel — the PDF must still generate.
-  if (!biotics) return null
-
-  const rows = orderedByNeed(biotics)
-
-  return (
-    <View style={styles.spacer}>
-      <Text style={styles.sectionHeading}>Your 3 Biotics</Text>
-      {rows.map(([key, score]) => {
-        const color = PATHWAY_PDF_COLOR[key]
-        const barWidth = `${score}%` as `${number}%`
-        return (
-          <View key={key} style={styles.pillarRow}>
-            <View style={[styles.pillarAccent, { backgroundColor: color }]} />
-            <Text style={styles.pillarLabel}>{PATHWAY_LABEL[key]}</Text>
-            <View style={styles.pillarBarBg}>
-              <View
-                style={[
-                  styles.pillarBarFill,
-                  { backgroundColor: color, width: barWidth },
-                ]}
-              />
-            </View>
-            <Text style={[styles.pillarScore, { color }]}>{score}</Text>
-          </View>
-        )
-      })}
-    </View>
-  )
-}
+/* ══ 0R-6R · `PillarScoresSection` IS DELETED ═══════════════════════════════
+ *
+ * Heading: "Your 3 Biotics". Then, for each pathway, sorted WEAKEST FIRST by
+ * `orderedByNeed`:
+ *
+ *     a coloured accent bar   backgroundColor: PATHWAY_PDF_COLOR[key]
+ *     the Biotic's name       PATHWAY_LABEL[key]
+ *     a bar                   width: `${score}%`
+ *     the score               {score}, in the same per-Biotic colour
+ *
+ * Name, number, colour and A BAR WHOSE WIDTH IS THE SCORE — the exact four
+ * forms of `BioticBar`, which 0R-5 deleted from `twin-stage.tsx` after finding
+ * it rendering ungated for every member with a Twin. Reconstructed here in the
+ * PDF a paying customer downloads, with the ranking carried by the row order on
+ * top of it.
+ *
+ * It survived five previous tranches of this programme for a measurable reason,
+ * recorded because it is the generalisable one: `lib/pdf/report-pdf.tsx` was in
+ * no claims corpus until 0R-1, and in NO `VISUAL_MODULES` entry until 0R-6R.
+ * 0R-5 widened that instrument's sinks from colour to EXTENT specifically to
+ * catch a bar whose width is a score, and never pointed it at a PDF. The gap
+ * between widening a rule and widening the corpus it reads is where the worst
+ * remaining instance of the construct was living.
+ *
+ * Page 2 of the legacy PDF now opens on "Your Assessment", which is the
+ * narrative the page was always mostly made of.
+ */
 
 /* ── TextSection ─────────────────────────────────────────────────────── */
 
@@ -839,7 +815,7 @@ export function ReportPDF({
   freeScores,
   report,
 }: ReportPDFProps) {
-  const { overall, subScores, profile } = freeScores
+  const { overall, profile } = freeScores
   const retestDate = getRetestDate()
 
   // Type narrowing
@@ -864,10 +840,10 @@ export function ReportPDF({
         profile={profile}
       />
 
-      {/* ── Page 2: Pillar scores + Opening + Score interpretation ── */}
+      {/* ── Page 2: Opening + Score interpretation ──
+        * 0R-6R · the "Your 3 Biotics" panel opened this page. See the block
+        * where it used to be defined. */}
       <Page size="A4" style={styles.page}>
-        <PillarScoresSection subScores={subScores} />
-        <View style={styles.divider} />
         <TextSection
           heading="Your Assessment"
           body={starterReport.opening}

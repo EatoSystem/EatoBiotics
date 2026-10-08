@@ -195,21 +195,27 @@ describe("rejected input never reaches the lens", () => {
   })
 })
 
-describe("the lens never touches the core scores", () => {
-  it.each(ADDON_KEYS)("%s leaves bioticScores and the ranking identical", (addon) => {
+describe("the lens never touches the core report", () => {
+  /*
+   * 0R-6R · these read `before.bioticScores` and
+   * `systemSnapshot.priorityPathway`, neither of which exists on the product
+   * model any more. The invariant is unchanged and is now stated over the whole
+   * snapshot: building a lens must not mutate the core.
+   */
+  it.each(ADDON_KEYS)("%s leaves the core snapshot identical", (addon) => {
     const before = coreFor(SCORES.probioticsWeak)
-    const snapshot = JSON.stringify({ s: before.bioticScores, k: before.systemSnapshot })
+    const snapshot = JSON.stringify(before.systemSnapshot)
 
     buildAddonLens({ addon, answers: ANSWERS[addon].a, foodSystem: before })
 
-    expect(JSON.stringify({ s: before.bioticScores, k: before.systemSnapshot })).toBe(snapshot)
+    expect(JSON.stringify(before.systemSnapshot)).toBe(snapshot)
   })
 
-  it("identical core answers with different add-ons keep identical core scores", () => {
+  it("identical core answers with different add-ons keep an identical core", () => {
     const cores = ADDON_KEYS.map((addon) => {
       const core = coreFor(SCORES.probioticsWeak)
       buildAddonLens({ addon, answers: ANSWERS[addon].a, foodSystem: core })
-      return JSON.stringify(core.bioticScores) + "|" + core.systemSnapshot.priorityPathway
+      return JSON.stringify(core.systemSnapshot)
     })
     expect(new Set(cores).size).toBe(1)
   })
@@ -226,22 +232,45 @@ describe("the lens never touches the core scores", () => {
   })
 })
 
-describe("the priority connection is derived from the core report", () => {
-  it.each(ADDON_KEYS)("%s names the core's priority pathway, whatever the answers", (addon) => {
-    for (const sub of Object.values(SCORES)) {
-      const core = coreFor(sub)
-      const lens = buildAddonLens({ addon, answers: ANSWERS[addon].b, foodSystem: core })
-      expect(lens.priorityConnection.pathway).toBe(core.systemSnapshot.priorityPathway)
-    }
+/* ══ 0R-6R · THIS DESCRIBE ASSERTED THE CONSTRUCT, AND IS INVERTED ═════════
+ *
+ * It had two tests and both are now the defect, stated plainly:
+ *
+ *   "%s names the core's priority pathway, whatever the answers"
+ *       expect(lens.priorityConnection.pathway).toBe(core…priorityPathway)
+ *
+ *   "the same lens changes its priority copy when the weak pathway changes"
+ *       expect(new Set(whys).size).toBe(3)
+ *
+ * The second is the sharper one: it REQUIRED the lens chapter to say something
+ * different depending on which Biotic was weakest, and passing it meant the
+ * ranking was reaching customer-facing copy. A lens may not nominate its own
+ * priority — the old comment in `addon-lens.ts` said so — and 0R-6R adds the
+ * half that was missing: neither may the core.
+ */
+describe("0R-6R · the lens nominates no pathway, and neither does the core", () => {
+  it.each(ADDON_KEYS)("%s · the priority connection carries no pathway at all", (addon) => {
+    const lens = buildAddonLens({ addon, answers: ANSWERS[addon].b, foodSystem: coreFor(SCORES.probioticsWeak) })
+    expect(lens.priorityConnection).not.toHaveProperty("pathway")
+    // NON-VACUITY: the connection still says something.
+    expect(lens.priorityConnection.why.length).toBeGreaterThan(40)
   })
 
-  it("the same lens changes its priority copy when the weak pathway changes", () => {
-    for (const addon of ADDON_KEYS) {
-      const whys = Object.values(SCORES).map(
-        (sub) => buildAddonLens({ addon, answers: ANSWERS[addon].a, foodSystem: coreFor(sub) }).priorityConnection.why,
-      )
-      expect(new Set(whys).size, addon).toBe(3)
-    }
+  it.each(ADDON_KEYS)("%s · the priority copy is identical whichever Biotic is weakest", (addon) => {
+    const whys = Object.values(SCORES).map(
+      (sub) => buildAddonLens({ addon, answers: ANSWERS[addon].a, foodSystem: coreFor(sub) }).priorityConnection.why,
+    )
+    expect(
+      new Set(whys).size,
+      `${addon} — the lens's priority copy still varies with which Biotic is ` +
+        `weakest, so an unmeasured ranking is choosing what this chapter says.`,
+    ).toBe(1)
+  })
+
+  it.each(ADDON_KEYS)("%s · names no Biotic in its priority copy", (addon) => {
+    const { why } = buildAddonLens({ addon, answers: ANSWERS[addon].a, foodSystem: coreFor(SCORES.probioticsWeak) }).priorityConnection
+    expect(why).not.toMatch(/\b(?:[Pp]re|[Pp]ro|[Pp]ost)biotics?\b/)
+    expect(why).not.toMatch(/thinnest|weakest|strongest/i)
   })
 })
 

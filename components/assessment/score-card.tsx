@@ -5,13 +5,10 @@ import { Share2, Copy, Check, ExternalLink } from "lucide-react"
 
 interface ScoreCardProps {
   score: number
-  feed: number
-  seed: number
-  heal: number
   profile: string
 }
 
-export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) {
+export function ScoreCard({ score, profile }: ScoreCardProps) {
   const [copied, setCopied] = useState(false)
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
@@ -26,14 +23,19 @@ export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) 
   // They did not: this sent prebiotics/probiotics/postbiotics while the route read
   // feed/seed/heal, so every generated card rendered 0 / 0 / 0. The route now
   // accepts both spellings, which also repairs cards shared before this fix.
-  const ogImageUrl = `${siteUrl}/api/score-card?score=${score}&feed=${feed}&seed=${seed}&heal=${heal}&profile=${encodeURIComponent(profile)}`
+  //
+  // The three sub-scores are no longer SENT, because the image no longer renders
+  // them — a number per Biotic is a personal biological claim. The route keeps
+  // parsing both spellings regardless, so links shared before this still resolve;
+  // it simply has nothing to draw with them.
+  const ogImageUrl = `${siteUrl}/api/score-card?score=${score}&profile=${encodeURIComponent(profile)}`
 
   async function handleShare() {
     try {
       if (navigator.share) {
         await navigator.share({
           title: `My Biotics Score: ${score}/100`,
-          text: `My Prebiotics, Probiotics, and Postbiotics scores are ${feed}, ${seed}, and ${heal}. Take the free Food System Assessment to discover yours.`,
+          text: `My Biotics Score is ${score}/100 — ${profile}. Take the free Food System Assessment to discover yours.`,
           url: shareUrl,
         })
       } else {
@@ -54,9 +56,9 @@ export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) 
   }
 
   const pillars = [
-    { label: "Prebiotics", score: feed, color: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" },
-    { label: "Probiotics", score: seed, color: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" },
-    { label: "Postbiotics", score: heal, color: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" },
+    { label: "Prebiotics", color: "var(--icon-lime)" },
+    { label: "Probiotics", color: "var(--icon-teal)" },
+    { label: "Postbiotics", color: "var(--icon-yellow)" },
   ]
 
   const scoreColor =
@@ -111,20 +113,24 @@ export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) 
               <p className="mt-1 text-xs text-white/30">/100</p>
             </div>
 
-            {/* Pillar bars */}
-            <div className="flex flex-1 flex-col gap-2.5">
-              {pillars.map(({ label, score: pScore, color, gradient }) => (
-                <div key={label}>
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-white/60">{label}</span>
-                    <span className="text-xs font-bold" style={{ color }}>{pScore}</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pScore}%`, background: gradient }}
-                    />
-                  </div>
+            {/* The three Biotics, named — with no personal number.
+              *
+              * This rendered a bar and a value per Biotic, and the share text
+              * read "My Prebiotics, Probiotics, and Postbiotics scores are X,
+              * Y, Z". A per-Biotic number is a personal biological state,
+              * which POSTBIOTICS_INFERENCE_BOUNDARY prohibits for Postbiotics
+              * by name and which strict ISAPP makes unmeasurable by
+              * questionnaire for all three. The Biotics stay — they are the
+              * foundation the card is about — and only the claim goes. */}
+            <div className="flex flex-1 flex-col gap-2">
+              {pillars.map(({ label, color }) => (
+                <div key={label} className="flex items-center gap-2.5">
+                  <span
+                    aria-hidden
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: color }}
+                  />
+                  <span className="text-xs font-semibold text-white/60">{label}</span>
                 </div>
               ))}
             </div>

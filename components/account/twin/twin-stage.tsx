@@ -17,7 +17,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, Leaf, Target, Utensils, UtensilsCrossed, X } from "lucide-react"
+import { ArrowRight, Target, Utensils, UtensilsCrossed, X } from "lucide-react"
 import { HeroVideo } from "@/components/hero-video"
 import { DigitalTwinFigure } from "@/components/digital-twin/parts"
 import { MealReactionBurst } from "./meal-reaction"
@@ -28,12 +28,12 @@ import type { QuickLogResult } from "./quick-log"
 import { systemMapState, type SystemHotspotKey, type SystemHotspotState } from "@/lib/account/system-map"
 import { stageMood, type StageMood } from "@/lib/account/stage-mood"
 import { twinEvolution } from "@/lib/account/evolution"
-import { browserStore, dayKey, loadRitual, ritualCount } from "@/lib/account/ritual"
-import { auraGradientForBiotic } from "@/lib/account/twin-visual"
+// `countRitual` is aliased: the component now takes a `ritualCount` PROP.
+import { browserStore, dayKey, loadRitual, ritualCount as countRitual } from "@/lib/account/ritual"
+import { auraGradientForTone, restingAuraGradient } from "@/lib/account/twin-visual"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVideo } from "@/lib/account/twin-figure"
-import type { BioticKey } from "@/lib/agent-loop/types"
 
 const STAGE_BG = "linear-gradient(175deg, #0B1607 0%, #122208 55%, #16290F 100%)"
 const CREAM = "#FDFBF7"
@@ -51,17 +51,6 @@ const LABEL_ANCHOR: Record<SystemHotspotKey, { x: number; y: number; align: "lef
   defence: { x: 6, y: 28, align: "right" },
   digestion: { x: 90, y: 54, align: "left" },
   energy: { x: 8, y: 76, align: "right" },
-}
-
-const BIOTIC_NAME: Record<BioticKey, string> = {
-  prebiotics: "Prebiotics",
-  probiotics: "Probiotics",
-  postbiotics: "Postbiotics",
-}
-const BIOTIC_COLOR: Record<BioticKey, string> = {
-  prebiotics: "#A8E063",
-  probiotics: "#2DAA6E",
-  postbiotics: "#F5C518",
 }
 
 /* ── 14-day sparkline of meal signals ─────────────────────────────────────── */
@@ -110,25 +99,46 @@ function Sparkline({ twin }: { twin: FoodSystemDigitalTwin }) {
   )
 }
 
-/* ── Dark biotic bar with shimmer fill ────────────────────────────────────── */
-
-function BioticBar({ biotic, score, delay }: { biotic: BioticKey; score: number; delay: number }) {
-  const c = BIOTIC_COLOR[biotic]
-  return (
-    <div className="eb-reveal" style={{ animationDelay: `${delay}ms` }}>
-      <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(253,251,247,0.75)" }}>{BIOTIC_NAME[biotic]}</span>
-        <span className="font-serif text-sm font-bold" style={{ color: c }}>{score}</span>
-      </div>
-      <div className="mt-1.5 h-[7px] overflow-hidden rounded-full" style={{ background: "rgba(253,251,247,0.10)" }}>
-        <div
-          className="eb-shimmer h-full rounded-full transition-[width] duration-1000"
-          style={{ width: `${Math.max(4, Math.min(100, score))}%`, backgroundColor: c, backgroundBlendMode: "overlay" }}
-        />
-      </div>
-    </div>
-  )
-}
+/* ══ 0R-5 · `BioticBar` IS DELETED — THE WORST OF THE LIVE SITES ════════════
+ *
+ * A SIXTH live site of `P0-SCIENCE-01`'s class, in no register entry, rendered
+ * UNGATED in the stage cockpit for every member with a Twin on `/account`:
+ *
+ *     PREBIOTICS                                              64
+ *     ████████████████░░░░░░░░░░░░
+ *     PROBIOTICS                                              41
+ *     ██████████░░░░░░░░░░░░░░░░░░
+ *     POSTBIOTICS                                             57
+ *     ██████████████░░░░░░░░░░░░░░
+ *
+ * The Biotic name, the member's score as a number, a per-Biotic colour, and a
+ * bar whose width IS the score. This is the "Your Biotics Profile" construct
+ * 0R-4 retired from `live-dashboard.tsx`, reconstructed in a different
+ * component out of real data — the same thing Gate 3.6 recorded when the
+ * hotspot panel rebuilt the reveal's model, and the fourth time this programme
+ * has found one construct rebuilt somewhere else.
+ *
+ * ── WHY NEITHER AUDIT SAW IT ─────────────────────────────────────────────
+ *
+ * Two compounding reasons, both already documented in this repository as the
+ * known blindness:
+ *
+ *   • `twin-stage.tsx` was SOURCE-ONLY audited in Experience 0 (`/account/twin`
+ *     is POST_V1), and the component is mounted on live `/account` by
+ *     `live-dashboard.tsx:1113` — so the audit read it in the wrong context.
+ *   • the Biotic words were in `BIOTIC_NAME[biotic]`, a lookup table. A regex
+ *     over the corpus sees `${BIOTIC_NAME[biotic]}` and no Biotic at all; this
+ *     is the ninth instance of exactly that, and `agent-loop-claims.test.ts`
+ *     exists because of the first eight.
+ *
+ * It was found by 0R-5 widening `biotic-visual-encoding.test.ts`'s sinks from
+ * colour to EXTENT — the bar's `width:` — which is the promise that file's
+ * header made in 0R-2 and did not implement.
+ *
+ * The cockpit keeps the Food System Score, the delta since baseline, the
+ * 14-day meal-signal sparkline and the next best action. Nothing replaces the
+ * bars: there is no per-Biotic figure the product is entitled to show.
+ */
 
 /* ── Ambient life — slow microbes drifting + nutrients rising inside the orb ──
    Calm, not gimmicky: low-opacity brand-green motes on the proven eb-float-big /
@@ -208,7 +218,7 @@ export function TwinStage({
   revealMemory = null,
   onRevealDone,
   onLogAnother,
-  signals = [],
+  ritualCount = 0,
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -238,9 +248,24 @@ export function TwinStage({
   onRevealDone?: () => void
   /** Called from the reveal's "Log another" — reopens the QuickLog. */
   onLogAnother?: () => void
-  /** Today's completed ritual signals — soft persistent lit nodes on the figure
-      (the body carrying the day's habits). Node = % coords, like the reveal. */
-  signals?: Array<{ key: string; node: { x: number; y: number }; color: string; strain?: boolean }>
+  /*
+   * ══ 0R-5 · `signals` IS REPLACED BY A COUNT ════════════════════════════════
+   *
+   * The prop was
+   * `Array<{ key: string; node: { x: number; y: number }; color: string }>`,
+   * and `biotic-visual-encoding.test.ts` found THIS DECLARATION rather than the
+   * register: `P0-SCIENCE-05` was recorded at the producer (`ritual.ts`) and at
+   * the rendered copy, and the prop contract carrying a body coordinate between
+   * them was never named. It rendered a lit, pinging node at each coordinate on
+   * the member's figure — one per checkbox they had ticked.
+   *
+   * A number cannot carry a coordinate. The stage still brightens with how much
+   * the member logged today, which is their own reported activity and is the
+   * same kind of fact as the streak; what it no longer does is say where in
+   * their body it happened.
+   */
+  /** How many of today's ritual check-ins the member has logged (0–5). */
+  ritualCount?: number
 }) {
   const [selected, setSelected] = useState<SystemHotspotKey | null>(null)
   const revealing = reveal != null
@@ -272,16 +297,37 @@ export function TwinStage({
         const start = new Date()
         start.setHours(0, 0, 0, 0)
         return o.createdAt >= start.getTime()
-      }) || ritualCount(loadRitual(browserStore(), dayKey())) > 0
+      }) || countRitual(loadRitual(browserStore(), dayKey())) > 0
     setMood(stageMood(new Date().getHours(), { fed: fedToday }))
   }, [twin])
   const hotspots = useMemo(() => systemMapState(twin), [twin])
   const active: SystemHotspotState | null = hotspots.find((h) => h.key === selected) ?? null
+  /*
+   * ══ 0R-5 · `P0-SCIENCE-04` — THE AURA NO LONGER ENCODES A BIOTIC ══════════
+   *
+   * The default branch read `auraGradientForBiotic(twin.biotics.weakest, …)`,
+   * and the result is applied below as the breathing glow around the member's
+   * body figure. The COLOUR of that glow was a comparative personal Biotic
+   * verdict — `weakest` is `argmin` over the three — carrying no text at all,
+   * which is exactly why a corpus of string rules could not see it at any
+   * width. A claim is still a claim when it is encoded visually.
+   *
+   * Three branches, and only one of them was the defect:
+   *
+   *   reveal   `revealAura(reveal)` — the meal just logged. A property of that
+   *            plate, not a state of the person. Untouched.
+   *   active   the hotspot the member TAPPED. Still tinted, and with the same
+   *            colour as before, but through `active.tone` — a static palette
+   *            tone declared on `SYSTEM_HOTSPOTS` — so no `BioticKey` reaches
+   *            a colour function from here either.
+   *   default  WAS the member's weakest Biotic. Now the stage's resting aura:
+   *            one fixed tone, identical for every member.
+   */
   const aura = reveal
     ? revealAura(reveal)
     : active
-      ? auraGradientForBiotic(active.biotic, visual.confidence)
-      : auraGradientForBiotic(twin.biotics.weakest, visual.confidence)
+      ? auraGradientForTone(active.tone, visual.confidence)
+      : restingAuraGradient(visual.confidence)
 
   const score = useCountUp(visual.ringScore)
   const delta = twin.progress.scoreDelta
@@ -328,7 +374,7 @@ export function TwinStage({
             <div
               aria-hidden
               className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-full w-full rounded-full"
-              style={{ transform: "translate(-50%,-50%)", background: aura, opacity: Math.min(1, (0.5 + 0.4 * visual.confidence) * mood.auraMult + (revealing ? 0 : signals.length * 0.05)), animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen", transition: "opacity 1s" }}
+              style={{ transform: "translate(-50%,-50%)", background: aura, opacity: Math.min(1, (0.5 + 0.4 * visual.confidence) * mood.auraMult + (revealing ? 0 : ritualCount * 0.05)), animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen", transition: "opacity 1s" }}
             />
             {/* the figure — video in a circular mask, or the still figure */}
             <div className="eb-orb-bloom absolute left-1/2 top-1/2 h-[84%] w-[84%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full" style={{ animationDelay: "150ms" }}>
@@ -350,21 +396,14 @@ export function TwinStage({
             {/* ambient microbes + nutrients drifting inside the orb (calm loop) */}
             {!revealing && <StageAmbientLife />}
 
-            {/* today's ritual signals — soft persistent lit nodes: the body
-                carrying the day's habits (sleep, movement, food, mood) */}
-            {!revealing && signals.map((s) => (
-              <span
-                key={s.key}
-                aria-hidden
-                className="pointer-events-none absolute z-[6] -translate-x-1/2 -translate-y-1/2"
-                style={{ left: `${s.node.x}%`, top: `${s.node.y}%` }}
-              >
-                <span className="relative flex h-6 w-6 items-center justify-center">
-                  <span className="eb-ping absolute inline-flex h-full w-full rounded-full" style={{ background: s.color, opacity: s.strain ? 0.28 : 0.4, animationDuration: s.strain ? "3.2s" : "2.6s" }} />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: s.color, boxShadow: `0 0 10px ${s.color}aa` }} />
-                </span>
-              </span>
-            ))}
+            {/*
+                0R-5 · the per-check lit nodes are gone. Each one sat at a
+                `RITUAL_CHECKS` coordinate on the figure — "the body carrying
+                the day's habits" — so ticking "Slept well" lit a point at the
+                head and "Fermented food" lit one at the gut. The glow above
+                still responds to `ritualCount`; it no longer places the
+                response anywhere on the member.
+            */}
 
             {/* constellation connector lines (desktop) — hidden while a meal reveals */}
             <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 hidden h-full w-full sm:block" style={{ opacity: revealing ? 0 : 1, transition: "opacity 300ms" }}>
@@ -392,7 +431,7 @@ export function TwinStage({
                   type="button"
                   onClick={() => setSelected(isActive ? null : h.key)}
                   aria-pressed={isActive}
-                  aria-label={`${h.label} — ${h.level}`}
+                  aria-label={`Inside you — ${h.label}`}
                   className="eb-reveal absolute z-10 -translate-x-1/2 -translate-y-1/2"
                   style={{ left: `${h.x}%`, top: `${h.y}%`, animationDelay: `${900 + i * 120}ms` }}
                 >
@@ -435,7 +474,6 @@ export function TwinStage({
                     }}
                   >
                     {h.label}
-                    <span style={{ color: c }}>{h.score}</span>
                   </span>
                 </button>
               )
@@ -522,13 +560,8 @@ export function TwinStage({
               </Link>
             </h2>
 
-            <div className="mt-5 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-8">
+            <div className="mt-5">
               {checklist ?? <Sparkline twin={twin} />}
-              <div className="max-w-sm space-y-3">
-                <BioticBar biotic="prebiotics" score={twin.biotics.prebiotics.score} delay={700} />
-                <BioticBar biotic="probiotics" score={twin.biotics.probiotics.score} delay={800} />
-                <BioticBar biotic="postbiotics" score={twin.biotics.postbiotics.score} delay={900} />
-              </div>
             </div>
 
             {twin.nextBestAction && (
@@ -587,14 +620,15 @@ export function TwinStage({
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: HOTSPOT_COLOR[active.key] }}>
                   Inside you · {active.label}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full px-2.5 py-1 text-xs font-bold" style={{ background: HOTSPOT_COLOR[active.key], color: "#0B1607" }}>
-                    {active.level} · {active.score}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: "rgba(253,251,247,0.08)", border: "1px solid rgba(253,251,247,0.18)", color: "#A8E063" }}>
-                    <Leaf size={11} /> Fed by {active.bioticLabel}
-                  </span>
-                </div>
+                {/*
+                  GATE 3.6: two chips and a bar used to live here —
+                  "Building · 45" (a personal Biotic number with a band word)
+                  and "Fed by Postbiotics" (a feeding mechanism naming a
+                  Biotic), over a bar whose width was that same score. All
+                  three are gone, and `SystemHotspotState` no longer carries
+                  the fields, so they cannot be rendered again by accident.
+                  What a hotspot now says is what it teaches and what to eat.
+                */}
               </div>
               <button
                 type="button"
@@ -605,9 +639,6 @@ export function TwinStage({
               >
                 <X size={13} />
               </button>
-            </div>
-            <div className="mt-3 h-[7px] max-w-md overflow-hidden rounded-full" style={{ background: "rgba(253,251,247,0.10)" }}>
-              <div className="eb-shimmer h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.max(4, Math.min(100, active.score))}%`, backgroundColor: HOTSPOT_COLOR[active.key] }} />
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 md:gap-6">
               <p className="text-sm leading-relaxed" style={{ color: "rgba(253,251,247,0.85)" }}>{active.what}</p>

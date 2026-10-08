@@ -61,12 +61,27 @@ vi.mock("@/lib/statsig-server", () => ({ logServerEvent: vi.fn(async () => {}) }
 vi.mock("@/lib/report-error", () => ({ reportError: vi.fn(async () => {}) }))
 vi.mock("@/lib/email/welcome-subscription-email", () => ({ welcomeSubscriptionEmailHtml: () => "" }))
 vi.mock("@/lib/email/paid-onboarding-email", () => ({ cancellationEmail: () => ({ subject: "", html: "" }) }))
+/*
+ * These two factories must export everything the route imports, even the
+ * values these five cases never reach — `tests/unit/stripe-mock-coverage.test.ts`
+ * enforces it. A factory that omits one does not make the route fail loudly;
+ * it makes a BRANCH UNREACHABLE while the file still reads like coverage of
+ * it, which is how the €49 `checkout.session.completed` path went untested.
+ *
+ * The five assertions below are unchanged and still exercise only the guard
+ * rails. `isCheckoutSessionSettled` stays pinned to false here, so the paid
+ * branch is still not reached from this file — deliberately. The commercial
+ * proof lives in tests/unit/v1-paid-journey.test.ts, which runs the real
+ * module instead of mocking it.
+ */
 vi.mock("@/lib/paid-report-session", () => ({
   getPaidReportSummaryFromSession: () => null,
+  resolvePaidReportSummary: async () => null,
   isCheckoutSessionSettled: () => false,
 }))
 vi.mock("@/lib/auth/reconcile-account", () => ({
   decideTrialActivation: () => ({ activate: false }),
+  latestPurchaseAt: () => null,
 }))
 vi.mock("@/lib/membership", () => ({
   tierFromPriceId: () => null,
