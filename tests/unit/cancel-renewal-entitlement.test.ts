@@ -102,7 +102,15 @@ async function tier() {
 
 /** Stripe's answer to `subscriptions.update(id, { cancel_at_period_end: true })`. */
 function scheduledCancellation() {
-  return { id: SUB_ID, status: "active", cancel_at_period_end: true, current_period_end: PERIOD_END }
+  // Stripe v20 (`2026-02-25.clover`) shape: the period end is on the items,
+  // and the subscription itself carries no `current_period_end`.
+  return {
+    id: SUB_ID,
+    status: "active",
+    cancel_at_period_end: true,
+    cancel_at: PERIOD_END,
+    items: { object: "list", data: [{ id: "si_cancel_fixture", current_period_end: PERIOD_END }] },
+  }
 }
 
 async function cancelRenewal() {

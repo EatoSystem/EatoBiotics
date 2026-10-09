@@ -95,6 +95,8 @@ export const MEAL_SURFACES = [
  */
 export const ACCOUNT_SURFACES = [
   "components/account/live-dashboard.tsx",
+  // The subscription card's renewal copy, rendered by `live-dashboard.tsx`.
+  "components/account/renewal-status.tsx",
   "components/account/dashboard-client.tsx",
   "components/account/report-bridge-card.tsx",
   "components/account/day8-challenge-card.tsx",

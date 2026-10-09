@@ -4,6 +4,7 @@ import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
 import { stripe } from "@/lib/stripe-server"
+import { renewalState, type RenewalState } from "@/lib/stripe-renewal"
 import { canAccess, type MembershipTier } from "@/lib/membership"
 import { LiveDashboard } from "@/components/account/live-dashboard"
 import type { RealAnalysis, RealWeeklyReport, LivePaidReport } from "@/components/account/live-dashboard"
@@ -19,9 +20,6 @@ export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
   description: "Your assessment history, reports, and food system progress.",
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function field<T>(obj: unknown, key: string): T | undefined { return (obj as any)?.[key] as T | undefined }
 
 export default async function AccountPage({
   searchParams,
@@ -66,7 +64,7 @@ export default async function AccountPage({
     weeklyReports,
     weeklyCheckin,
     monthlyPlan,
-    nextBillingDate,
+    renewal,
     streakInfo,
     paidReports,
     scoreHistory,
@@ -186,16 +184,16 @@ export default async function AccountPage({
       return (data?.content as string | null) ?? null
     })(),
 
-    /* Next billing date from Stripe */
-    (async (): Promise<string | null> => {
+    /* Renewal state from Stripe — read on every load, so a cancelled renewal
+       still shows as cancelled after a refresh. The profile stays `active`
+       until the paid period ends, so it cannot answer this. */
+    (async (): Promise<RenewalState | null> => {
       if (!profile?.stripe_subscription_id) return null
       try {
-        const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id as string)
-        const periodEnd = field<number>(sub, "current_period_end")
-        return periodEnd ? new Date(periodEnd * 1000).toISOString() : null
+        return renewalState(await stripe.subscriptions.retrieve(profile.stripe_subscription_id as string))
       } catch (err) {
         console.error("[account] Stripe fetch failed:", err)
-        return null
+        return { kind: "unknown" }
       }
     })(),
 
@@ -343,7 +341,8 @@ export default async function AccountPage({
         monthlyPlan={monthlyPlan}
         weeklyCheckin={weeklyCheckin}
         memberStartedAt={(profile.membership_started_at as string | null) ?? null}
-        nextBillingDate={nextBillingDate}
+        nextBillingDate={renewal?.kind === "renews" ? renewal.nextBillingDate : null}
+        scheduledCancellation={renewal?.kind === "ends" ? { accessUntil: renewal.accessUntil } : null}
         referralCode={(profile.referral_code as string | null) ?? null}
         twin={accountTwin?.twin ?? null}
         twinVisual={twinVisual}

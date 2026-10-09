@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { stripe } from "@/lib/stripe-server"
+import { renewalState } from "@/lib/stripe-renewal"
 
 export async function POST() {
   try {
@@ -47,8 +48,10 @@ export async function POST() {
      * moves the member to cancelled/free.
      */
 
-    const periodEnd = (updated as unknown as { current_period_end: number }).current_period_end
-    const accessUntil = periodEnd ? new Date(periodEnd * 1000).toISOString() : null
+    // The period end is on the subscription items under the pinned API
+    // version, not on the subscription — see `lib/stripe-renewal.ts`.
+    const renewal = renewalState(updated)
+    const accessUntil = renewal.kind === "ends" ? renewal.accessUntil : null
 
     return NextResponse.json({ ok: true, accessUntil })
   } catch (err) {
