@@ -37,6 +37,7 @@ import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
 import type { TwinVideo } from "@/lib/account/twin-figure"
 import { AGE_BRACKETS } from "@/lib/age-brackets"
+import { RenewalCancelledNotice, renewalLine } from "@/components/account/renewal-status"
 
 
 /*
@@ -335,6 +336,10 @@ export interface LiveDashboardProps {
   weeklyCheckin?:    string | null
   memberStartedAt?:  string | null
   nextBillingDate?:  string | null
+  /** Set when Stripe has the renewal cancelled (`cancel_at_period_end`). The
+   *  profile stays `active` until the paid period ends, so `membershipStatus`
+   *  cannot carry this; `app/account/page.tsx` reads it from Stripe per load. */
+  scheduledCancellation?: { accessUntil: string | null } | null
   referralCode?:     string | null
   dailyLoop?:        DailyLoopData | null
   twin?:             FoodSystemDigitalTwin | null
@@ -692,6 +697,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     monthlyPlan        = null,
     memberStartedAt    = null,
     nextBillingDate    = null,
+    scheduledCancellation = null,
     dailyLoop          = null,
     referralCode       = null,
     twin               = null,
@@ -726,6 +732,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const [cancelStage,    setCancelStage]    = useState<CancelStage>("idle")
   const [cancelUntil,    setCancelUntil]    = useState<string | null>(null)
   const [cancelError,    setCancelError]    = useState<string | null>(null)
+  const renewalCancelled = cancelStage === "done" || scheduledCancellation !== null
 
   const router = useRouter()
 
@@ -2466,8 +2473,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             {/* ── Active paid plan: cancel flow ── */}
             {propMemberTier && propMemberTier !== "free" && propMemberStatus !== "cancelled" ? (
               <>
+                {/* Renewal cancelled — just now, or before this page load */}
+                {renewalCancelled && (
+                  <RenewalCancelledNotice accessUntil={cancelUntil ?? scheduledCancellation?.accessUntil ?? null} />
+                )}
+
                 {/* Idle */}
-                {cancelStage === "idle" && (
+                {!renewalCancelled && cancelStage === "idle" && (
                   <div className="flex items-center justify-between gap-4 px-5 py-5">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "#fff7ed" }}>
@@ -2478,9 +2490,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                           {propMemberTier} Subscription
                         </p>
                         <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                          {nextBillingDate
-                            ? `Next billing ${new Date(nextBillingDate as string).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}`
-                            : "Active subscription"}
+                          {renewalLine(nextBillingDate)}
                         </p>
                       </div>
                     </div>
@@ -2542,25 +2552,6 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <div className="flex items-center justify-center gap-3 px-5 py-6">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-500" />
                     <p className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>Cancelling subscription…</p>
-                  </div>
-                )}
-
-                {/* Done */}
-                {cancelStage === "done" && (
-                  <div className="px-5 py-5 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "#f0fdf4" }}>
-                        <Check size={13} style={{ color: "var(--icon-green)" }} />
-                      </div>
-                      <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Subscription cancelled</p>
-                    </div>
-                    {cancelUntil ? (
-                      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-                        Your access continues until <strong>{new Date(cancelUntil).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}</strong>. No further charges will be made.
-                      </p>
-                    ) : (
-                      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No further charges will be made.</p>
-                    )}
                   </div>
                 )}
               </>

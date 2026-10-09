@@ -35,6 +35,7 @@ const TEST_FILES = [
   "tests/unit/stripe-webhook-route.test.ts",
   "tests/unit/money-paths.test.ts",
   "tests/unit/v1-paid-journey.test.ts",
+  "tests/unit/cancel-renewal-entitlement.test.ts",
 ]
 
 function parse(file: string): ts.SourceFile {

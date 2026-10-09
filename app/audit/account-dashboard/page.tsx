@@ -120,6 +120,18 @@ export default async function ExperienceAuditFixturePage({
    */
   const twinVisual = twin ? twinVisualState(twin) : null
 
+  /*
+   * `renewal=cancelled` renders what `app/account/page.tsx` derives on every
+   * load once Stripe has `cancel_at_period_end` set (`lib/stripe-renewal.ts`):
+   * no next charge, paid access until the period end. It is a modifier rather
+   * than a fixture state so the capture matrix is unchanged; it exists for
+   * `tests/e2e/renewal-cancelled.spec.ts`.
+   */
+  const renewalCancelled = params.renewal === "cancelled"
+  const renewal = renewalCancelled
+    ? { nextBillingDate: null, scheduledCancellation: { accessUntil: props.nextBillingDate ?? null } }
+    : {}
+
   return (
     <div className="min-h-screen bg-background">
       {/*
@@ -165,7 +177,14 @@ export default async function ExperienceAuditFixturePage({
         can never inherit mounted state from `dense`. A fixture that carried
         state between captures would produce screenshots nobody could trust.
       */}
-      <LiveDashboard key={state} {...props} twin={twin} twinVisual={twinVisual} twinFeed={built?.feed ?? null} />
+      <LiveDashboard
+        key={renewalCancelled ? `${state}-renewal-cancelled` : state}
+        {...props}
+        {...renewal}
+        twin={twin}
+        twinVisual={twinVisual}
+        twinFeed={built?.feed ?? null}
+      />
     </div>
   )
 }

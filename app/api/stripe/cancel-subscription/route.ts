@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { stripe } from "@/lib/stripe-server"
+import { renewalState } from "@/lib/stripe-renewal"
 
 export async function POST() {
   try {
@@ -30,14 +31,27 @@ export async function POST() {
       cancel_at_period_end: true,
     })
 
-    // Reflect the pending-cancel state in the DB so the UI can update immediately
-    await adminSupabase
-      .from("profiles")
-      .update({ membership_status: "cancelled" })
-      .eq("id", user.id)
+    /* ══ CANCELLING RENEWAL IS NOT CANCELLING ACCESS ═══════════════════════
+     *
+     * This route used to write `membership_status: "cancelled"` here, "so the
+     * UI can update immediately". `getUserMembershipTier` treats `cancelled`
+     * as free, so a member who cancelled their renewal lost the period they
+     * had already paid for the moment they clicked. The webhook's next
+     * `customer.subscription.updated` (still `active`) usually restored it —
+     * unless that event was processed first, or failed, in which case the
+     * loss lasted until the next event about the subscription.
+     *
+     * The profile is deliberately left alone. Stripe is the source of truth:
+     * the subscription stays `active` with `cancel_at_period_end` until the
+     * period ends, access stays bounded by `membership_expires_at`, and only
+     * `customer.subscription.deleted` — Stripe saying it has actually ended —
+     * moves the member to cancelled/free.
+     */
 
-    const periodEnd = (updated as unknown as { current_period_end: number }).current_period_end
-    const accessUntil = periodEnd ? new Date(periodEnd * 1000).toISOString() : null
+    // The period end is on the subscription items under the pinned API
+    // version, not on the subscription — see `lib/stripe-renewal.ts`.
+    const renewal = renewalState(updated)
+    const accessUntil = renewal.kind === "ends" ? renewal.accessUntil : null
 
     return NextResponse.json({ ok: true, accessUntil })
   } catch (err) {

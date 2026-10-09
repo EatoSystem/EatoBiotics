@@ -603,6 +603,8 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "components/account/live-dashboard.tsx",
       "components/account/monthly-progress-card.tsx",
       "components/account/progress-chart.tsx",
+      // PR #293: the subscription card's renewal copy, split out of live-dashboard.
+      "components/account/renewal-status.tsx",
       "components/account/report-bridge-card.tsx",
       "components/account/score-progress-card.tsx",
       "components/account/seven-day-guide.tsx",
